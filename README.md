@@ -51,13 +51,13 @@ Build the jar your plugin compiles against with `./gradlew :client:assemble`, or
 - Runtime agent tooling: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/agentserver`
 
 ## Discord
-[![Discord Banner 1](https://discord.com/api/guilds/1087718903985221642/widget.png?style=banner1)](https://discord.gg/zaGrfqFEWE)
+[![Discord Banner 1](https://discord.com/api/guilds/1521062459446657125/widget.json)]([https://discord.gg/zaGrfqFEWE](https://discord.gg/UUwfkXFcub))
 
-If you have any questions, please join our [Discord](https://discord.gg/zaGrfqFEWE) server. 
+If you have any questions, please join our [Discord]([https://discord.gg/zaGrfqFEWE](https://discord.gg/UUwfkXFcub)) server. 
 
 ## Credits and licence
 
-Project X is a fork of [Microbot](https://github.com/chsami/Microbot) by chsami, which is itself
+Project X is a fork of [xclient](https://github.com/iEasyScript/xclient) by chsami, which is itself
 a fork of [RuneLite](https://github.com/runelite/runelite). Released under the BSD 2-Clause
 licence &mdash; see [LICENSE](LICENSE). Copyright notices of both upstream projects are retained
 throughout the source.
