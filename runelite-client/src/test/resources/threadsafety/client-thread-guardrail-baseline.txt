@@ -1,0 +1,970 @@
+# Baseline of pre-existing client-thread guardrail violations.
+# Maintained by net.runelite.client.plugins.projectx.threadsafety.ClientThreadGuardrailTest.
+# Format: <fully-qualified caller>  ->  <api owner>#<member>
+# Regenerate with: ./gradlew :client:runUnitTests -Dprojectx.guardrail.regenerate-baseline=true
+# Lines starting with '#' are ignored.
+
+net.runelite.client.plugins.projectx.api.AbstractEntityQueryable#lambda$fromWorldView$0(WorldView, IEntity): boolean  ->  net.runelite.api.WorldView#getId(): int
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#getAnimation(): int  ->  net.runelite.api.Actor#getAnimation(): int
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#getCurrentOrientation(): int  ->  net.runelite.api.Actor#getCurrentOrientation(): int
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#getGraphic(): int  ->  net.runelite.api.Actor#getGraphic(): int
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#getLocalLocation(): LocalPoint  ->  net.runelite.api.Actor#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#getModel(): Model  ->  net.runelite.api.Actor#getModel(): Model
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#getWorldArea(): WorldArea  ->  net.runelite.api.Actor#getWorldArea(): WorldArea
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#projectActorLocationToMainWorld(): WorldPoint  ->  net.runelite.api.Actor#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#projectActorLocationToMainWorld(): WorldPoint  ->  net.runelite.api.Actor#getWorldView(): WorldView
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#projectActorLocationToMainWorld(): WorldPoint  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#projectActorLocationToMainWorld(): WorldPoint  ->  net.runelite.api.Projection#project(float, float, float): float[]
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#projectActorLocationToMainWorld(): WorldPoint  ->  net.runelite.api.WorldView#getMainWorldProjection(): Projection
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#projectActorLocationToMainWorld(): WorldPoint  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#projectActorLocationToMainWorld(): WorldPoint  ->  net.runelite.api.coords.WorldPoint#fromLocal(WorldView, int, int, int): WorldPoint
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#setDead(boolean): void  ->  net.runelite.api.Actor#setDead(boolean): void
+net.runelite.client.plugins.projectx.api.actor.Rs2ActorModel#setOverheadText(String): void  ->  net.runelite.api.Actor#setOverheadText(String): void
+net.runelite.client.plugins.projectx.api.boat.Rs2BoatCache#getBoat(Rs2PlayerModel): Rs2BoatModel  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.api.boat.Rs2BoatCache#getLocalBoat(): Rs2BoatModel  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.api.boat.models.Rs2BoatModel#clickSailButton(): boolean  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.api.boat.models.Rs2BoatModel#setHeading(Heading): void  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.api.boat.models.Rs2BoatModel#setHeading(Heading): void  ->  net.runelite.api.WorldView#getId(): int
+net.runelite.client.plugins.projectx.api.npc.Rs2NpcCache#getStream(): Stream  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.api.npc.Rs2NpcCache#getStream(): Stream  ->  net.runelite.api.Client#getWorldView(int): WorldView
+net.runelite.client.plugins.projectx.api.npc.Rs2NpcCache#getStream(): Stream  ->  net.runelite.api.IndexedObjectSet#stream(): Stream
+net.runelite.client.plugins.projectx.api.npc.Rs2NpcCache#getStream(): Stream  ->  net.runelite.api.WorldView#npcs(): IndexedObjectSet
+net.runelite.client.plugins.projectx.api.npc.models.Rs2NpcModel#click(String): boolean  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.api.npc.models.Rs2NpcModel#getId(): int  ->  net.runelite.api.NPC#getId(): int
+net.runelite.client.plugins.projectx.api.npc.models.Rs2NpcModel#getIndex(): int  ->  net.runelite.api.NPC#getIndex(): int
+net.runelite.client.plugins.projectx.api.npc.models.Rs2NpcModel#getMenuAction(int): MenuAction  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.api.npc.models.Rs2NpcModel#hasLineOfSight(): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.api.npc.models.Rs2NpcModel#hasLineOfSight(): boolean  ->  net.runelite.api.coords.WorldArea#hasLineOfSightTo(WorldView, WorldPoint): boolean
+net.runelite.client.plugins.projectx.api.player.Rs2PlayerCache#getStream(): Stream  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.api.player.Rs2PlayerCache#getStream(): Stream  ->  net.runelite.api.Client#getWorldView(int): WorldView
+net.runelite.client.plugins.projectx.api.player.Rs2PlayerCache#getStream(): Stream  ->  net.runelite.api.IndexedObjectSet#stream(): Stream
+net.runelite.client.plugins.projectx.api.player.models.Rs2PlayerModel#<init>(): void  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.api.player.models.Rs2PlayerModel#getId(): int  ->  net.runelite.api.Player#getId(): int
+net.runelite.client.plugins.projectx.api.playerstate.Rs2PlayerStateCache#getQuestState(Quest): QuestState  ->  net.runelite.api.Quest#getId(): int
+net.runelite.client.plugins.projectx.api.playerstate.Rs2PlayerStateCache#onGameStateChanged(GameStateChanged): void  ->  net.runelite.api.events.GameStateChanged#getGameState(): GameState
+net.runelite.client.plugins.projectx.api.playerstate.Rs2PlayerStateCache#onVarbitChanged(VarbitChanged): void  ->  net.runelite.api.Client#getGameState(): GameState
+net.runelite.client.plugins.projectx.api.playerstate.Rs2PlayerStateCache#onVarbitChanged(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getValue(): int
+net.runelite.client.plugins.projectx.api.playerstate.Rs2PlayerStateCache#onVarbitChanged(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getVarbitId(): int
+net.runelite.client.plugins.projectx.api.playerstate.Rs2PlayerStateCache#onVarbitChanged(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getVarpId(): int
+net.runelite.client.plugins.projectx.api.playerstate.Rs2PlayerStateCache#refreshLocalPlayer(): void  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.api.playerstate.Rs2PlayerStateCache#updateQuest(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getVarbitId(): int
+net.runelite.client.plugins.projectx.api.playerstate.Rs2PlayerStateCache#updateQuest(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getVarpId(): int
+net.runelite.client.plugins.projectx.api.tileitem.Rs2TileItemCache#getStream(): Stream  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.api.tileitem.Rs2TileItemCache#getStream(): Stream  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.api.tileitem.Rs2TileItemCache#getStream(): Stream  ->  net.runelite.api.Client#getWorldView(int): WorldView
+net.runelite.client.plugins.projectx.api.tileitem.Rs2TileItemCache#getStream(): Stream  ->  net.runelite.api.Scene#getTiles(): Tile[][][]
+net.runelite.client.plugins.projectx.api.tileitem.Rs2TileItemCache#getStream(): Stream  ->  net.runelite.api.Tile#getGroundItems(): List
+net.runelite.client.plugins.projectx.api.tileitem.Rs2TileItemCache#getStream(): Stream  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.api.tileitem.Rs2TileItemCache#getStream(): Stream  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel#click(String): boolean  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel#getId(): int  ->  net.runelite.api.TileItem#getId(): int
+net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel#getLocalLocation(): LocalPoint  ->  net.runelite.api.Tile#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel#getQuantity(): int  ->  net.runelite.api.TileItem#getQuantity(): int
+net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel#getWorldLocation(): WorldPoint  ->  net.runelite.api.Tile#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel#getWorldView(): WorldView  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel#isDespawned(): boolean  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel#willDespawnWithin(int): boolean  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.api.tileobject.Rs2TileObjectCache#getStream(): Stream  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.api.tileobject.Rs2TileObjectCache#getStream(): Stream  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.api.tileobject.Rs2TileObjectCache#getStream(): Stream  ->  net.runelite.api.Client#getWorldView(int): WorldView
+net.runelite.client.plugins.projectx.api.tileobject.Rs2TileObjectCache#getStream(): Stream  ->  net.runelite.api.Scene#getTiles(): Tile[][][]
+net.runelite.client.plugins.projectx.api.tileobject.Rs2TileObjectCache#getStream(): Stream  ->  net.runelite.api.Tile#getGameObjects(): GameObject[]
+net.runelite.client.plugins.projectx.api.tileobject.Rs2TileObjectCache#getStream(): Stream  ->  net.runelite.api.WorldView#getId(): int
+net.runelite.client.plugins.projectx.api.tileobject.Rs2TileObjectCache#getStream(): Stream  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.api.tileobject.Rs2TileObjectCache#getStream(): Stream  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.GameObject#sizeX(): int
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.GameObject#sizeY(): int
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.ObjectComposition#getImpostor(): ObjectComposition
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.ObjectComposition#getImpostorIds(): int[]
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.WorldView#getId(): int
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#getClickbox(): Shape  ->  net.runelite.api.TileObject#getClickbox(): Shape
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#getId(): int  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#getWorldLocation(): WorldPoint  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#getWorldLocation(): WorldPoint  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#getWorldLocation(): WorldPoint  ->  net.runelite.api.coords.WorldPoint#fromScene(WorldView, int, int, int): WorldPoint
+net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel#isReachable(): boolean  ->  net.runelite.api.WorldView#getId(): int
+net.runelite.client.plugins.projectx.util.Rs2InventorySetup#computeSetupRetainItemIds(): Set  ->  net.runelite.api.ItemComposition#getLinkedNoteId(): int
+net.runelite.client.plugins.projectx.util.Rs2InventorySetup#firstNonEmptyCompositionName(ItemComposition): String  ->  net.runelite.api.ItemComposition#getMembersName(): String
+net.runelite.client.plugins.projectx.util.Rs2InventorySetup#firstNonEmptyCompositionName(ItemComposition): String  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.Rs2InventorySetup#getItemDefinitionThreadSafe(int): ItemComposition  ->  net.runelite.api.Client#getItemDefinition(int): ItemComposition
+net.runelite.client.plugins.projectx.util.Rs2InventorySetup#getItemDefinitionThreadSafe(int): ItemComposition  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.Rs2InventorySetup#setupRowIsStackableByDefinition(InventorySetupsItem): boolean  ->  net.runelite.api.ItemComposition#isStackable(): boolean
+net.runelite.client.plugins.projectx.util.Rs2InventorySetup#validateInventorySetupAgainstDefsIfEnabled(): void  ->  net.runelite.api.ItemComposition#isStackable(): boolean
+net.runelite.client.plugins.projectx.util.antiban.Rs2Antiban#checkForCookingEvent(ChatMessage): boolean  ->  net.runelite.api.events.ChatMessage#getMessage(): String
+net.runelite.client.plugins.projectx.util.antiban.Rs2Antiban#checkForCookingEvent(ChatMessage): boolean  ->  net.runelite.api.events.ChatMessage#getType(): ChatMessageType
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#calculateScrollYFromSlotId(int): int  ->  net.runelite.api.Client#getWidget(int): Widget
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#calculateScrollYFromSlotId(int): int  ->  net.runelite.api.widgets.Widget#getHeight(): int
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#closeCollectionBox(): boolean  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#depositEquipment(): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#findBankStackRowForSavedId(int): Rs2ItemModel  ->  net.runelite.api.ItemComposition#getLinkedNoteId(): int
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#findBankStackRowForSavedId(int): Rs2ItemModel  ->  net.runelite.api.ItemComposition#getMembersName(): String
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#findBankStackRowForSavedId(int): Rs2ItemModel  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#findLockedSlots(): List  ->  net.runelite.api.Client#getWidget(int): Widget
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#findLockedSlots(): List  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#findLockedSlots(): List  ->  net.runelite.api.widgets.Widget#getChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#getBankItemCount(): int  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#getItemBounds(int): Rectangle  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#getItemDefinitionThreadSafe(int): ItemComposition  ->  net.runelite.api.Client#getItemDefinition(int): ItemComposition
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#getItemDefinitionThreadSafe(int): ItemComposition  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#isLockedSlot(int): boolean  ->  net.runelite.api.Client#getWidget(int): Widget
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#isLockedSlot(int): boolean  ->  net.runelite.api.widgets.Widget#getChild(int): Widget
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#isLockedSlot(int): boolean  ->  net.runelite.api.widgets.Widget#getChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#isWidgetLocked(Widget): boolean  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#itemBounds(Rs2ItemModel): Rectangle  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#lambda$depositLootingBag$49(): boolean  ->  net.runelite.api.widgets.Widget#getChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#lambda$getPathAndBankToNearestBank$39(TileObject, BankLocation): int  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#lambda$getPathAndBankToNearestBank$40(Set, TileObject): AbstractMap$SimpleEntry  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#lambda$handleAmount$17(): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#openBank(): boolean  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#openCollectionBox(): boolean  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#scrollBankToSlot(int): boolean  ->  net.runelite.api.Client#getWidget(int): Widget
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#updateLocalBank(ItemContainerChanged): void  ->  net.runelite.api.Client#getItemDefinition(int): ItemComposition
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#updateLocalBank(ItemContainerChanged): void  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#updateLocalBank(ItemContainerChanged): void  ->  net.runelite.api.Item#getId(): int
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#updateLocalBank(ItemContainerChanged): void  ->  net.runelite.api.ItemComposition#getPlaceholderTemplateId(): int
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#updateLocalBank(ItemContainerChanged): void  ->  net.runelite.api.ItemContainer#getItems(): Item[]
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#updateLocalBank(ItemContainerChanged): void  ->  net.runelite.api.events.ItemContainerChanged#getContainerId(): int
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#updateLocalBank(ItemContainerChanged): void  ->  net.runelite.api.events.ItemContainerChanged#getItemContainer(): ItemContainer
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#withdrawLootItems(String, List): boolean  ->  net.runelite.api.ItemComposition#getNote(): int
+net.runelite.client.plugins.projectx.util.bank.Rs2Bank#withdrawLootItems(String, List): boolean  ->  net.runelite.api.ItemComposition#isTradeable(): boolean
+net.runelite.client.plugins.projectx.util.camera.Rs2Camera#getZoom(): int  ->  net.runelite.api.Client#getVarcIntValue(int): int
+net.runelite.client.plugins.projectx.util.camera.Rs2Camera#isTileOnScreen(LocalPoint): boolean  ->  net.runelite.api.Client#getPlane(): int
+net.runelite.client.plugins.projectx.util.combat.Rs2Combat#getWeaponAttackStyle(): String  ->  net.runelite.api.EnumComposition#getIntValue(int): int
+net.runelite.client.plugins.projectx.util.combat.Rs2Combat#inCombat(): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.combat.Rs2Combat#setAttackStyle(WidgetInfo): boolean  ->  net.runelite.api.Client#getWidget(WidgetInfo): Widget
+net.runelite.client.plugins.projectx.util.combat.Rs2Combat#setAttackStyle(WidgetInfo): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.combat.Rs2Combat#setAttackStyle(WidgetInfo): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.combat.Rs2Combat#setAutoCastSpell(Rs2CombatSpells, boolean): boolean  ->  net.runelite.api.widgets.WidgetInfo#getId(): int
+net.runelite.client.plugins.projectx.util.combat.Rs2Combat#setSpecState(boolean, int): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.combat.models.Rs2DropSource#toString(): String  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.coords.Rs2WorldPoint#convertInstancedWorldPoint(WorldPoint): WorldPoint  ->  net.runelite.api.coords.WorldPoint#fromLocal(Client, LocalPoint): WorldPoint
+net.runelite.client.plugins.projectx.util.coords.Rs2WorldPoint#pathTo(WorldPoint, boolean): List  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.coords.Rs2WorldPoint#pathTo(WorldPoint, boolean): List  ->  net.runelite.api.Scene#getTiles(): Tile[][][]
+net.runelite.client.plugins.projectx.util.coords.Rs2WorldPoint#pathTo(WorldPoint, boolean): List  ->  net.runelite.api.Tile#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.coords.Rs2WorldPoint#pathTo(WorldPoint, boolean): List  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.coords.Rs2WorldPoint#toLocalInstance(WorldPoint): WorldPoint  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.depositbox.Rs2DepositBox#getDepositBoxBounds(): Rectangle  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.depositbox.Rs2DepositBox#getItems(): List  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.depositbox.Rs2DepositBox#itemBounds(Rs2ItemModel): Rectangle  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.depositbox.Rs2DepositBox#lambda$getNearestDepositBox$12(TileObject, DepositBoxLocation): int  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.depositbox.Rs2DepositBox#lambda$getNearestDepositBox$13(Set, TileObject): AbstractMap$SimpleEntry  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.depositbox.Rs2DepositBox#openDepositBox(): boolean  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#clickOption(String, boolean): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#getCombinationOptions(): List  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#getCombinationOptions(): List  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#getDialogueOptions(): List  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#getDialogueOptions(): List  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#getQuestion(): String  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#getQuestion(): String  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#getStrippedWidgetText(int, int): String  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#handleQuestOptionDialogueSelection(): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#hasDialogueOptionTitle(String, boolean): boolean  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#hasDialogueOptionTitle(String, boolean): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#hasSelectAnOption(): boolean  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#lambda$clickOption$3(Widget, String): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#lambda$clickOption$4(Widget, String): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#lambda$getCombinationOption$9(boolean, String, Widget): boolean  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#lambda$getDialogueOption$1(boolean, String, Widget): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue#lambda$hasDialogueOption$2(boolean, String, Widget): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#<clinit>(): void  ->  net.runelite.api.EquipmentInventorySlot#getSlotIdx(): int
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#<clinit>(): void  ->  net.runelite.api.EquipmentInventorySlot#values(): EquipmentInventorySlot[]
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#equipment(): ItemContainer  ->  net.runelite.api.Client#getItemContainer(int): ItemContainer
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#equipment(): ItemContainer  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#getSafeBounds(int, int): Rectangle  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#storeEquipmentItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.Client#getItemDefinition(int): ItemComposition
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#storeEquipmentItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#storeEquipmentItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.Item#getId(): int
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#storeEquipmentItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.ItemContainer#getItems(): Item[]
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#storeEquipmentItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.events.ItemContainerChanged#getContainerId(): int
+net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment#storeEquipmentItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.events.ItemContainerChanged#getItemContainer(): ItemContainer
+net.runelite.client.plugins.projectx.util.gameobject.Rs2Cannon#refill(int): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2Cannon#repair(): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#canWalkTo(TileObject, int): boolean  ->  net.runelite.api.Client#isInInstancedRegion(): boolean
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#canWalkTo(TileObject, int): boolean  ->  net.runelite.api.GameObject#sizeX(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#canWalkTo(TileObject, int): boolean  ->  net.runelite.api.GameObject#sizeY(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#canWalkTo(TileObject, int): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#canWalkTo(TileObject, int): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(Client, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#canWalkTo(TileObject, int): boolean  ->  net.runelite.api.coords.WorldPoint#fromLocalInstance(Client, LocalPoint): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#canWalkTo(TileObject, int): boolean  ->  net.runelite.api.coords.WorldPoint#fromScene(Client, int, int, int): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.GameObject#sizeX(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.GameObject#sizeY(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.ObjectComposition#getImpostor(): ObjectComposition
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.ObjectComposition#getImpostorIds(): int[]
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.WorldView#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#clickObject(TileObject, String): boolean  ->  net.runelite.api.WorldView#isTopLevel(): boolean
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#convertToObjectComposition(TileObject): ObjectComposition  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#convertToObjectComposition(TileObject, boolean): ObjectComposition  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#fetchGameObjects(Predicate, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#fetchTileObjects(Predicate, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#findObjectByIdAndDistance(int, int): TileObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#findObjectByIdAndDistance(int, int): TileObject  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getCompositionName(TileObject): Optional  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getDecorativeObject(Predicate): DecorativeObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getDecorativeObject(Predicate, WorldPoint, int): DecorativeObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getDecorativeObject(Predicate, WorldPoint, int): DecorativeObject  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getDecorativeObject(Predicate, int): DecorativeObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getDecorativeObject(int, int): DecorativeObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getDecorativeObjects(Predicate): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getDecorativeObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getDecorativeObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getDecorativeObjects(Predicate, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGameObject(Predicate): GameObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGameObject(Predicate, WorldPoint, int): GameObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGameObject(Predicate, WorldPoint, int): GameObject  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGameObject(int, int): GameObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGameObjects(Predicate): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGameObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGameObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGameObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGameObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGameObjects(Predicate, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGroundObject(Predicate, WorldPoint, int): GroundObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGroundObject(Predicate, WorldPoint, int): GroundObject  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGroundObject(Predicate, int): GroundObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGroundObjects(Predicate): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGroundObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGroundObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGroundObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGroundObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getGroundObjects(Predicate, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getObjectComposition(int): ObjectComposition  ->  net.runelite.api.ObjectComposition#getImpostorIds(): int[]
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getSceneObjects(Function): Stream  ->  net.runelite.api.Tile#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObject(Predicate): TileObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObject(Predicate, WorldPoint, int): TileObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObject(Predicate, WorldPoint, int): TileObject  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObject(Predicate, int): TileObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObject(int, int): TileObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObjects(Predicate): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTileObjects(Predicate, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTiles(int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTiles(int): List  ->  net.runelite.api.Client#getPlane(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTiles(int): List  ->  net.runelite.api.Client#getScene(): Scene
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTiles(int): List  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTiles(int): List  ->  net.runelite.api.Scene#getTiles(): Tile[][][]
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getTiles(int): List  ->  net.runelite.api.Tile#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWallObject(Predicate): WallObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWallObject(Predicate, WorldPoint, int): WallObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWallObject(Predicate, WorldPoint, int): WallObject  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWallObject(Predicate, int): WallObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWallObject(int, int): WallObject  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWallObjects(Predicate): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWallObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWallObjects(Predicate, WorldPoint, int): List  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWallObjects(Predicate, int): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWorldArea(GameObject): WorldArea  ->  net.runelite.api.GameObject#sizeX(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWorldArea(GameObject): WorldArea  ->  net.runelite.api.GameObject#sizeY(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#getWorldArea(GameObject): WorldArea  ->  net.runelite.api.coords.WorldPoint#fromLocal(Client, LocalPoint): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#hasLineOfSight(WorldPoint, TileObject): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#hasLineOfSight(WorldPoint, TileObject): boolean  ->  net.runelite.api.GameObject#sizeX(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#hasLineOfSight(WorldPoint, TileObject): boolean  ->  net.runelite.api.GameObject#sizeY(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#hasLineOfSight(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#hasLineOfSight(WorldPoint, TileObject): boolean  ->  net.runelite.api.coords.WorldArea#hasLineOfSightTo(WorldView, WorldArea): boolean
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#hasLineOfSight(WorldPoint, TileObject): boolean  ->  net.runelite.api.coords.WorldPoint#fromScene(Client, int, int, int): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#interact(TileObject, String, boolean): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findBank$17(GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findBank$18(GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findDepositBox$20(GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findGameObjectByLocation$7(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findGrandExchangeBooth$21(WallObject): boolean  ->  net.runelite.api.WallObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObject$10(int, WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObject$10(int, WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObject$37(Set, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObjectById$5(int, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObjectById$9(int, int, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObjectById$9(int, int, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObjectByIdAndDistance$8(int, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObjectByImposter$15(int, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObjectByLocation$6(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findReachableObject$13(Rs2WorldPoint, GameObject): int  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getDecorativeObject$69(int, DecorativeObject): boolean  ->  net.runelite.api.DecorativeObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getDecorativeObject$70(Set, DecorativeObject): boolean  ->  net.runelite.api.DecorativeObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getDecorativeObject$71(Set, DecorativeObject): boolean  ->  net.runelite.api.DecorativeObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getGameObject$35(int, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getGameObject$36(Set, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getGameObject$38(Set, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getGroundObject$47(int, GroundObject): boolean  ->  net.runelite.api.GroundObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getGroundObject$48(Set, GroundObject): boolean  ->  net.runelite.api.GroundObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getGroundObject$49(Set, GroundObject): boolean  ->  net.runelite.api.GroundObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getTileObject$23(int, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getTileObject$24(int, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getTileObject$25(Set, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getTileObject$26(Set, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getWallObject$58(int, WallObject): boolean  ->  net.runelite.api.WallObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getWallObject$59(Set, WallObject): boolean  ->  net.runelite.api.WallObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getWallObject$60(Set, WallObject): boolean  ->  net.runelite.api.WallObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$nameMatches$85(Set, boolean, String, String, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$static$0(Tile): Collection  ->  net.runelite.api.Tile#getGameObjects(): GameObject[]
+net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#localPointFromWorldSafe(WorldPoint): LocalPoint  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#<init>(TileObject, Tile): void  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#<init>(TileObject, Tile): void  ->  net.runelite.api.GameObject#sizeX(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#<init>(TileObject, Tile): void  ->  net.runelite.api.GameObject#sizeY(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#blocksLineOfSight(): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#getCanonicalLocation(): WorldPoint  ->  net.runelite.api.Tile#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#getCanonicalLocation(): WorldPoint  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#getId(): int  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#getName(): String  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#isSolid(): boolean  ->  net.runelite.api.ObjectComposition#getImpostorIds(): int[]
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#abortOffer(String, boolean): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#abortOffer(String, boolean): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#adjustPriceByPercent(int): void  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#adjustPriceByPercent(int): void  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#adjustPriceByPercent(int): void  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#cancelSpecificOffers(List, boolean): List  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#cancelSpecificOffers(List, boolean): List  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#clickPreviousSearch(): boolean  ->  net.runelite.api.widgets.Widget#getChild(int): Widget
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#collectAll(boolean): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#collectAll(boolean): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#collectOffer(GrandExchangeSlots, boolean): boolean  ->  net.runelite.api.widgets.Widget#getChild(int): Widget
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#collectOffer(GrandExchangeSlots, boolean): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#collectOffer(boolean): boolean  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#collectOffer(boolean): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#collectOffer(boolean): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#collectOffer(boolean): boolean  ->  net.runelite.api.widgets.Widget#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#collectOffer(boolean): boolean  ->  net.runelite.api.widgets.Widget#getItemQuantity(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#findSlotForItem(int, boolean): GrandExchangeSlots  ->  net.runelite.api.GrandExchangeOffer#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#findSlotForItem(int, boolean): GrandExchangeSlots  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getActiveOfferSlotsByProgress(): List  ->  net.runelite.api.GrandExchangeOffer#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getActiveOfferSlotsByProgress(): List  ->  net.runelite.api.GrandExchangeOffer#getQuantitySold(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getCompletedOffers(): Map  ->  net.runelite.api.GrandExchangeOffer#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getCompletedOffers(): Map  ->  net.runelite.api.GrandExchangeOffer#getQuantitySold(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getCompletedOffers(): Map  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getItemsBoughtFromOffer(GrandExchangeSlots): int  ->  net.runelite.api.GrandExchangeOffer#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getItemsBoughtFromOffer(GrandExchangeSlots): int  ->  net.runelite.api.GrandExchangeOffer#getQuantitySold(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getItemsBoughtFromOffer(GrandExchangeSlots): int  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getItemsSoldFromOffer(GrandExchangeSlots): int  ->  net.runelite.api.GrandExchangeOffer#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getItemsSoldFromOffer(GrandExchangeSlots): int  ->  net.runelite.api.GrandExchangeOffer#getQuantitySold(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getItemsSoldFromOffer(GrandExchangeSlots): int  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getOfferDetails(GrandExchangeSlots): GrandExchangeOfferDetails  ->  net.runelite.api.GrandExchangeOffer#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getOfferDetails(GrandExchangeSlots): GrandExchangeOfferDetails  ->  net.runelite.api.GrandExchangeOffer#getQuantitySold(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getOfferDetails(GrandExchangeSlots): GrandExchangeOfferDetails  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getOfferDetailsForCancellation(GrandExchangeSlots): Map  ->  net.runelite.api.GrandExchangeOffer#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getOfferDetailsForCancellation(GrandExchangeSlots): Map  ->  net.runelite.api.GrandExchangeOffer#getQuantitySold(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getOfferDetailsForCancellation(GrandExchangeSlots): Map  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#getSearchResultWidget(String, boolean): Pair  ->  net.runelite.api.widgets.Widget#getChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#hasBoughtOffer(GrandExchangeSlots): boolean  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#hasBuyOffer(int): GrandExchangeOfferDetails  ->  net.runelite.api.GrandExchangeOffer#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#hasBuyOffer(int): GrandExchangeOfferDetails  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#hasSellOffer(int): GrandExchangeOfferDetails  ->  net.runelite.api.GrandExchangeOffer#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#hasSellOffer(int): GrandExchangeOfferDetails  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#hasSoldOffer(GrandExchangeSlots): boolean  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#isCancelledOfferWithItems(GrandExchangeSlots): boolean  ->  net.runelite.api.GrandExchangeOffer#getItemId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#isCancelledOfferWithItems(GrandExchangeSlots): boolean  ->  net.runelite.api.GrandExchangeOffer#getQuantitySold(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#isCancelledOfferWithItems(GrandExchangeSlots): boolean  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#isPreviousSearchMatch(String): boolean  ->  net.runelite.api.widgets.Widget#getChild(int): Widget
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#isPreviousSearchMatch(String): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#isSlotAvailable(GrandExchangeSlots): boolean  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$abortAllOffers$20(GrandExchangeSlots): void  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$abortAllOffers$20(GrandExchangeSlots): void  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$abortOffer$18(String, GrandExchangeSlots): boolean  ->  net.runelite.api.widgets.Widget#getChild(int): Widget
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$abortOffer$18(String, GrandExchangeSlots): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$adjustPriceByPercent$12(boolean, int): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$getSearchResultWidget$22(boolean, String, Widget): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$hasBoughtOffer$25(GrandExchangeOffer): boolean  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$hasFinishedBuyingOffers$26(GrandExchangeOffer): boolean  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$hasFinishedBuyingOffers$27(GrandExchangeOffer): boolean  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$hasFinishedSellingOffers$29(GrandExchangeOffer): boolean  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$hasFinishedSellingOffers$30(GrandExchangeOffer): boolean  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#lambda$hasSoldOffer$28(GrandExchangeOffer): boolean  ->  net.runelite.api.GrandExchangeOffer#getState(): GrandExchangeOfferState
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#processOffer(GrandExchangeRequest): boolean  ->  net.runelite.api.widgets.Widget#getChild(int): Widget
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#processOffer(GrandExchangeRequest): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#restoreOffer(Map, GrandExchangeSlots): boolean  ->  net.runelite.api.Client#getItemDefinition(int): ItemComposition
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#restoreOffer(Map, GrandExchangeSlots): boolean  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#setChatboxValue(int): void  ->  net.runelite.api.widgets.Widget#setText(String): Widget
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#setPrice(int): void  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#setQuantity(int): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#viewOffer(Widget): void  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.grandexchange.Rs2GrandExchange#viewOffer(Widget): void  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#hasLineOfSight(Tile): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#hasLineOfSight(Tile): boolean  ->  net.runelite.api.Tile#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#hasLineOfSight(Tile): boolean  ->  net.runelite.api.coords.WorldArea#hasLineOfSightTo(WorldView, WorldArea): boolean
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#interact(InteractModel, String): boolean  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#interact(InteractModel, String): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(Client, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#interact(RS2Item, String): boolean  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#interact(RS2Item, String): boolean  ->  net.runelite.api.Tile#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#interact(RS2Item, String): boolean  ->  net.runelite.api.TileItem#getId(): int
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$exists$28(int, RS2Item): boolean  ->  net.runelite.api.ItemComposition#getId(): int
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$exists$29(String, RS2Item): boolean  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$getAllAt$1(Tile, TileItem): RS2Item  ->  net.runelite.api.TileItem#getId(): int
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$getAllFromWorldPoint$4(RS2Item): int  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$getAllFromWorldPoint$4(RS2Item): int  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$getAllFromWorldPoint$4(RS2Item): int  ->  net.runelite.api.Tile#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$interact$26(String, RS2Item): boolean  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$interact$27(int, RS2Item): boolean  ->  net.runelite.api.ItemComposition#getId(): int
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$loot$25(int, RS2Item): boolean  ->  net.runelite.api.ItemComposition#getId(): int
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$loot$30(int, RS2Item): boolean  ->  net.runelite.api.ItemComposition#getId(): int
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$loot$7(String, int, RS2Item): boolean  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lambda$loot$7(String, int, RS2Item): boolean  ->  net.runelite.api.TileItem#getQuantity(): int
+net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem#lootAllItemBasedOnValue(int, int): boolean  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.grounditem.models.Rs2SpawnLocation#getItemName(): String  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#depositActionIndex(Rs2ItemModel, String): int  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#depositSlotBounds(int): Rectangle  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#findKitSlotWidget(List, int): Widget  ->  net.runelite.api.widgets.Widget#getIndex(): int
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#getKitSideInventorySlotWidget(int): Widget  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#getKitSideInventorySlotWidget(int): Widget  ->  net.runelite.api.widgets.Widget#getIndex(): int
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#invokeKitChromeAction(int, String): boolean  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#invokeKitChromeAction(int, String): boolean  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#invokeMenu(int, Rs2ItemModel): void  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#itemBounds(Rs2ItemModel): Rectangle  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#kitItemContainer(): ItemContainer  ->  net.runelite.api.Client#getItemContainer(int): ItemContainer
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#lambda$depositX$15(): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#lambda$withdrawX$20(): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#scrollKitToSlot(int): boolean  ->  net.runelite.api.widgets.Widget#getHeight(): int
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#updateLocalKit(ItemContainerChanged): void  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#updateLocalKit(ItemContainerChanged): void  ->  net.runelite.api.events.ItemContainerChanged#getContainerId(): int
+net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit#withdrawActionIndex(Rs2ItemModel, String): int  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.inventory.Rs2Gembag#onChatMessage(ChatMessage): void  ->  net.runelite.api.events.ChatMessage#getMessage(): String
+net.runelite.client.plugins.projectx.util.inventory.Rs2Gembag#onChatMessage(ChatMessage): void  ->  net.runelite.api.events.ChatMessage#getType(): ChatMessageType
+net.runelite.client.plugins.projectx.util.inventory.Rs2Gembag#onMenuOptionClicked(MenuOptionClicked): void  ->  net.runelite.api.events.MenuOptionClicked#getMenuOption(): String
+net.runelite.client.plugins.projectx.util.inventory.Rs2Gembag#onMenuOptionClicked(MenuOptionClicked): void  ->  net.runelite.api.events.MenuOptionClicked#getMenuTarget(): String
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#getSelectedValueOrDefault(Function, Object): Object  ->  net.runelite.api.Client#getSelectedWidget(): Widget
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#inventory(): ItemContainer  ->  net.runelite.api.Client#getItemContainer(int): ItemContainer
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#invokeMenu(Rs2ItemModel, String): void  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#invokeMenu(Rs2ItemModel, String): void  ->  net.runelite.api.widgets.Widget#getChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#invokeMenu(Rs2ItemModel, String): void  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#isItemSelected(): boolean  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#itemBounds(Rs2ItemModel): Rectangle  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#lambda$getSelectedItemName$45(Widget): String  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#lambda$invokeMenu$68(Rs2ItemModel, Widget): boolean  ->  net.runelite.api.widgets.Widget#getIndex(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#lambda$itemBounds$48(Rs2ItemModel, Widget): boolean  ->  net.runelite.api.widgets.Widget#getIndex(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#moveItemToSlot(Rs2ItemModel, int): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#moveItemToSlot(Rs2ItemModel, int): boolean  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#storeInventoryItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.Client#getItemDefinition(int): ItemComposition
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#storeInventoryItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#storeInventoryItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.Item#getId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#storeInventoryItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.ItemContainer#getItems(): Item[]
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#storeInventoryItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.events.ItemContainerChanged#getContainerId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory#storeInventoryItemsInMemory(ItemContainerChanged): void  ->  net.runelite.api.events.ItemContainerChanged#getItemContainer(): ItemContainer
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#<init>(Item, ItemComposition, int): void  ->  net.runelite.api.Item#getId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#<init>(Item, ItemComposition, int): void  ->  net.runelite.api.Item#getQuantity(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#addEquipmentActions(ItemComposition): void  ->  net.runelite.api.ItemComposition#getStringValue(int): String
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getLinkedItemId(ItemComposition): int  ->  net.runelite.api.ItemComposition#getLinkedNoteId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getNotedId(): int  ->  net.runelite.api.ItemComposition#getLinkedNoteId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getNotedItemId(ItemComposition): int  ->  net.runelite.api.ItemComposition#getId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getNotedItemId(ItemComposition): int  ->  net.runelite.api.ItemComposition#getLinkedNoteId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getNotedItemId(ItemComposition): int  ->  net.runelite.api.ItemComposition#getNote(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getNotedItemId(ItemComposition): int  ->  net.runelite.api.ItemComposition#isStackable(): boolean
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getUnNotedId(): int  ->  net.runelite.api.ItemComposition#getLinkedNoteId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getUnNotedId(ItemComposition): int  ->  net.runelite.api.ItemComposition#getId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getUnNotedId(ItemComposition): int  ->  net.runelite.api.ItemComposition#getLinkedNoteId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getUnNotedId(ItemComposition): int  ->  net.runelite.api.ItemComposition#getNote(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#getUnNotedId(ItemComposition): int  ->  net.runelite.api.ItemComposition#isStackable(): boolean
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#initializeFromComposition(ItemComposition): void  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#initializeFromComposition(ItemComposition): void  ->  net.runelite.api.ItemComposition#getNote(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#initializeFromComposition(ItemComposition): void  ->  net.runelite.api.ItemComposition#isStackable(): boolean
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#initializeFromComposition(ItemComposition): void  ->  net.runelite.api.ItemComposition#isTradeable(): boolean
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#lambda$initializeFromComposition$15(ItemComposition): void  ->  net.runelite.api.ItemComposition#isTradeable(): boolean
+net.runelite.client.plugins.projectx.util.inventory.Rs2ItemModel#lambda$matches$11(Rs2ItemModel, EquipmentInventorySlot): boolean  ->  net.runelite.api.EquipmentInventorySlot#getSlotIdx(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2LogBasket#checkBasketContents(): Rs2LogBasket$BasketContents  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#coreLoad(Map): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#coreLoad(Map): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#coreLoad(Map): boolean  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#onVarbitChanged(VarbitChanged): void  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#onVarbitChanged(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getValue(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#onVarbitChanged(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getVarbitId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#onWidgetLoaded(WidgetLoaded): void  ->  net.runelite.api.Client#getWidget(int, int): Widget
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#onWidgetLoaded(WidgetLoaded): void  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#onWidgetLoaded(WidgetLoaded): void  ->  net.runelite.api.events.WidgetLoaded#getGroupId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#onWidgetLoaded(WidgetLoaded): void  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#onWidgetLoaded(WidgetLoaded): void  ->  net.runelite.api.widgets.Widget#getIndex(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#onWidgetLoaded(WidgetLoaded): void  ->  net.runelite.api.widgets.Widget#getItemId(): int
+net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch#onWidgetLoaded(WidgetLoaded): void  ->  net.runelite.api.widgets.Widget#getItemQuantity(): int
+net.runelite.client.plugins.projectx.util.item.Rs2ExplorersRing#interact(Rs2ItemModel): boolean  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.item.Rs2ExplorersRing#interact(Rs2ItemModel): boolean  ->  net.runelite.api.widgets.Widget#getItemId(): int
+net.runelite.client.plugins.projectx.util.item.Rs2ItemManager#getPrice(int): int  ->  net.runelite.api.ItemComposition#getPrice(): int
+net.runelite.client.plugins.projectx.util.keyboard.Rs2Keyboard#getCanvas(): Canvas  ->  net.runelite.api.Client#getCanvas(): Canvas
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#alch(MagicAction, Rs2ItemModel, int, int): void  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#alch(Rs2ItemModel, int, int): void  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#canCast(MagicAction): boolean  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#cast(MagicAction, String, int): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#castOn(MagicAction, Actor): boolean  ->  net.runelite.api.Actor#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#lambda$canCast$1(MagicAction, Widget): boolean  ->  net.runelite.api.widgets.Widget#getSpriteId(): int
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#lambda$castOn$4(): boolean  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#lambda$npcContact$14(Rectangle, String): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#lambda$npcContact$15(Rectangle, Rectangle, Widget): void  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#npcContact(String): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#quickCanCast(MagicAction): boolean  ->  net.runelite.api.widgets.Widget#getSpriteId(): int
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#quickCast(MagicAction): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#setup(): boolean  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#superHeat(Rs2ItemModel, int, int): void  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.magic.Rs2Magic#superHeat(Rs2ItemModel, int, int): void  ->  net.runelite.api.widgets.Widget#getSpriteId(): int
+net.runelite.client.plugins.projectx.util.magic.Rs2Spellbook#lambda$isAltarNearby$4(Rs2Spellbook, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.magic.Rs2Spellbook#lambda$switchViaAltar$0(GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.magic.Rs2Spellbook#lambda$switchViaAltar$1(GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.magic.Rs2Spellbook#lambda$switchViaAltar$2(Rs2Spellbook, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.misc.Rs2UiHelper#getActorClickbox(Actor): Rectangle  ->  net.runelite.api.Actor#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.misc.Rs2UiHelper#getTileClickbox(Tile): Rectangle  ->  net.runelite.api.Client#getPlane(): int
+net.runelite.client.plugins.projectx.util.misc.Rs2UiHelper#getTileClickbox(Tile): Rectangle  ->  net.runelite.api.Tile#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#attack(List): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#attack(NPC): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#attack(NPC): boolean  ->  net.runelite.api.NPC#getInteracting(): Actor
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#attack(Rs2NpcModel): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#canWalkTo(Rs2NpcModel, int): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#canWalkTo(Rs2NpcModel, int): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#getAvailableAction(Rs2NpcModel, List): String  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#getMenuAction(int): MenuAction  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#getNearestNpcWithAction(String): Rs2NpcModel  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#getNearestNpcWithAction(String): Rs2NpcModel  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#getNearestNpcWithAction(String): Rs2NpcModel  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#getNpcsForPlayer(Predicate): Stream  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#getNpcsForPlayer(Predicate): Stream  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#getNpcsForPlayer(String, boolean): List  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#getNpcsForPlayer(String, boolean): List  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#hasAction(int, String): boolean  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#hasLineOfSight(Rs2NpcModel): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#hasLineOfSight(Rs2NpcModel): boolean  ->  net.runelite.api.coords.WorldArea#hasLineOfSightTo(WorldView, WorldPoint): boolean
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#interact(Rs2NpcModel, String): boolean  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#isInAttackRange(Rs2NpcModel, boolean, boolean): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#isInAttackRange(Rs2NpcModel, boolean, boolean): boolean  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#lambda$getAttackableNpcs$18(Rs2NpcModel): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#lambda$getBankerNPC$28(Rs2NpcModel): boolean  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#lambda$getNearestNpcWithAction$38(String, Rs2NpcModel): boolean  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#lambda$getNpc$26(Rs2NpcModel): int  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#lambda$getNpc$26(Rs2NpcModel): int  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#lambda$getNpcWithAction$43(String, Rs2NpcModel): boolean  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#lambda$getPestControlPortals$22(Rs2NpcModel): int  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#lambda$getPestControlPortals$22(Rs2NpcModel): int  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#lambda$getRandomEventNPC$27(Rs2NpcModel): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.npc.Rs2Npc#lambda$getRandomEventNPC$27(Rs2NpcModel): boolean  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.util.npc.Rs2NpcModel#getComposition(): NPCComposition  ->  net.runelite.api.NPC#getComposition(): NPCComposition
+net.runelite.client.plugins.projectx.util.npc.Rs2NpcModel#getId(): int  ->  net.runelite.api.NPC#getId(): int
+net.runelite.client.plugins.projectx.util.npc.Rs2NpcModel#getIndex(): int  ->  net.runelite.api.NPC#getIndex(): int
+net.runelite.client.plugins.projectx.util.npc.Rs2NpcModel#getTransformedComposition(): NPCComposition  ->  net.runelite.api.NPC#getTransformedComposition(): NPCComposition
+net.runelite.client.plugins.projectx.util.player.Rs2Player#IsInInstance(): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.player.Rs2Player#IsInInstance(): boolean  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.player.Rs2Player#IsInInstance(): boolean  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.player.Rs2Player#checkIdleLogout(long): boolean  ->  net.runelite.api.Client#getKeyboardIdleTicks(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#distanceTo(WorldPoint): int  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.player.Rs2Player#distanceTo(WorldPoint): int  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.player.Rs2Player#distanceTo(WorldPoint): int  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.player.Rs2Player#drinkCombatPotionAt(Skill, boolean): boolean  ->  net.runelite.api.Skill#ordinal(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#drinkPrayerPotionAt(int): boolean  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.player.Rs2Player#getGraphicId(): int  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.player.Rs2Player#getGraphicId(): int  ->  net.runelite.api.Player#getGraphic(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#getLocalLocation(): LocalPoint  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.player.Rs2Player#getLocalLocation(): LocalPoint  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.player.Rs2Player#getPlayerEquipmentIds(Rs2PlayerModel): Map  ->  net.runelite.api.PlayerComposition#getEquipmentId(KitType): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#getPlayerEquipmentIds(Rs2PlayerModel): Map  ->  net.runelite.api.kit.KitType#values(): KitType[]
+net.runelite.client.plugins.projectx.util.player.Rs2Player#getPlayers(Predicate, boolean): Stream  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.player.Rs2Player#getPlayers(Predicate, boolean): Stream  ->  net.runelite.api.IndexedObjectSet#stream(): Stream
+net.runelite.client.plugins.projectx.util.player.Rs2Player#getWorld(): int  ->  net.runelite.api.Client#getWorld(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#handleAnimationChanged(AnimationChanged): void  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.player.Rs2Player#handleAnimationChanged(AnimationChanged): void  ->  net.runelite.api.Player#getAnimation(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#handleAnimationChanged(AnimationChanged): void  ->  net.runelite.api.events.AnimationChanged#getActor(): Actor
+net.runelite.client.plugins.projectx.util.player.Rs2Player#handlePotionTimers(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getValue(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#handlePotionTimers(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getVarbitId(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#handlePotionTimers(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getVarpId(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#handleTeleblockTimer(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getValue(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#handleTeleblockTimer(VarbitChanged): void  ->  net.runelite.api.events.VarbitChanged#getVarbitId(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#hasSpotAnimation(int): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.player.Rs2Player#isInCave(): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.player.Rs2Player#isInCave(): boolean  ->  net.runelite.api.WorldView#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.player.Rs2Player#isInPoh(): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.player.Rs2Player#isInPoh(): boolean  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.player.Rs2Player#isInPoh(): boolean  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.player.Rs2Player#isInteracting(): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.player.Rs2Player#isInteracting(): boolean  ->  net.runelite.api.Player#isInteracting(): boolean
+net.runelite.client.plugins.projectx.util.player.Rs2Player#lambda$getLocalPlayer$27(Rs2PlayerModel): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.player.Rs2Player#lambda$getLocalPlayer$27(Rs2PlayerModel): boolean  ->  net.runelite.api.Player#getId(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#lambda$getPlayers$16(boolean, Rs2PlayerModel): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.player.Rs2Player#lambda$isInMemberWorld$8(World): boolean  ->  net.runelite.api.Client#getWorld(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#lambda$isStandingOnGameObject$42(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.player.Rs2Player#lambda$waitForXpDrop$2(int, Skill, boolean): boolean  ->  net.runelite.api.Client#getSkillExperience(Skill): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#toggleRunEnergy(boolean): boolean  ->  net.runelite.api.widgets.WidgetInfo#getId(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player#waitForXpDrop(Skill, int, boolean): boolean  ->  net.runelite.api.Client#getSkillExperience(Skill): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player$1#<clinit>(): void  ->  net.runelite.api.Skill#ordinal(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Player$1#<clinit>(): void  ->  net.runelite.api.Skill#values(): Skill[]
+net.runelite.client.plugins.projectx.util.player.Rs2PlayerModel#<init>(): void  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.player.Rs2PlayerModel#getId(): int  ->  net.runelite.api.Player#getId(): int
+net.runelite.client.plugins.projectx.util.player.Rs2PlayerModel#getOverheadIcon(): HeadIcon  ->  net.runelite.api.Player#getOverheadIcon(): HeadIcon
+net.runelite.client.plugins.projectx.util.player.Rs2PlayerModel#getPlayerComposition(): PlayerComposition  ->  net.runelite.api.Player#getPlayerComposition(): PlayerComposition
+net.runelite.client.plugins.projectx.util.player.Rs2PlayerModel#getSkullIcon(): int  ->  net.runelite.api.Player#getSkullIcon(): int
+net.runelite.client.plugins.projectx.util.player.Rs2PlayerModel#isClanMember(): boolean  ->  net.runelite.api.Player#isClanMember(): boolean
+net.runelite.client.plugins.projectx.util.player.Rs2PlayerModel#isFriend(): boolean  ->  net.runelite.api.Player#isFriend(): boolean
+net.runelite.client.plugins.projectx.util.player.Rs2PlayerModel#isFriendsChatMember(): boolean  ->  net.runelite.api.Player#isFriendsChatMember(): boolean
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#calculateRisk(Client, ItemManager): int  ->  net.runelite.api.Client#getItemContainer(InventoryID): ItemContainer
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#calculateRisk(Client, ItemManager): int  ->  net.runelite.api.Item#getId(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#calculateRisk(Client, ItemManager): int  ->  net.runelite.api.Item#getQuantity(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#calculateRisk(Client, ItemManager): int  ->  net.runelite.api.ItemComposition#getPrice(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#calculateRisk(Client, ItemManager): int  ->  net.runelite.api.ItemComposition#isTradeable(): boolean
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#calculateRisk(Client, ItemManager): int  ->  net.runelite.api.ItemContainer#getItems(): Item[]
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#isAttackable(): boolean  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#isAttackable(Rs2PlayerModel): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#isAttackable(Rs2PlayerModel): boolean  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#isAttackable(Rs2PlayerModel): boolean  ->  net.runelite.api.Player#getCombatLevel(): int
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#isAttackable(Rs2PlayerModel, boolean, boolean, int): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.player.Rs2Pvp#isAttackable(Rs2PlayerModel, boolean, boolean, int): boolean  ->  net.runelite.api.Player#getCombatLevel(): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#getBestMagePrayer(): Rs2PrayerEnum  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#getBestMeleePrayer(): Rs2PrayerEnum  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#getBestRangePrayer(): Rs2PrayerEnum  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#getPrayerBounds(Rs2PrayerEnum): Rectangle  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#getPrayerPoints(): int  ->  net.runelite.api.Client#getBoostedSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#getQuickPrayerOrbBounds(): Rectangle  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#isAuguryUnlocked(): boolean  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#isChivalryUnlocked(): boolean  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#isDeadeyeUnlocked(): boolean  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#isMysticVigourUnlocked(): boolean  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#isOutOfPrayer(): boolean  ->  net.runelite.api.Client#getBoostedSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#isPietyUnlocked(): boolean  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#isPreserveUnlocked(): boolean  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.prayer.Rs2Prayer#isRigourUnlocked(): boolean  ->  net.runelite.api.Client#getRealSkillLevel(Skill): int
+net.runelite.client.plugins.projectx.util.reachable.Rs2Reachable#getReachableTiles(WorldPoint): IntSet  ->  net.runelite.api.Client#getTickCount(): int
+net.runelite.client.plugins.projectx.util.reflection.Rs2Reflection#invokeMenu(int, int, int, int, int, int, String, String, int, int): void  ->  net.runelite.api.Client#getKeyboardIdleTicks(): int
+net.runelite.client.plugins.projectx.util.settings.Rs2Settings#enableDropShiftSetting(boolean): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.settings.Rs2Settings#enableSpellFiltering(): void  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.settings.Rs2Settings#enableSpellFiltering(): void  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.settings.Rs2Settings#switchToSettingsTab(String): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.settings.Rs2Settings#turnOffMusic(): void  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.settings.Rs2Settings#turnOffMusic(): void  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.shop.Rs2Shop#isOpen(): boolean  ->  net.runelite.api.widgets.WidgetInfo#getId(): int
+net.runelite.client.plugins.projectx.util.shop.Rs2Shop#itemBounds(Rs2ItemModel): Rectangle  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.shop.Rs2Shop#itemBounds(Rs2ItemModel): Rectangle  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.shop.Rs2Shop#lambda$getNearestShopNpc$3(Rs2NpcModel): boolean  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopItem#getItemName(): String  ->  net.runelite.api.ItemComposition#getName(): String
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopItem#getNoteId(): int  ->  net.runelite.api.ItemComposition#getId(): int
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopItem#getNoteId(): int  ->  net.runelite.api.ItemComposition#getLinkedNoteId(): int
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopItem#getNoteId(): int  ->  net.runelite.api.ItemComposition#isStackable(): boolean
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopItem#getUnNotedId(): int  ->  net.runelite.api.ItemComposition#getId(): int
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopItem#getUnNotedId(): int  ->  net.runelite.api.ItemComposition#getLinkedNoteId(): int
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopItem#getUnNotedId(): int  ->  net.runelite.api.ItemComposition#isStackable(): boolean
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopItem#isNoteable(): boolean  ->  net.runelite.api.ItemComposition#getLinkedNoteId(): int
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopItem#itemStoreValue(): int  ->  net.runelite.api.ItemComposition#getPrice(): int
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopSource#lambda$getPotentialShopNPCNearPlayer$1(WorldPoint, int, Rs2NpcModel): boolean  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.util.shop.models.Rs2ShopSource#lambda$getShopNPC$0(WorldArea, Rs2NpcModel): boolean  ->  net.runelite.api.NPCComposition#getActions(): String[]
+net.runelite.client.plugins.projectx.util.tabs.Rs2Tab#getSpellBookTab(): Widget  ->  net.runelite.api.Client#isResized(): boolean
+net.runelite.client.plugins.projectx.util.tabs.Rs2Tab#onVarClientIntChanged(VarClientIntChanged): void  ->  net.runelite.api.Client#getVarcIntValue(int): int
+net.runelite.client.plugins.projectx.util.tabs.Rs2Tab#onVarClientIntChanged(VarClientIntChanged): void  ->  net.runelite.api.events.VarClientIntChanged#getIndex(): int
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#addDangerousGameObjectTile(GameObject, int): void  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#addDangerousGraphicsObjectTile(GraphicsObject, int): void  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#addDangerousGraphicsObjectTile(GraphicsObject, int): void  ->  net.runelite.api.GraphicsObject#getLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#addDangerousGraphicsObjectTile(GraphicsObject, int): void  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#addDangerousGraphicsObjectTile(GraphicsObject, int): void  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#addDangerousGraphicsObjectTile(GraphicsObject, int): void  ->  net.runelite.api.coords.WorldPoint#fromLocal(Client, LocalPoint): WorldPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#addDangerousGraphicsObjectTile(GraphicsObject, int): void  ->  net.runelite.api.coords.WorldPoint#fromLocalInstance(Client, LocalPoint): WorldPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#addDangerousGraphicsObjectTileForInstances(GraphicsObject, int): void  ->  net.runelite.api.GraphicsObject#getLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#addDangerousGraphicsObjectTileForInstances(GraphicsObject, int): void  ->  net.runelite.api.coords.WorldPoint#fromLocalInstance(Client, LocalPoint): WorldPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#fullPathToInternal(Tile, Tile): List  ->  net.runelite.api.Client#getScene(): Scene
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#fullPathToInternal(Tile, Tile): List  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#fullPathToInternal(Tile, Tile): List  ->  net.runelite.api.CollisionData#getFlags(): int[][]
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#fullPathToInternal(Tile, Tile): List  ->  net.runelite.api.Scene#getTiles(): Tile[][][]
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#fullPathToInternal(Tile, Tile): List  ->  net.runelite.api.WorldView#getCollisionMaps(): CollisionData[]
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getFlagsInternal(): int[][]  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getFlagsInternal(): int[][]  ->  net.runelite.api.CollisionData#getFlags(): int[][]
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getFlagsInternal(): int[][]  ->  net.runelite.api.WorldView#getCollisionMaps(): CollisionData[]
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getFlagsInternal(): int[][]  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getNearestWalkableTileForObjectInternal(GameObject): Rs2WorldPoint  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getNearestWalkableTileForObjectInternal(GameObject): Rs2WorldPoint  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getNearestWalkableTileWithLineOfSightInternal(WorldPoint): WorldPoint  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getReachableTilesFromTileInternal(WorldPoint, int, boolean): HashMap  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getReachableTilesFromTileInternal(WorldPoint, int, boolean): HashMap  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getReachableTilesFromTileInternal(WorldPoint, int, boolean): HashMap  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getReachableTilesFromTileInternal(WorldPoint, int, boolean): HashMap  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getTileInternal(int, int): Tile  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getTileInternal(int, int): Tile  ->  net.runelite.api.Scene#getTiles(): Tile[][][]
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getTileInternal(int, int): Tile  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getTileInternal(int, int): Tile  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getTileInternal(int, int): Tile  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getTileInternal(int, int): Tile  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getWalkableTilesAroundTileInternal(WorldPoint, int): List  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getWalkableTilesAroundTileInternal(WorldPoint, int): List  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isBankBoothInternal(WorldPoint): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileReachableInternal(WorldPoint): boolean  ->  net.runelite.api.Client#getBaseX(): int
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileReachableInternal(WorldPoint): boolean  ->  net.runelite.api.Client#getBaseY(): int
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileReachableInternal(WorldPoint): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileReachableInternal(WorldPoint): boolean  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileReachableInternal(WorldPoint): boolean  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isValidTileInternal(Tile): boolean  ->  net.runelite.api.Client#getPlane(): int
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isValidTileInternal(Tile): boolean  ->  net.runelite.api.CollisionData#getFlags(): int[][]
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isVisited(WorldPoint, boolean[][]): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isVisited(WorldPoint, boolean[][]): boolean  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isVisited(WorldPoint, boolean[][]): boolean  ->  net.runelite.api.WorldView#getBaseX(): int
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isVisited(WorldPoint, boolean[][]): boolean  ->  net.runelite.api.WorldView#getBaseY(): int
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isVisited(WorldPoint, boolean[][]): boolean  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isWalkableWorldPointInternal(WorldPoint): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isWalkableWorldPointInternal(WorldPoint): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#lambda$isBankBoothInternal$32(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#pathToInternal(Tile, Tile): List  ->  net.runelite.api.Client#getScene(): Scene
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#pathToInternal(Tile, Tile): List  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#pathToInternal(Tile, Tile): List  ->  net.runelite.api.CollisionData#getFlags(): int[][]
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#pathToInternal(Tile, Tile): List  ->  net.runelite.api.Scene#getTiles(): Tile[][][]
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#pathToInternal(Tile, Tile): List  ->  net.runelite.api.WorldView#getCollisionMaps(): CollisionData[]
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#runClientRead(Supplier, Object): Object  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.Client#isWidgetSelected(): boolean
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.GameObject#sizeX(): int
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.GameObject#sizeY(): int
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.ObjectComposition#getImpostor(): ObjectComposition
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.ObjectComposition#getImpostorIds(): int[]
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#click(String): boolean  ->  net.runelite.api.Player#getLocalLocation(): LocalPoint
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#getClickbox(): Shape  ->  net.runelite.api.TileObject#getClickbox(): Shape
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#getId(): int  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.tileobject.Rs2TileObjectModel#getWorldLocation(): WorldPoint  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2MiniMap#getMinimapClipArea(): Shape  ->  net.runelite.api.Client#isResized(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2MiniMap#getMinimapClipArea(double): Shape  ->  net.runelite.api.Client#isResized(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2MiniMap#getMinimapClipArea(double): Shape  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.walker.Rs2MiniMap#getMinimapClipAreaSimple(): Shape  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.walker.Rs2MiniMap#getMinimapDrawWidget(): Widget  ->  net.runelite.api.Client#isResized(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2MiniMap#worldToMinimap(WorldPoint): Point  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2MiniMap#worldToMinimap(WorldPoint): Point  ->  net.runelite.api.WorldView#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2MiniMap#worldToMinimap(WorldPoint): Point  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#adjacentSamePlaneTransportSuppressionPoints(Transport, TileObject): Set  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#charterWidgetMatchesDestination(Widget, String): boolean  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#charterWidgetMatchesDestination(Widget, String): boolean  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#charterWidgetMatchesDestination(Widget, String): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#closeWorldMap(): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#distanceToRegion(int, int): int  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#distanceToRegion(int, int): int  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#doorObjectStillHasAction(TileObject, WorldPoint, WorldPoint, WorldPoint, List, String): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#findCharterDestinationTextWidget(Widget, String): Widget  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#findCharterDestinationTextWidget(Widget, String): Widget  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#findCharterDestinationTextWidget(Widget, String): Widget  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#findClickableCharterWidget(Widget, Widget): Widget  ->  net.runelite.api.widgets.Widget#getParent(): Widget
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getFirstWidgetAction(Widget): String  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getPointWithWallDistance(WorldPoint, WorldPoint): WorldPoint  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getPointWithWallDistance(WorldPoint, WorldPoint): WorldPoint  ->  net.runelite.api.CollisionData#getFlags(): int[][]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getPointWithWallDistance(WorldPoint, WorldPoint): WorldPoint  ->  net.runelite.api.WorldView#getCollisionMaps(): CollisionData[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getPointWithWallDistance(WorldPoint, WorldPoint): WorldPoint  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getPointWithWallDistance(WorldPoint, WorldPoint): WorldPoint  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getTile(WorldPoint): Tile  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getTile(WorldPoint): Tile  ->  net.runelite.api.Scene#getTiles(): Tile[][][]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getTile(WorldPoint): Tile  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getTile(WorldPoint): Tile  ->  net.runelite.api.WorldView#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getTile(WorldPoint): Tile  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#getTransportsForPath(List, int, TransportType, boolean): List  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleDoors(List, int, boolean): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleDoors(List, int, boolean): boolean  ->  net.runelite.api.ObjectComposition#getImpostorIds(): int[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleDoors(List, int, boolean): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleDoors(List, int, boolean): boolean  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleDoors(List, int, boolean): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleDoors(List, int, boolean): boolean  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleFairyRing(Transport): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleMasterScrollBook(String): boolean  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleMinigameTeleport(Transport): boolean  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleMinigameTeleport(Transport): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleMinigameTeleport(Transport): boolean  ->  net.runelite.api.widgets.Widget#getIndex(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleMinigameTeleport(Transport): boolean  ->  net.runelite.api.widgets.Widget#getOnOpListener(): Object[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleMinigameTeleport(Transport): boolean  ->  net.runelite.api.widgets.Widget#getSpriteId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleMinigameTeleport(Transport): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleObject(Transport, TileObject, String): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleObjectExceptions(Transport, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleObjectExceptions(Transport, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleObjectExceptions(Transport, TileObject): boolean  ->  net.runelite.api.widgets.Widget#getItemId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleSpiritTree(Transport): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleTransports(List, int): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleTransports(List, int): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleTransports(List, int): boolean  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleTransports(List, int): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleTransports(List, int): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#handleTransports(List, int): boolean  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#hasDoorCandidateOnRawSegment(List, int): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#hasDoorCandidateOnRawSegment(List, int): boolean  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#hasDoorCandidateOnRawSegment(List, int): boolean  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#hasLineOfSightBetween(WorldPoint, WorldPoint): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#hasLineOfSightBetween(WorldPoint, WorldPoint): boolean  ->  net.runelite.api.coords.WorldArea#hasLineOfSightTo(WorldView, WorldArea): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#hasWidgetActions(Widget): boolean  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#interactingActorNearWalkablePath(): boolean  ->  net.runelite.api.Actor#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#invokeCharterDestinationWidget(Widget, String): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#invokeCharterDestinationWidget(Widget, String): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#invokeCharterDestinationWidget(Widget, String): boolean  ->  net.runelite.api.widgets.Widget#getIndex(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isClientThread(): boolean  ->  net.runelite.api.Client#isClientThread(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isCloseToRegion(int, int, int): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isCloseToRegion(int, int, int): boolean  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isKnownWalkableOrUnloaded(WorldPoint): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isKnownWalkableOrUnloaded(WorldPoint): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isPendingRouteDoorObject(TileObject, WorldPoint, WorldPoint, WorldPoint, int): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isPendingRouteDoorObject(TileObject, WorldPoint, WorldPoint, WorldPoint, int): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isUnresolvedRouteDoorObject(TileObject, WorldPoint, WorldPoint, WorldPoint, int): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isUnresolvedRouteDoorObject(TileObject, WorldPoint, WorldPoint, WorldPoint, int): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$getPointWithWallDistance$13(WorldView, int[][], WorldPoint): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$getPointWithWallDistance$14(WorldView, int[][], WorldPoint): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleFairyRing$192(Transport, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleMinigameTeleport$161(Widget, Object[]): boolean  ->  net.runelite.api.widgets.Widget#getOnOpListener(): Object[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleMinigameTeleport$163(String): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$139(int, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$145(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$145(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$146(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$146(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$112(int, boolean, Integer, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$114(TileObject): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$116(Transport, TileObject): int  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$117(TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$118(Transport, Object): Integer  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$119(Transport, Object): Integer  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$121(int, List, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$122(Transport, TileObject): int  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleWildernessObelisk$153(Transport, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleWildernessObelisk$154(Transport, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$processWalk$2(): boolean  ->  net.runelite.api.widgets.Widget#getSpriteId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$processWalk$3(): boolean  ->  net.runelite.api.widgets.Widget#getSpriteId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$resolveProbeGameObject$38(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$resolveProbeGameObject$39(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$tryHandleBlockingPathObjectsWithTimeout$69(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#localPointForWorld(WorldPoint): LocalPoint  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#localPointForWorld(WorldPoint): LocalPoint  ->  net.runelite.api.WorldView#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#localPointForWorld(WorldPoint): LocalPoint  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#markNearbyDoorFamilyOpened(TileObject, WorldPoint, String, int): void  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#maybeCanvasNudgeAfterDoor(WorldPoint, int, List): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#maybeCanvasNudgeAfterDoor(WorldPoint, int, List): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#mergePathAdjCandidate(Map, TileObject, WorldPoint, String, int, int, WorldPoint, WorldPoint, int): void  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#normalizePathAdjFamilyKey(TileObject, String): String  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#normalizePathAdjFamilyKey(TileObject, String): String  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#normalizePathAdjFamilyKey(TileObject, String): String  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#processWalk(WorldPoint, int, int): WalkerState  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#processWalk(WorldPoint, int, int): WalkerState  ->  net.runelite.api.WorldView#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#resolveDoorSegment(List, int): WorldPoint[]  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#resolveDoorSegment(List, int): WorldPoint[]  ->  net.runelite.api.Scene#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#resolveDoorSegment(List, int): WorldPoint[]  ->  net.runelite.api.WorldView#getScene(): Scene
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#resolveProbeGameObject(WorldPoint): TileObject  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#setTarget(WorldPoint, String): void  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#staminaThreshold(): int  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#staminaThreshold(): int  ->  net.runelite.api.Player#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#tryHandleBlockingPathObjectsWithTimeout(List, int, int, int, long, Map): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#tryHandleDoorObject(TileObject, WorldPoint, WorldPoint, WorldPoint, List, boolean): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#tryResolveDoorBlockerLineOfSight(WorldPoint, List, int, int): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#tryResolveDoorBlockerLineOfSight(WorldPoint, List, int, int): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#tryResolveDoorBlockerLineOfSight(WorldPoint, List, int, int): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#tryResolveNearbyDoorBlocker(WorldPoint, int): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#tryResolveNearbyDoorBlocker(WorldPoint, int): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#tryResolveNearbyDoorBlocker(WorldPoint, int): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#tryResolvePathAdjacentBlocker(WorldPoint, List, int, int, int): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#tryResolvePathAdjacentBlocker(WorldPoint, List, int, int, int): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkCanvas(WorldPoint): WorldPoint  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkCanvas(WorldPoint): WorldPoint  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkCanvas(WorldPoint): WorldPoint  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvas(WorldPoint, boolean): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvas(WorldPoint, boolean): boolean  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvas(WorldPoint, boolean): boolean  ->  net.runelite.api.WorldView#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvas(WorldPoint, boolean): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvasOnScreenOnly(WorldPoint, boolean): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvasOnScreenOnly(WorldPoint, boolean): boolean  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastLocal(LocalPoint): void  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastLocal(LocalPoint): void  ->  net.runelite.api.WorldView#getPlane(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkNextToInstance(GameObject): void  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkNextToInstance(GameObject): void  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkStep(WorldPoint, int): WalkerState  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkStep(WorldPoint, int): WalkerState  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkWithBankedTransportsAndStateLocked(WorldPoint, int, boolean): WalkerState  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkWithBankedTransportsAndStateLocked(WorldPoint, int, boolean): WalkerState  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkWithStateInternal(WorldPoint, int): WalkerState  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkWithStateInternal(WorldPoint, int): WalkerState  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
+net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorClassifier#isDoorComposition(ObjectComposition, List): boolean  ->  net.runelite.api.ObjectComposition#getImpostorIds(): int[]
+net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorClassifier#isDoorComposition(ObjectComposition, List): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorDetection#isDoorLikeSceneObject(TileObject): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
+net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorDetection#isDoorLikeSceneObject(TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorGeometry#isDoorInteractionWithinRange(TileObject, WorldPoint, WorldPoint, WorldPoint, WorldPoint, int): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorGeometry#isDoorOnSegment(TileObject, WorldPoint, WorldPoint): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorProbe#isCatalogTransportObject(TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorProbe#isCatalogTransportObject(TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorProbe#lambda$findDoorNearSegment$4(DoorProbeContext, Set, WorldPoint, WorldPoint, WorldPoint, List, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorProbe#lambda$findDoorNearSegment$5(WorldPoint, TileObject): int  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.obstacle.Rs2ObstacleHandler#handleRockfall(List, int): Rs2ObstacleHandler$RockfallResult  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
+net.runelite.client.plugins.projectx.util.walker.obstacle.Rs2ObstacleHandler#handleRockfall(List, int): Rs2ObstacleHandler$RockfallResult  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.obstacle.Rs2ObstacleHandler#handleRockfall(List, int): Rs2ObstacleHandler$RockfallResult  ->  net.runelite.api.WorldView#isInstance(): boolean
+net.runelite.client.plugins.projectx.util.walker.obstacle.Rs2ObstacleHandler#lambda$handleRockfall$0(WorldPoint, Tile): boolean  ->  net.runelite.api.Tile#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#checkBoundsOverlapWidgetInMainModal(Rectangle, int, int): boolean  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#checkWidgetAndDescendantsForOverlapCanvas(Widget, Rectangle, int, int): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#checkWidgetAndDescendantsForOverlapCanvas(Widget, Rectangle, int, int): boolean  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#checkWidgetAndDescendantsForOverlapCanvas(Widget, Rectangle, int, int): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#checkWidgetAndDescendantsForOverlapCanvas(Widget, Rectangle, int, int): boolean  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#checkWidgetAndDescendantsForOverlapCanvas(Widget, Rectangle, int, int): boolean  ->  net.runelite.api.widgets.Widget#getParent(): Widget
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#checkWidgetAndDescendantsForOverlapCanvas(Widget, Rectangle, int, int): boolean  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#checkWidgetAndDescendantsForOverlapCanvas(Widget, Rectangle, int, int): boolean  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#clickChildWidget(int, int): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#clickChildWidget(int, int): boolean  ->  net.runelite.api.widgets.Widget#getChild(int): Widget
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#clickWidget(Widget): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#clickWidget(int): boolean  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#clickWidgetFast(Widget, int, int): void  ->  net.runelite.api.widgets.Widget#getBounds(): Rectangle
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#clickWidgetFast(Widget, int, int): void  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#clickWidgetFast(Widget, int, int): void  ->  net.runelite.api.widgets.Widget#getItemId(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#clickWidgetFast(Widget, int, int): void  ->  net.runelite.api.widgets.Widget#getType(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#findBestMatchingWidget(int, String): Widget  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#findBestWordSimilarityMatch(List, String): Widget  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#findWidgetsWithAction(String, int, int, boolean): Map  ->  net.runelite.api.widgets.Widget#getChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#findWidgetsWithAction(String, int, int, boolean): Map  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#findWidgetsWithAction(String, int, int, boolean): Map  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#getChildWidgetText(int, int): String  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#getProcessingWidgetKeyCode(Widget): Integer  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#getProcessingWidgetKeyCode(Widget): Integer  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#getProcessingWidgetKeyCode(Widget): Integer  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#getProcessingWidgetKeyCode(Widget): Integer  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#getWidgetsKeyMap(int, int): Map  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#getWidgetsKeyMap(int, int): Map  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#handleProcessingInterface(String): boolean  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#handleProcessingInterface(String): boolean  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#handleProcessingInterface(String): boolean  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#handleProcessingInterface(String): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#hasVisibleWidgetText(String): boolean  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#lambda$findContainsMatch$27(String, Widget): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#lambda$findExactMatch$26(String, Widget): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#lambda$findSimilarWidgets$30(Widget): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#lambda$findSimilarWidgets$31(String, Widget): AbstractMap$SimpleEntry  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#lambda$findWidget$15(Widget): boolean  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#lambda$findWidget$17(Widget): boolean  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#lambda$findWidgetsWithAction$19(Widget): boolean  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#matchesSpriteId(Widget, int): boolean  ->  net.runelite.api.widgets.Widget#getSpriteId(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#matchesText(Widget, String, boolean): boolean  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#matchesText(Widget, String, boolean): boolean  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#matchesText(Widget, String, boolean): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#matchesWildCardText(Widget, String, boolean, boolean): boolean  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#matchesWildCardText(Widget, String, boolean, boolean): boolean  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#matchesWildCardText(Widget, String, boolean, boolean): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#searchChildren(String, Widget, boolean): Widget  ->  net.runelite.api.widgets.Widget#getChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#searchChildren(String, Widget, boolean): Widget  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#searchChildren(String, Widget, boolean): Widget  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#searchChildren(String, Widget, boolean): Widget  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#searchChildren(int, Widget): Widget  ->  net.runelite.api.widgets.Widget#getChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#searchChildren(int, Widget): Widget  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#searchChildren(int, Widget): Widget  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2Widget#searchChildren(int, Widget): Widget  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#countVisible(Widget[]): int  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#countVisibleChildren(Widget): int  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#countVisibleChildren(Widget): int  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#getAllChildren(Widget): List  ->  net.runelite.api.widgets.Widget#getDynamicChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#getAllChildren(Widget): List  ->  net.runelite.api.widgets.Widget#getStaticChildren(): Widget[]
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#getLabel(Widget): String  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#getLabel(Widget): String  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#scoreWidget(Widget, String[]): int  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#scoreWidget(Widget, String[]): int  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#scoreWidget(Widget, String[]): int  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#searchTree(Widget, String, String[], List, int, int): void  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#toDescription(Widget, String): Rs2WidgetInspector$WidgetDescription  ->  net.runelite.api.widgets.Widget#getActions(): String[]
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#toDescription(Widget, String): Rs2WidgetInspector$WidgetDescription  ->  net.runelite.api.widgets.Widget#getId(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#toDescription(Widget, String): Rs2WidgetInspector$WidgetDescription  ->  net.runelite.api.widgets.Widget#getIndex(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#toDescription(Widget, String): Rs2WidgetInspector$WidgetDescription  ->  net.runelite.api.widgets.Widget#getItemId(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#toDescription(Widget, String): Rs2WidgetInspector$WidgetDescription  ->  net.runelite.api.widgets.Widget#getName(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#toDescription(Widget, String): Rs2WidgetInspector$WidgetDescription  ->  net.runelite.api.widgets.Widget#getSpriteId(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#toDescription(Widget, String): Rs2WidgetInspector$WidgetDescription  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#toDescription(Widget, String): Rs2WidgetInspector$WidgetDescription  ->  net.runelite.api.widgets.Widget#getType(): int
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#toDescription(Widget, String): Rs2WidgetInspector$WidgetDescription  ->  net.runelite.api.widgets.WidgetUtil#componentToId(int): int
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#toDescription(Widget, String): Rs2WidgetInspector$WidgetDescription  ->  net.runelite.api.widgets.WidgetUtil#componentToInterface(int): int
+net.runelite.client.plugins.projectx.util.widget.Rs2WidgetInspector#walkTree(Widget, String, int, int, List): void  ->  net.runelite.api.widgets.Widget#isHidden(): boolean
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#canAccessWorld(int): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#canAccessWorld(int): boolean  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#findBestAccessibleWorld(boolean, WorldRegion, Set): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getAccessibleWorldsByPing(int, List): List  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getAccessibleWorldsByPopulation(int): List  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getBestAccessibleWorldForLogin(boolean, WorldRegion, boolean, boolean, boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getBestPingWorld(): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getMostPopulatedAccessibleWorld(): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getMostPopulatedWorldExclude(List): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getMostPopulatedWorldFromList(int[]): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getMostPopulatedWorldFromListWithPing(int[], boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getRandomAccessibleWorld(boolean, boolean, boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getRandomAccessibleWorldFromRegion(WorldRegion, boolean, boolean, boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getWorldStatistics(): Map  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#isMemberAccount(): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#lambda$hopWorld$8(): boolean  ->  net.runelite.api.Client#getGameState(): GameState

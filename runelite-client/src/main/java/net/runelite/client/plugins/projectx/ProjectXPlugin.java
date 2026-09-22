@@ -1,0 +1,658 @@
+package net.runelite.client.plugins.projectx;
+
+import ch.qos.logback.classic.LoggerContext;
+import com.google.inject.Provides;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.*;
+import net.runelite.api.events.*;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.client.RuneLiteProperties;
+import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ClientShutdown;
+import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.OverlayMenuClicked;
+import net.runelite.client.events.RuneScapeProfileChanged;
+import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.projectx.pouch.PouchOverlay;
+import net.runelite.client.plugins.projectx.ui.ProjectXPluginConfigurationDescriptor;
+import net.runelite.client.plugins.projectx.ui.ProjectXPluginListPanel;
+import net.runelite.client.plugins.projectx.ui.ProjectXTopLevelConfigPanel;
+import net.runelite.client.plugins.projectx.util.bank.Rs2Bank;
+import net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment;
+import net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit;
+import net.runelite.client.plugins.projectx.util.inventory.Rs2Gembag;
+import net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory;
+import net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch;
+import net.runelite.client.plugins.projectx.util.overlay.GembagOverlay;
+import net.runelite.client.plugins.projectx.util.player.Rs2Player;
+import net.runelite.client.plugins.projectx.util.reflection.Rs2Reflection;
+import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
+import net.runelite.client.plugins.projectx.util.leaguetransport.Rs2LeaguesTransport;
+import net.runelite.client.plugins.projectx.util.leaguetransport.SeasonalTransportHandlers;
+import net.runelite.client.plugins.projectx.api.boat.Rs2BoatCache;
+import net.runelite.client.plugins.projectx.util.shop.Rs2Shop;
+import net.runelite.client.plugins.projectx.util.tabs.Rs2Tab;
+import net.runelite.client.plugins.projectx.util.widget.Rs2Widget;
+import net.runelite.client.plugins.projectx.util.security.LoginManager;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.overlay.OverlayMenuEntry;
+import net.runelite.client.util.ImageUtil;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import javax.swing.*;
+import java.awt.AWTException;
+import java.awt.Rectangle;
+import java.awt.image.BufferedImage;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+@PluginDescriptor(
+	name = PluginDescriptor.Default + "Project X",
+	description = "Project X",
+	tags = {"main", "projectx", "parent"},
+	alwaysOn = true,
+	hidden = true,
+	priority = true
+)
+@Slf4j
+public class ProjectXPlugin extends Plugin
+{
+	/**
+	 * Max age of {@code lastTransportAttempt} for attributing locked-region chat to a click.
+	 * Canonical value is {@link Rs2LeaguesTransport#LEAGUES_LOCK_CHAT_MAX_ATTEMPT_AGE_MS}; kept here for script compatibility.
+	 *
+	 * @apiNote Treat as stable external API: renames or semantic changes break scripts — note in changelog when modifying.
+	 */
+	public static final long LEAGUES_LOCK_CHAT_MAX_ATTEMPT_AGE_MS = Rs2LeaguesTransport.LEAGUES_LOCK_CHAT_MAX_ATTEMPT_AGE_MS;
+	private EnumSet<WorldType> lastWorldTypeProfile = null;
+
+	@Inject
+	private Provider<ProjectXPluginListPanel> pluginListPanelProvider;
+
+	@Inject
+	private Provider<ProjectXTopLevelConfigPanel> topLevelConfigPanelProvider;
+
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	@Inject
+	private ConfigManager configManager;
+
+	@Inject
+	private ProjectXConfig projectxConfig;
+
+	private ProjectXTopLevelConfigPanel topLevelConfigPanel;
+
+	private NavigationButton navButton;
+
+	@Provides
+	@Singleton
+	ProjectXConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(ProjectXConfig.class);
+	}
+
+	@Inject
+	private OverlayManager overlayManager;
+	@Inject
+	private ProjectXOverlay projectxOverlay;
+	@Inject
+	private GembagOverlay gembagOverlay;
+	@Inject
+	private PouchOverlay pouchOverlay;
+	@Inject
+	private EventBus eventBus;
+	private GameChatAppender gameChatAppender;
+
+	@Inject
+	private ProjectXVersionChecker projectxVersionChecker;
+	
+	// Widget change tracking for overlay cache invalidation
+	private volatile boolean widgetLayoutChanged = false;
+	private Rectangle lastCheckedBounds = null;
+	private boolean lastOverlapResult = false;
+	/**
+	 * Initializes the cache system and registers all caches with the EventBus.
+	 * Cache loading from configuration will happen later during game events.
+	 */
+	@Override
+	protected void startUp() throws AWTException
+	{
+		log.info("ProjectX: {} - {}", RuneLiteProperties.getProjectXVersion(), RuneLiteProperties.getProjectXCommit());
+		log.info("JVM: {} {}", System.getProperty("java.vendor"), System.getProperty("java.runtime.version"));
+
+		projectxVersionChecker.checkForUpdate();
+
+		gameChatAppender = new GameChatAppender();
+		gameChatAppender.setName("GAME_CHAT");
+		
+		// Set pattern based on new configuration
+		String pattern = projectxConfig.getGameChatLogPattern().getPattern();
+		gameChatAppender.setPattern(pattern);
+
+		final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+		gameChatAppender.setContext(context);
+		context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(gameChatAppender);
+
+		// Start appender if logging is enabled
+		if (projectxConfig.enableGameChatLogging()) {
+			gameChatAppender.start();
+		}
+		
+		// Initialize the cached configuration in GameChatAppender
+		GameChatAppender.updateConfiguration(
+			projectxConfig.enableGameChatLogging(),
+			projectxConfig.getGameChatLogLevel().getLevel(),
+			projectxConfig.onlyProjectXLogging()
+		);
+
+		ProjectX.pauseAllScripts.set(false);
+		ProjectX.enableAutoRunOn = projectxConfig.enableAutoRunOn();
+		ProjectX.useStaminaPotsIfNeeded = projectxConfig.useStaminaPotsIfNeeded();
+		ProjectX.getBlockingEventManager().start();
+
+		ProjectXPluginListPanel pluginListPanel = pluginListPanelProvider.get();
+		pluginListPanel.addFakePlugin(new ProjectXPluginConfigurationDescriptor(
+			"Project X", "Project X client settings",
+			new String[]{"client"},
+			projectxConfig, configManager.getConfigDescriptor(projectxConfig)
+		));
+		pluginListPanel.rebuildPluginList();
+
+		topLevelConfigPanel = topLevelConfigPanelProvider.get();
+
+		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "projectx_config_icon_lg.png");
+
+		navButton = NavigationButton.builder()
+			.tooltip("Community Plugins")
+			.icon(icon)
+			.priority(0)
+			.panel(topLevelConfigPanel)
+			.build();
+
+		clientToolbar.addNavigation(navButton);
+
+		new InputSelector(clientToolbar);
+
+		ProjectX.getPouchScript().startUp();
+
+		Rs2Walker.setSeasonalTransportHandlers(SeasonalTransportHandlers.defaultHandlerList());
+
+		if (overlayManager != null)
+		{
+			overlayManager.add(projectxOverlay);
+			overlayManager.add(gembagOverlay);
+			overlayManager.add(pouchOverlay);
+		}
+
+	}
+
+	protected void shutDown()
+	{
+		overlayManager.remove(projectxOverlay);
+		overlayManager.remove(gembagOverlay);
+		overlayManager.remove(pouchOverlay);
+		clientToolbar.removeNavigation(navButton);
+		if (gameChatAppender.isStarted()) gameChatAppender.stop();
+		projectxVersionChecker.shutdown();
+	}
+
+
+	@Subscribe
+	public void onStatChanged(StatChanged statChanged)
+	{
+		ProjectX.setIsGainingExp(true);
+	}
+
+	@Subscribe
+	public void onRuneScapeProfileChanged(RuneScapeProfileChanged event)
+	{
+		String newProfile = event.getNewProfile();
+		String oldProfile = event.getPreviousProfile();
+		if ((newProfile != null && !newProfile.isEmpty()) &&
+			(oldProfile == null || oldProfile.isEmpty() || !newProfile.equals(oldProfile))
+		)
+		{
+			log.info("\nReceived RuneScape profile change event from '{}' to '{}'", oldProfile, newProfile);
+		}
+		
+	}
+
+	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		ProjectX.getPouchScript().onItemContainerChanged(event);
+		if (event.getContainerId() == InventoryID.INV)
+		{
+			Rs2Inventory.storeInventoryItemsInMemory(event);
+		}
+		else if (event.getContainerId() == InventoryID.WORN)
+		{
+			Rs2Equipment.storeEquipmentItemsInMemory(event);
+		}
+		else if (event.getContainerId() == InventoryID.BANK)
+		{
+			Rs2Bank.updateLocalBank(event);
+		}
+		else if (event.getContainerId() == InventoryID.HUNTSMANS_KIT)
+		{
+			Rs2HuntKit.updateLocalKit(event);
+		}
+		else if (Arrays.stream(getShopContainerIds()).anyMatch(sid -> Objects.equals(event.getContainerId(), sid))) {
+			Rs2Shop.storeShopItemsInMemory(event, event.getContainerId());
+		}
+	}
+
+	/**
+	 * Retrieves all currently open container IDs from {@link InventoryID}
+	 * and excludes specific container IDs.
+	 *
+	 * @return an array of open container IDs excluding the specified excluded IDs
+	 */
+	private int[] getShopContainerIds()
+	{
+		Field[] fields = InventoryID.class.getFields();
+		List<Integer> openContainerIds = new ArrayList<>();
+		int[] excludedIds = { 90, 93, 94, 95 };
+
+		for (Field field : fields)
+		{
+			if (field.getType() != int.class)
+				continue;
+
+			try
+			{
+				int containerId = field.getInt(null);
+				ItemContainer container = ProjectX.getClient().getItemContainer(containerId);
+				
+				if (container != null && container.getItems() != null && container.getItems().length > 0) {
+					boolean hasItems = Arrays.stream(container.getItems())
+						.anyMatch(item -> item != null && item.getId() != -1);
+						
+					if (hasItems && Arrays.stream(excludedIds).noneMatch(excludedId -> excludedId == containerId)) {
+						openContainerIds.add(containerId);
+					}
+				}
+			}
+			catch (IllegalAccessException e)
+            {
+                log.error("Failed to access field: {}", field.getName(), e);
+            }
+		}
+		return openContainerIds.stream().mapToInt(Integer::intValue).toArray();
+	}
+
+
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged gameStateChanged)
+	{
+		
+	   if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
+	   {
+		   // Region-based login detection logic
+		   final Client client = ProjectX.getClient();
+		   if (client != null) {
+				EnumSet<WorldType> worldTypeProfile = normalizeWorldTypesForProfileComparison(client.getWorldType());
+				if (lastWorldTypeProfile != null && !lastWorldTypeProfile.equals(worldTypeProfile))
+				{
+					Rs2Bank.invalidateBankMirrorCache("world-type-profile-transition");
+				}
+				lastWorldTypeProfile = worldTypeProfile;
+				int[] currentRegions = client.getTopLevelWorldView().getMapRegions();
+				boolean wasLoggedIn = LoginManager.getLastKnownGameState() == GameState.LOGGED_IN;
+				if (!wasLoggedIn) {
+					LoginManager.markLoggedIn();
+					Rs2RunePouch.fullUpdate();
+				}
+				if (currentRegions != null) {
+					ProjectX.setLastKnownRegions(currentRegions.clone());
+				}
+		   }
+	   }
+	   if (gameStateChanged.getGameState() == GameState.HOPPING || gameStateChanged.getGameState() == GameState.LOGIN_SCREEN || gameStateChanged.getGameState() == GameState.CONNECTION_LOST)
+	   {
+		   // Clear all cache states when logging out through Rs2CacheManager
+		   //Rs2CacheManager.emptyCacheState(); // should not be nessary here, handled in ClientShutdown event,
+		   // and we also handle correct cache loading in onRuneScapeProfileChanged event
+		   LoginManager.markLoggedOut();
+		   ProjectX.setLastKnownRegions(null);
+		   Rs2LeaguesTransport.onLogout();
+	   }
+	   // update last known game state to track login/logout transitions
+	   LoginManager.setLastKnownGameState(gameStateChanged.getGameState());
+	}
+
+	private static EnumSet<WorldType> normalizeWorldTypesForProfileComparison(EnumSet<WorldType> rawTypes)
+	{
+		EnumSet<WorldType> normalized = rawTypes == null
+				? EnumSet.noneOf(WorldType.class)
+				: rawTypes.clone();
+		// Profile compare should ignore normal-world and combat-variant flags.
+		normalized.remove(WorldType.MEMBERS);
+		normalized.remove(WorldType.PVP);
+		normalized.remove(WorldType.BOUNTY);
+		normalized.remove(WorldType.SKILL_TOTAL);
+		normalized.remove(WorldType.HIGH_RISK);
+		normalized.remove(WorldType.LAST_MAN_STANDING);
+		return normalized;
+	}
+
+	@Subscribe
+	public void onVarClientIntChanged(VarClientIntChanged event)
+	{
+		Rs2Tab.onVarClientIntChanged(event);
+	}
+
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		Rs2Player.handlePotionTimers(event);
+		Rs2Player.handleTeleblockTimer(event);
+		Rs2RunePouch.onVarbitChanged(event);
+	}
+
+	@Subscribe
+	public void onAnimationChanged(AnimationChanged event)
+	{
+		Rs2Player.handleAnimationChanged(event);
+	}
+
+	@Subscribe(priority = 999)
+	private void onMenuEntryAdded(MenuEntryAdded event)
+	{
+		if (ProjectX.targetMenu != null && event.getType() != ProjectX.targetMenu.getType().getId())
+		{
+			ProjectX.getClient().getMenu().setMenuEntries(new MenuEntry[]{});
+		}
+
+		if (ProjectX.targetMenu != null)
+		{
+			MenuEntry entry =
+				ProjectX.getClient().getMenu().createMenuEntry(-1)
+                    .setItemId(0)
+					.setOption(ProjectX.targetMenu.getOption())
+					.setTarget(ProjectX.targetMenu.getTarget())
+					.setIdentifier(ProjectX.targetMenu.getIdentifier())
+					.setType(ProjectX.targetMenu.getType())
+					.setParam0(ProjectX.targetMenu.getParam0())
+					.setParam1(ProjectX.targetMenu.getParam1())
+                    .setWorldViewId(ProjectX.targetMenu.getWorldViewId())
+					.setForceLeftClick(false);
+
+			if (ProjectX.targetMenu.getItemId() > 0)
+			{
+				try
+				{
+					Rs2Reflection.setItemId(entry, ProjectX.targetMenu.getItemId());
+				}
+				catch (IllegalAccessException | InvocationTargetException e)
+				{
+					log.error(e.getMessage(), e);
+				}
+			}
+			ProjectX.getClient().getMenu().setMenuEntries(new MenuEntry[]{entry});
+		}
+	}
+
+	@Subscribe
+	private void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		ProjectX.getPouchScript().onMenuOptionClicked(event);
+		Rs2Gembag.onMenuOptionClicked(event);
+		ProjectX.targetMenu = null;
+		if (projectxConfig.enableMenuEntryLogging()) log.info(event.getMenuEntry().toString());
+	}
+
+	@Subscribe
+	private void onChatMessage(ChatMessage event)
+	{
+		if (event.getType() == ChatMessageType.ENGINE)
+		{
+			String msg = event.getMessage();
+			if (msg != null && msg.equalsIgnoreCase("I can't reach that!"))
+			{
+				ProjectX.cantReachTarget = true;
+			}
+		}
+		if (event.getType() == ChatMessageType.GAMEMESSAGE)
+		{
+			String msg = event.getMessage();
+			if (msg != null && containsIgnoreCase(msg, "you can't log into a non-members"))
+			{
+				ProjectX.cantHopWorld = true;
+			}
+
+			// Leagues: "haven't unlocked access to X area" -> blacklist last transport dest.
+			if (msg != null)
+			{
+				Rs2LeaguesTransport.onLockedRegionGameMessage(msg);
+			}
+		}
+		ProjectX.getPouchScript().onChatMessage(event);
+		Rs2Gembag.onChatMessage(event);
+	}
+
+	private static boolean containsIgnoreCase(String haystack, String needle)
+	{
+		if (haystack == null || needle == null || needle.isEmpty())
+		{
+			return false;
+		}
+		int hLen = haystack.length();
+		int nLen = needle.length();
+		if (nLen > hLen)
+		{
+			return false;
+		}
+		for (int i = 0; i <= hLen - nLen; i++)
+		{
+			if (haystack.regionMatches(true, i, needle, 0, nLen))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged ev)
+	{
+		if (ev.getGroup().equals(ProjectXConfig.configGroup)) {
+			switch (ev.getKey()) {
+				case ProjectXConfig.keyEnableAutoRunOn:
+					ProjectX.enableAutoRunOn = projectxConfig.enableAutoRunOn();
+					break;
+				case ProjectXConfig.keyUseStaminaPotsIfNeeded:
+					ProjectX.useStaminaPotsIfNeeded = projectxConfig.useStaminaPotsIfNeeded();
+					break;
+				case ProjectXConfig.keyEnableGameChatLogging:
+				case ProjectXConfig.keyGameChatLogPattern:
+				case ProjectXConfig.keyGameChatLogLevel:
+				case ProjectXConfig.keyOnlyProjectXLogging:
+					// Handle any logging-related configuration changes
+					final boolean shouldBeStarted = projectxConfig.enableGameChatLogging();
+
+					// Update the cached configuration in GameChatAppender
+					GameChatAppender.updateConfiguration(
+							projectxConfig.enableGameChatLogging(),
+							projectxConfig.getGameChatLogLevel().getLevel(),
+							projectxConfig.onlyProjectXLogging()
+					);
+
+					if (shouldBeStarted) {
+						// Update pattern if needed
+						String pattern = projectxConfig.getGameChatLogPattern().getPattern();
+						gameChatAppender.setPattern(pattern);
+
+						if (!gameChatAppender.isStarted()) {
+							gameChatAppender.start();
+						}
+					} else if (gameChatAppender.isStarted()) {
+						gameChatAppender.stop();
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		if (ev.getKey().equals("displayPouchCounter"))
+		{
+			if (Objects.equals(ev.getNewValue(), "true"))
+			{
+				ProjectX.getPouchScript().startUp();
+			}
+			else
+			{
+				ProjectX.getPouchScript().shutdown();
+			}
+		}
+	}
+
+	@Subscribe
+	public void onWidgetLoaded(WidgetLoaded event)
+	{
+		Rs2RunePouch.onWidgetLoaded(event);
+		
+		// Mark that widget layout has changed for cache invalidation
+		widgetLayoutChanged = true;
+		log.debug("Widget {} loaded, layout changed", event.getGroupId());
+	}
+
+	@Subscribe
+	public void onWidgetClosed(WidgetClosed event)
+	{
+		// Mark that widget layout has changed for cache invalidation
+		widgetLayoutChanged = true;
+		log.debug("Widget {} closed, layout changed", event.getGroupId());
+	}
+
+	@Subscribe
+	public void onHitsplatApplied(HitsplatApplied event)
+	{
+		// Case 1: Hitsplat applied to the local player (indicates someone or something is attacking you)
+		if (event.getActor().equals(ProjectX.getClient().getLocalPlayer()))
+		{
+			if (!event.getHitsplat().isOthers())
+			{
+				Rs2Player.updateCombatTime();
+			}
+		}
+
+		// Case 2: Hitsplat is applied to another player (indicates you are attacking another player)
+		else if (event.getActor() instanceof Player)
+		{
+			if (event.getHitsplat().isMine())
+			{
+				Rs2Player.updateCombatTime();
+			}
+		}
+
+		// Case 3: Hitsplat is applied to an NPC (indicates you are attacking an NPC)
+		else if (event.getActor() instanceof NPC)
+		{
+			if (event.getHitsplat().isMine())
+			{
+				Rs2Player.updateCombatTime();
+			}
+		}
+	}
+
+	@Subscribe
+	public void onOverlayMenuClicked(OverlayMenuClicked overlayMenuClicked)
+	{
+		OverlayMenuEntry overlayMenuEntry = overlayMenuClicked.getEntry();
+		if (overlayMenuEntry.getMenuAction() == MenuAction.RUNELITE_OVERLAY_CONFIG)
+		{
+			Overlay overlay = overlayMenuClicked.getOverlay();
+			Plugin plugin = overlay.getPlugin();
+			if (plugin == null)
+			{
+				return;
+			}
+
+			// Expand config panel for plugin
+			SwingUtilities.invokeLater(() ->
+			{
+				clientToolbar.openPanel(navButton);
+				topLevelConfigPanel.openConfigurationPanel(plugin.getName());
+			});
+		}
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		// Start Leagues teleport calibration ASAP after login (non-blocking; prompts for consent once).
+		Rs2LeaguesTransport.tickLeaguesCalibration();
+	}
+
+	@Subscribe(priority = 100)
+	private void onClientShutdown(ClientShutdown e)
+	{
+
+	}
+
+	/**
+	 * Dynamically checks if any visible widget overlaps with the specified bounds
+	 * @param overlayBoundsCanvas The bounds to check for widget overlap
+	 * @return true if any visible widget overlaps with the specified bounds
+	 */
+	public boolean hasWidgetOverlapWithBounds(Rectangle overlayBoundsCanvas) {
+		if (overlayBoundsCanvas == null || ProjectX.getClient() == null) {
+			return false;
+		}
+
+	   int viewportXOffset = ProjectX.getClient().getViewportXOffset();
+	   int viewportYOffset = ProjectX.getClient().getViewportYOffset();
+
+		// Use cached result if widget layout hasn't changed and bounds are the same
+		if (!this.widgetLayoutChanged && overlayBoundsCanvas.equals(this.lastCheckedBounds)) {
+			return this.lastOverlapResult;
+		}
+
+	   boolean result = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+		   try {
+			   return Rs2Widget.checkBoundsOverlapWidgetInMainModal(overlayBoundsCanvas, viewportXOffset, viewportYOffset);
+		   } catch (Exception e) {
+			   log.debug("Error checking widget overlap: {}", e.getMessage());
+			   return false;
+		   }
+	   }).orElse(false);
+
+		// Cache the result
+		widgetLayoutChanged = false;
+		lastCheckedBounds = new Rectangle(overlayBoundsCanvas);
+		lastOverlapResult = result;
+
+		return result;
+	}
+
+    @Subscribe
+    public void onWorldViewLoaded(WorldViewLoaded event)
+    {
+        ProjectX.getWorldViewIds().add(event.getWorldView().getId());
+    }
+
+    @Subscribe
+    public void onWorldViewUnloaded(WorldViewUnloaded event)
+    {
+        ProjectX.getWorldViewIds().remove(event.getWorldView().getId());
+    }
+}

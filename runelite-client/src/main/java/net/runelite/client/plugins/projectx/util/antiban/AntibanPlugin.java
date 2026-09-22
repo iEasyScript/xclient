@@ -1,0 +1,432 @@
+package net.runelite.client.plugins.projectx.util.antiban;
+
+import net.runelite.api.AnimationID;
+import net.runelite.api.GameState;
+import net.runelite.api.Skill;
+import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.StatChanged;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ProfileChanged;
+import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.breakhandler.BreakHandlerPlugin;
+import net.runelite.client.plugins.projectx.util.events.PluginPauseEvent;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.plugins.projectx.util.antiban.enums.Activity;
+import net.runelite.client.plugins.projectx.util.antiban.enums.ActivityIntensity;
+import net.runelite.client.plugins.projectx.util.antiban.enums.CombatSkills;
+import net.runelite.client.plugins.projectx.util.antiban.ui.MasterPanel;
+import net.runelite.client.plugins.projectx.util.player.Rs2Player;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ImageUtil;
+
+import javax.inject.Inject;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
+/**
+ * The AntibanPlugin is responsible for managing anti-ban behaviors during bot operation.
+ *
+ * <p>
+ * This plugin ensures that the bot behaves in a more human-like manner to avoid detection by using various
+ * anti-ban strategies. These strategies include simulating breaks, adjusting activity levels, and mimicking
+ * attention span variations. The plugin tracks user activity and game state to dynamically adjust bot behavior.
+ * </p>
+ *
+ * <h3>Main Features:</h3>
+ * <ul>
+ *   <li>Simulates action cooldowns and micro-breaks based on the bot's current activities.</li>
+ *   <li>Dynamically adjusts activity intensity and behavior depending on the bot's in-game actions, such as mining or cooking.</li>
+ *   <li>Tracks user skill changes and updates the anti-ban settings accordingly.</li>
+ *   <li>Supports attention span simulation, profile switching, and periodic breaks to ensure realistic play styles.</li>
+ *   <li>Automatically enables the BreakHandlerPlugin when needed for managing breaks.</li>
+ * </ul>
+ *
+ * <h3>Usage:</h3>
+ * <p>
+ * The <code>AntibanPlugin</code> works silently in the background to adjust the bot's behavior during runtime.
+ * Users do not need to manually interact with this plugin, as it is automatically integrated into the bot framework.
+ * </p>
+ *
+ * <p>
+ * The plugin monitors in-game actions, such as cooking, mining, and skill changes, to adjust its anti-ban strategy
+ * accordingly. It also manages the simulation of breaks, cooldowns, and play style variations to mimic human behavior
+ * and avoid detection.
+ * </p>
+ *
+ * <h3>Additional Details:</h3>
+ * <ul>
+ *   <li>Automatic tracking of idle time to determine if the bot should take a break.</li>
+ *   <li>Real-time updates to anti-ban settings based on player activities and game state changes.</li>
+ *   <li>Hidden from the user interface to avoid unnecessary distractions, while always being active in the background.</li>
+ * </ul>
+ */
+
+@PluginDescriptor(
+        name = PluginDescriptor.See1Duck + "Antiban",
+        description = "Antiban for projectx",
+        tags = {"main", "projectx", "antiban parent"},
+        alwaysOn = true,
+        hidden = true
+)
+@Slf4j
+public class AntibanPlugin extends Plugin {
+
+    private static final int COOK_TIMEOUT = 3;
+    private static final int MINING_TIMEOUT = 3;
+    private static final int IDLE_TIMEOUT = 1;
+    public static int ticksSinceLogin;
+    private static Instant lastCookingAction = Instant.MIN;
+    private static Instant lastMiningAction = Instant.MIN;
+    private static int idleTicks = 0;
+    private final Map<Skill, Integer> skillExp = new EnumMap<>(Skill.class);
+    private boolean ready;
+    private Skill lastSkillChanged;
+    private NavigationButton navButton;
+    public static final int MICRO_BREAK_DURATION_LOW_DEFAULT = 3;
+    public static final int MICRO_BREAK_DURATION_HIGH_DEFAULT = 15;
+    private static final int MICRO_BREAK_DURATION_LOW_MIN = 1;
+    private static final int MICRO_BREAK_DURATION_LOW_MAX = 10;
+    private static final int MICRO_BREAK_DURATION_HIGH_MIN = 1;
+    private static final int MICRO_BREAK_DURATION_HIGH_MAX = 30;
+
+    /**
+     * Avoid spamming the user if they keep micro breaks on while the break handler is disabled.
+     */
+    private boolean warnedBreakHandlerDisabled;
+    private Timer panelRefreshTimer;
+
+    /**
+     * Remembers last micro-break state to detect transitions (start/end).
+     */
+    private boolean lastMicroBreakActive;
+
+    @Inject
+    private OverlayManager overlayManager;
+
+    @Inject
+    private ClientToolbar clientToolbar;
+
+    public static boolean isCooking() {
+        return Rs2Player.getAnimation() == AnimationID.COOKING_FIRE
+                || Rs2Player.getAnimation() == AnimationID.COOKING_RANGE
+                || Rs2Player.getAnimation() == AnimationID.COOKING_WINE
+                || Duration.between(lastCookingAction, Instant.now()).getSeconds() < COOK_TIMEOUT;
+    }
+
+    public static boolean isMining() {
+        return Rs2Antiban.isMining()
+                || Duration.between(lastMiningAction, Instant.now()).getSeconds() < MINING_TIMEOUT;
+    }
+
+    public static boolean isIdle() {
+        return idleTicks > IDLE_TIMEOUT;
+    }
+
+    private static void updateIdleTicks() {
+        idleTicks++;
+    }
+
+    private static void updateLastCookingAction() {
+        lastCookingAction = Instant.now();
+    }
+
+    private static void updateLastMiningAction() {
+        lastMiningAction = Instant.now();
+    }
+
+    public static void performActionBreak() {
+        if (Rs2AntibanSettings.actionCooldownActive) {
+            if (Rs2Antiban.getTIMEOUT() > 0) {
+                if (!Rs2Antiban.getCategory().isBusy()) {
+                    Rs2Antiban.TIMEOUT--;
+                }
+            } else {
+                Rs2AntibanSettings.actionCooldownActive = false;
+                if (Rs2AntibanSettings.universalAntiban && !Rs2AntibanSettings.microBreakActive)
+					ProjectX.pauseAllScripts.compareAndSet(true, false);
+            }
+        }
+    }
+
+    @Override
+    protected void startUp() throws AWTException {
+        Rs2Antiban.setActivityIntensity(ActivityIntensity.EXTREME);
+        final MasterPanel panel = injector.getInstance(MasterPanel.class);
+        final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "antiban.png");
+        navButton = NavigationButton.builder()
+                .tooltip("Antiban")
+                .icon(icon)
+                .priority(1)
+                .panel(panel)
+                .build();
+        Rs2AntibanSettings.reset();
+        Rs2AntibanSettings.loadFromProfile();
+        validateAndSetBreakDurations();
+
+        panelRefreshTimer = new Timer();
+        panelRefreshTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                SwingUtilities.invokeLater(panel::loadSettings);
+            }
+        }, 0, 600);
+
+        clientToolbar.addNavigation(navButton);
+        overlayManager.add(new AntibanOverlay());
+    }
+
+    @Override
+    protected void shutDown() {
+        overlayManager.removeIf(overlay -> overlay instanceof AntibanOverlay);
+        clientToolbar.removeNavigation(navButton);
+        if (panelRefreshTimer != null) {
+            panelRefreshTimer.cancel();
+            panelRefreshTimer = null;
+        }
+        clearPauseFlags();
+    }
+
+    @Subscribe
+    public void onChatMessage(ChatMessage event) {
+        if (Rs2Antiban.checkForCookingEvent(event)) {
+            updateLastCookingAction();
+        }
+    }
+
+    @Subscribe
+    public void onProfileChanged(ProfileChanged event) {
+        Rs2Antiban.resetAntibanSettings();
+        Rs2AntibanSettings.loadFromProfile();
+        validateAndSetBreakDurations();
+    }
+
+    @Subscribe
+    public void onGameStateChanged(GameStateChanged event) {
+        GameState state = event.getGameState();
+
+        switch (state) {
+            case LOGIN_SCREEN:
+                if(Rs2AntibanSettings.actionCooldownActive) {
+                    Rs2Antiban.TIMEOUT = 0;
+                    Rs2AntibanSettings.actionCooldownActive = false;
+                }
+            case LOGGING_IN:
+            case HOPPING:
+                ready = true;
+                break;
+            case LOGGED_IN:
+                if (ready) {
+                    ticksSinceLogin = 0;
+                    ready = false;
+                }
+                break;
+        }
+    }
+
+    // method to check if we have been idle for too long, indicating some issue with the script, use this to reset or reinitialize your script
+    public static boolean isIdleTooLong(int timeout) {
+        return idleTicks > timeout && !Rs2AntibanSettings.actionCooldownActive && !Rs2AntibanSettings.takeMicroBreaks;
+    }
+
+    @Subscribe
+    public void onGameTick(GameTick event) {
+        ticksSinceLogin++;
+
+        if (!Rs2AntibanSettings.antibanEnabled) {
+            return;
+        }
+
+        if (!Rs2Player.isAnimating()) {
+            updateIdleTicks();
+        } else {
+            if (Rs2AntibanSettings.simulateFatigue) {
+                ticksSinceLogin -= idleTicks;
+            }
+            idleTicks = 0;
+        }
+
+        handleMicroBreakIntegration();
+
+        if (Rs2Antiban.isMining()) {
+            updateLastMiningAction();
+        }
+
+        if (Rs2AntibanSettings.actionCooldownActive) {
+            performActionBreak();
+        }
+
+        if (Rs2AntibanSettings.usePlayStyle) {
+            if (Rs2Antiban.getPlayStyle() == null)
+                return;
+            if (Rs2AntibanSettings.simulateAttentionSpan && Rs2AntibanSettings.profileSwitching &&
+                    Rs2Antiban.getPlayStyle().shouldSwitchProfileBasedOnAttention()) {
+                Rs2Antiban.setPlayStyle(Rs2Antiban.getPlayStyle().switchProfile());
+                Rs2Antiban.getPlayStyle().resetPlayStyle();
+            }
+        }
+    }
+
+    /**
+     * Micro-break / BreakHandler integration logic that respects the user's manual BreakHandler toggle.
+     *
+     * Behaviour:
+     * - If user has micro-breaks on and BreakHandler is disabled, we warn once and do NOT auto-start.
+     * - When micro-breaks end, we clear pause flags so scripts resume even if BreakHandler stays disabled.
+     */
+    private void handleMicroBreakIntegration() {
+        boolean microBreaksEnabled = Rs2AntibanSettings.takeMicroBreaks;
+
+        // Detect end of micro-break to clear flags even if BreakHandler stays enabled.
+        if (lastMicroBreakActive && !Rs2AntibanSettings.microBreakActive) {
+            clearPauseFlags();
+        }
+        lastMicroBreakActive = Rs2AntibanSettings.microBreakActive;
+
+        if (!microBreaksEnabled) {
+            // User turned off micro-breaks; ensure pause flags are released.
+            return;
+        }
+
+        // Micro-breaks enabled: ensure BreakHandler is available, but respect manual disable.
+        if (ProjectX.isPluginEnabled(BreakHandlerPlugin.class)) {
+            // Already on (user or us). Nothing else to do.
+            return;
+        }
+
+        // BreakHandler is off. If user turned it off, warn once and skip auto-start.
+        if (warnedBreakHandlerDisabled) {
+            return;
+        }
+
+        // If a micro-break was triggered while BreakHandler is disabled, cancel it and unpause to avoid getting stuck.
+        if (Rs2AntibanSettings.microBreakActive) {
+            Rs2AntibanSettings.microBreakActive = false;
+            clearPauseFlags();
+        }
+
+        warnedBreakHandlerDisabled = true;
+        ProjectX.showMessage("Micro breaks need BreakHandler. Enable it to use micro breaks.");
+        log.debug("Micro breaks requested but BreakHandler is disabled; respecting user choice.");
+    }
+
+    /**
+     * Clears global pause flags to guarantee scripts resume after micro-break.
+     */
+    private void clearPauseFlags() {
+        PluginPauseEvent.setPaused(false);
+        ProjectX.pauseAllScripts.compareAndSet(true, false);
+    }
+
+    @Subscribe
+    public void onStatChanged(StatChanged statChanged) {
+        if (!Rs2AntibanSettings.antibanEnabled) {
+            return;
+        }
+
+        final Skill skill = statChanged.getSkill();
+        final int exp = statChanged.getXp();
+        final Integer previous = skillExp.put(skill, exp);
+
+        if (lastSkillChanged != null && (lastSkillChanged.equals(skill) || (CombatSkills.isCombatSkill(lastSkillChanged) && CombatSkills.isCombatSkill(skill)))) {
+            if (Rs2AntibanSettings.universalAntiban && !Rs2AntibanSettings.actionCooldownActive && Rs2Antiban.getActivity() != null) {
+                Rs2Antiban.actionCooldown();
+                Rs2Antiban.takeMicroBreakByChance();
+            }
+            if (Rs2Antiban.getActivity() == null)
+                updateAntibanSettings(skill);
+
+            return;
+        }
+
+        lastSkillChanged = skill;
+
+        if (previous == null || previous >= exp) {
+            return;
+        }
+
+        updateAntibanSettings(skill);
+    }
+
+    private void updateAntibanSettings(Skill skill) {
+        final ActivityIntensity activityIntensity = ActivityIntensity.fromSkill(skill);
+        final Activity activity = Activity.fromSkill(skill);
+
+        if (activity != null && Rs2AntibanSettings.dynamicActivity) {
+            Rs2Antiban.setActivity(activity);
+            if (Rs2AntibanSettings.devDebug) {
+                ProjectX.log("Activity changed, new activity: " + activity);
+            }
+            if (Rs2AntibanSettings.universalAntiban) {
+                Rs2Antiban.actionCooldown();
+                Rs2Antiban.takeMicroBreakByChance();
+            }
+        }
+
+        if (activityIntensity != null && Rs2AntibanSettings.dynamicIntensity) {
+            Rs2Antiban.setActivityIntensity(activityIntensity);
+            if (Rs2AntibanSettings.devDebug) {
+                ProjectX.log("Activity changed, new activity intensity: " + activityIntensity);
+            }
+        }
+    }
+
+    /**
+     * Validates and ensures the micro break duration settings are within acceptable thresholds.
+     *
+     * <p>This method checks the values of {@code Rs2AntibanSettings.microBreakDurationLow} and
+     * {@code Rs2AntibanSettings.microBreakDurationHigh} to ensure they fall within their
+     * respective minimum and maximum bounds. If a value is outside the allowed range,
+     * it is reset to its default value. Additionally, it ensures that the low duration
+     * does not exceed the high duration, resetting both to their defaults if necessary.</p>
+     *
+     * <h3>Validation Rules:</h3>
+     * <ul>
+     *   <li>{@code microBreakDurationLow} must be between {@code MICRO_BREAK_DURATION_LOW_MIN} and {@code MICRO_BREAK_DURATION_LOW_MAX}.</li>
+     *   <li>{@code microBreakDurationHigh} must be between {@code MICRO_BREAK_DURATION_HIGH_MIN} and {@code MICRO_BREAK_DURATION_HIGH_MAX}.</li>
+     *   <li>{@code microBreakDurationLow} must not exceed {@code microBreakDurationHigh}.</li>
+     * </ul>
+     *
+     * <h3>Behavior:</h3>
+     * <ul>
+     *   <li>If {@code microBreakDurationLow} is out of bounds, it is reset to {@code MICRO_BREAK_DURATION_LOW_DEFAULT}.</li>
+     *   <li>If {@code microBreakDurationHigh} is out of bounds, it is reset to {@code MICRO_BREAK_DURATION_HIGH_DEFAULT}.</li>
+     *   <li>If {@code microBreakDurationLow} exceeds {@code microBreakDurationHigh}, both are reset to their defaults.</li>
+     * </ul>
+     *
+     * <h3>Usage:</h3>
+     * <p>This method should be called during plugin initialization or whenever the settings
+     * are loaded or modified to ensure the durations remain consistent and valid.</p>
+     */
+    public static void validateAndSetBreakDurations() {
+        // Validate and correct microBreakDurationLow
+        if (Rs2AntibanSettings.microBreakDurationLow < MICRO_BREAK_DURATION_LOW_MIN
+                || Rs2AntibanSettings.microBreakDurationLow > MICRO_BREAK_DURATION_LOW_MAX) {
+            Rs2AntibanSettings.microBreakDurationLow = MICRO_BREAK_DURATION_LOW_DEFAULT;
+        }
+
+        // Validate and correct microBreakDurationHigh
+        if (Rs2AntibanSettings.microBreakDurationHigh < MICRO_BREAK_DURATION_HIGH_MIN
+                || Rs2AntibanSettings.microBreakDurationHigh > MICRO_BREAK_DURATION_HIGH_MAX) {
+            Rs2AntibanSettings.microBreakDurationHigh = MICRO_BREAK_DURATION_HIGH_DEFAULT;
+        }
+
+        // Ensure microBreakDurationLow is not greater than microBreakDurationHigh
+        if (Rs2AntibanSettings.microBreakDurationLow > Rs2AntibanSettings.microBreakDurationHigh) {
+            Rs2AntibanSettings.microBreakDurationLow = MICRO_BREAK_DURATION_LOW_DEFAULT;
+            Rs2AntibanSettings.microBreakDurationHigh = MICRO_BREAK_DURATION_HIGH_DEFAULT;
+        }
+    }
+}

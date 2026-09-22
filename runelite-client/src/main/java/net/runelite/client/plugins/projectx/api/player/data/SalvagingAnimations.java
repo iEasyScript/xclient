@@ -1,0 +1,80 @@
+package net.runelite.client.plugins.projectx.api.player.data;
+
+import static net.runelite.api.gameval.AnimationID.*;
+import static net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_DROP01;
+import static net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_IDLE01;
+import static net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_INTERACT01;
+import static net.runelite.api.gameval.AnimationID.HUMAN_SAILING_SALVAGE01_LARGE01_RESET01;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_1X3_RESET01;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_1X3_SALVAGING01;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_2X5_DROP01;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_2X5_IDLE01;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_2X5_IDLE02;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_2X5_RESET01;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_3X8_DROP01;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_3X8_IDLE01;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_3X8_IDLE02;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_3X8_RESET01;
+import static net.runelite.api.gameval.AnimationID.SAILING_BOATS_SALVAGE_HOOK_KANDARIN_UI;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_DROP01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_IDLE01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_INACTIVE01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_INTERACT01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_PULL01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_RESET01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_SALVAGING01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_2X5_DROP01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_2X5_IDLE01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_2X5_RESET01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_DROP01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_IDLE01;
+import static net.runelite.api.gameval.AnimationID.SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_RESET01;
+import static net.runelite.api.gameval.AnimationID.SAILING_SALVAGE01_LARGE01_DROP01;
+import static net.runelite.api.gameval.AnimationID.SAILING_SALVAGE01_LARGE01_IDLE01;
+import static net.runelite.api.gameval.AnimationID.SAILING_SALVAGE01_LARGE01_IDLE02;
+import static net.runelite.api.gameval.AnimationID.SAILING_SALVAGE01_LARGE01_RESET01;
+
+public class SalvagingAnimations {
+    public  static final int[] SALVAGING_ANIMATIONS = {
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_1X3_IDLE01,
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_1X3_DROP01,
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_1X3_IDLE02,
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_1X3_RESET01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_DROP01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_IDLE01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_RESET01,
+
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_2X5_IDLE01,
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_2X5_DROP01,
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_2X5_IDLE02,
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_2X5_RESET01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_2X5_DROP01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_2X5_IDLE01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_2X5_RESET01,
+
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_3X8_IDLE01,
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_3X8_DROP01,
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_3X8_IDLE02,
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_3X8_RESET01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_DROP01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_IDLE01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_3X8_RESET01,
+
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_UI,
+
+            SAILING_SALVAGE01_LARGE01_IDLE01,
+            SAILING_SALVAGE01_LARGE01_DROP01,
+            SAILING_SALVAGE01_LARGE01_IDLE02,
+            SAILING_SALVAGE01_LARGE01_RESET01,
+            HUMAN_SAILING_SALVAGE01_LARGE01_DROP01,
+            HUMAN_SAILING_SALVAGE01_LARGE01_IDLE01,
+            HUMAN_SAILING_SALVAGE01_LARGE01_INTERACT01,
+            HUMAN_SAILING_SALVAGE01_LARGE01_RESET01,
+
+            SAILING_BOATS_SALVAGE_HOOK_KANDARIN_1X3_SALVAGING01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_SALVAGING01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_INACTIVE01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_PULL01,
+            SAILING_HUMAN_SALVAGE_HOOK_KANDARIN_1X3_INTERACT01
+    };
+}

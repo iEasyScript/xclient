@@ -1,0 +1,237 @@
+package net.runelite.client.plugins.projectx.ui;
+
+import net.runelite.client.RuneLiteProperties;
+import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.config.TopLevelConfigPanel;
+import net.runelite.client.ui.ClientUI;
+import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
+import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.ui.components.materialtabs.MaterialTab;
+import net.runelite.client.ui.components.materialtabs.MaterialTabGroup;
+import net.runelite.client.util.ImageUtil;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+
+@Singleton
+public class ProjectXTopLevelConfigPanel extends PluginPanel {
+    private final MaterialTabGroup tabGroup;
+    private final CardLayout layout;
+    private final JPanel content;
+
+    private final EventBus eventBus;
+    private final ProjectXPluginListPanel pluginListPanel;
+    private final MaterialTab pluginListPanelTab;
+    private final MaterialTab profilePanelTab;
+
+    private boolean active = false;
+    private ProjectXPluginPanel current;
+    private boolean removeOnTabChange;
+
+    /**
+     * Creates a simple text-based icon for tabs.
+     * @param text {@link String} Text to display
+     * @param textColor {@link Color} Color of the text
+     * @param backgroundColor {@link Color} Background color (can be null for transparent)
+     * @param width Width of the icon
+     * @param height  Height of the icon
+     * @return ImageIcon {@link ImageIcon} with rendered text
+     */
+    private ImageIcon createTextIcon(String text, Color textColor, Color backgroundColor, int width, int height) {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+
+        // Enable antialiasing for smoother text
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        // Set background (optional, can be transparent)
+        if (backgroundColor != null) {
+            g2d.setColor(backgroundColor);
+            g2d.fillRect(0, 0, width, height);
+        }
+
+        // Set font and text color
+        g2d.setFont(FontManager.getRunescapeBoldFont());
+        g2d.setColor(textColor);
+
+        // Calculate text position to center it
+        FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(text);
+        int textHeight = fm.getAscent();
+
+        int x = (width - textWidth) / 2;
+        int y = (height - textHeight) / 2 + textHeight;
+
+        g2d.drawString(text, x, y);
+        g2d.dispose();
+
+        return new ImageIcon(image);
+    }
+
+    @Inject
+    ProjectXTopLevelConfigPanel(
+            EventBus eventBus,
+            ProjectXPluginListPanel pluginListPanel,
+            ProjectXProfilePanel profilePanel,
+            Provider<ProjectXPluginHubPanel> projectxPluginHubPanelProvider
+    ) {
+        super(false);
+
+        this.eventBus = eventBus;
+
+        tabGroup = new MaterialTabGroup();
+        tabGroup.setLayout(new GridLayout(1, 0, 7, 7));
+        tabGroup.setBorder(new EmptyBorder(10, 10, 0, 10));
+
+        content = new JPanel();
+        layout = new CardLayout();
+        content.setLayout(layout);
+
+        setLayout(new BorderLayout());
+        add(tabGroup, BorderLayout.NORTH);
+        add(content, BorderLayout.CENTER);
+        add(buildVersionFooter(), BorderLayout.SOUTH);
+
+        this.pluginListPanel = pluginListPanel;
+
+        // Create text-based icons instead of using image files for better clarity
+        ImageIcon installedIcon = createTextIcon("Installed", Color.YELLOW, null, 80, 32);
+        ImageIcon hubIcon = createTextIcon("Plugin Hub", Color.YELLOW, null, 80, 32);
+
+        pluginListPanelTab = addTab(pluginListPanel.getMuxer(), installedIcon, "Installed ProjectX Plugins");
+        profilePanelTab = addTab(profilePanel, "profile_icon.png", "Profiles");
+        addTab(projectxPluginHubPanelProvider, hubIcon, "ProjectX Hub");
+
+        tabGroup.select(pluginListPanelTab);
+    }
+
+    private JPanel buildVersionFooter() {
+        JPanel footer = new JPanel();
+        footer.setLayout(new BoxLayout(footer, BoxLayout.Y_AXIS));
+        footer.setBorder(new EmptyBorder(4, 0, 4, 0));
+
+        String version = RuneLiteProperties.getProjectXVersion();
+        JLabel versionLabel = new JLabel(version == null || version.isBlank() ? "Project X" : "Project X v" + version, SwingConstants.CENTER);
+        versionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        versionLabel.setFont(FontManager.getRunescapeSmallFont());
+        versionLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+        footer.add(versionLabel);
+
+        String proxy = ClientUI.proxyMessage;
+        if (proxy != null && !proxy.isBlank()) {
+            JLabel proxyLabel = new JLabel(proxy, SwingConstants.CENTER);
+            proxyLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            proxyLabel.setFont(FontManager.getRunescapeSmallFont());
+            proxyLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+            footer.add(proxyLabel);
+        }
+
+        return footer;
+    }
+
+    private MaterialTab addTab(ProjectXPluginPanel panel, ImageIcon icon, String tooltip) {
+        MaterialTab mt = new MaterialTab(icon, tabGroup, null);
+        mt.setToolTipText(tooltip);
+        tabGroup.addTab(mt);
+
+        content.add(tooltip, panel.getWrappedPanel()); // Use tooltip as unique key instead of image name
+        eventBus.register(panel);
+
+        mt.setOnSelectEvent(() ->
+        {
+            switchTo(tooltip, panel, false);
+            return true;
+        });
+        return mt;
+    }
+
+    private MaterialTab addTab(ProjectXPluginPanel panel, String image, String tooltip)
+    {
+        MaterialTab mt = new MaterialTab(
+                new ImageIcon(ImageUtil.loadImageResource(TopLevelConfigPanel.class, image)),
+                tabGroup, null);
+        mt.setToolTipText(tooltip);
+        tabGroup.addTab(mt);
+
+        content.add(image, panel.getWrappedPanel());
+        eventBus.register(panel);
+
+        mt.setOnSelectEvent(() ->
+        {
+            switchTo(image, panel, false);
+            return true;
+        });
+        return mt;
+    }
+
+    private MaterialTab addTab(Provider<? extends ProjectXPluginPanel> panelProvider, ImageIcon icon, String tooltip) {
+        MaterialTab mt = new MaterialTab(icon, tabGroup, null);
+        mt.setToolTipText(tooltip);
+        tabGroup.addTab(mt);
+
+        mt.setOnSelectEvent(() ->
+        {
+            ProjectXPluginPanel panel = panelProvider.get();
+            content.add(tooltip, panel.getWrappedPanel());
+            eventBus.register(panel);
+            switchTo(tooltip, panel, true);
+            return true;
+        });
+        return mt;
+    }
+
+    private void switchTo(String cardName, ProjectXPluginPanel panel, boolean removeOnTabChange) {
+        boolean doRemove = this.removeOnTabChange;
+        ProjectXPluginPanel prevPanel = current;
+        if (active) {
+            prevPanel.onDeactivate();
+            panel.onActivate();
+        }
+
+        current = panel;
+        this.removeOnTabChange = removeOnTabChange;
+
+        layout.show(content, cardName);
+
+        if (doRemove) {
+            content.remove(prevPanel.getWrappedPanel());
+            eventBus.unregister(prevPanel);
+        }
+
+        content.revalidate();
+    }
+
+    @Override
+    public void onActivate() {
+        active = true;
+        current.onActivate();
+    }
+
+    @Override
+    public void onDeactivate() {
+        active = false;
+        current.onDeactivate();
+    }
+
+    public void openConfigurationPanel(String name) {
+        tabGroup.select(pluginListPanelTab);
+        pluginListPanel.openConfigurationPanel(name);
+    }
+
+    public void openConfigurationPanel(Plugin plugin) {
+        tabGroup.select(pluginListPanelTab);
+        pluginListPanel.openConfigurationPanel(plugin);
+    }
+
+    public void openWithFilter(String filter) {
+        tabGroup.select(pluginListPanelTab);
+        pluginListPanel.openWithFilter(filter);
+    }
+}

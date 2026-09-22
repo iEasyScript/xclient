@@ -1,0 +1,8 @@
+# Baseline of pre-existing queryable-terminal guardrail violations.
+# Plugin code calling unsafe queryable terminals (nearest, first, toList, etc.)
+# instead of the thread-safe *OnClientThread() variants.
+# Maintained by net.runelite.client.plugins.projectx.threadsafety.QueryableTerminalGuardrailTest.
+# Format: <caller>  ->  <queryable type>#<terminal method>
+# Regenerate with: ./gradlew :client:regenerateQueryableTerminalBaseline
+# Lines starting with '#' are ignored.
+

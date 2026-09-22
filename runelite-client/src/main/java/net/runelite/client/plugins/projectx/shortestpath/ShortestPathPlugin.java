@@ -1,0 +1,1439 @@
+/**
+ *
+ * Credit:
+ *
+ * This project includes code or inspiration from the following open-source project:
+ *
+ * Project: Shortest Path Algorithm
+ * Repository: https://github.com/Skretzo/shortest-path
+ * Author: Skretzo
+ * License: BSD-2-Clause license
+ *
+ * Description:
+ * The shortest-path implementation in this project was adapted or inspired by
+ * the algorithm and code shared in the repository linked above. We thank the original
+ * author for making this available as open-source software.
+ *
+ * Any modifications to the original code have been made by ProjectX.
+ */
+
+package net.runelite.client.plugins.projectx.shortestpath;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.Inject;
+import com.google.inject.Provides;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import lombok.Setter;
+import net.runelite.api.Point;
+import net.runelite.api.*;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.MenuEntryAdded;
+import net.runelite.api.events.MenuOpened;
+import net.runelite.api.widgets.ComponentID;
+import net.runelite.api.widgets.Widget;
+import net.runelite.api.worldmap.WorldMap;
+import net.runelite.api.worldmap.WorldMapData;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.PluginMessage;
+import net.runelite.client.game.SpriteManager;
+import net.runelite.client.input.KeyListener;
+import net.runelite.client.input.KeyManager;
+import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.CollisionMap;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.Pathfinder;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.PathfinderConfig;
+import net.runelite.client.plugins.projectx.util.walker.WebWalkLog;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.live.LiveCollisionCapture;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.live.LiveCollisionConflicts;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.live.LiveCollisionOverlay;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.live.LiveCollisionPersistence;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.live.LiveCollisionSnapshot;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.live.LiveRouteValidator;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.SplitFlagMap;
+import net.runelite.client.plugins.projectx.util.player.Rs2Player;
+import net.runelite.client.plugins.projectx.util.tile.Rs2Tile;
+import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.JagexColors;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
+import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
+import net.runelite.client.util.ColorUtil;
+import net.runelite.client.util.HotkeyListener;
+import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.Text;
+
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.geom.Ellipse2D;
+import java.awt.image.BufferedImage;
+import java.util.List;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+
+@Slf4j
+@PluginDescriptor(
+        name = PluginDescriptor.Mocrosoft + "Web Walker",
+        description = "Draws the shortest path to a chosen destination on the map (right click a spot on the world map to use)",
+        tags = {"pathfinder", "map", "waypoint", "navigation", "projectx"},
+        enabledByDefault = true,
+        alwaysOn = true
+)
+public class ShortestPathPlugin extends Plugin implements KeyListener {
+    public static final String CONFIG_GROUP = "shortestpath";
+    private static final String PLUGIN_MESSAGE_PATH = "path";
+    private static final String PLUGIN_MESSAGE_CLEAR = "clear";
+    private static final String PLUGIN_MESSAGE_START = "start";
+    private static final String PLUGIN_MESSAGE_TARGET = "target";
+	private static final String PLUGIN_MESSAGE_CONFIG_OVERRIDE = "config";
+    private static final String CLEAR = "Clear";
+    private static final String PATH = ColorUtil.wrapWithColorTag("Path", JagexColors.MENU_TARGET);
+    private static final String SET = "Set";
+    private static final String START = ColorUtil.wrapWithColorTag("Start", JagexColors.MENU_TARGET);
+    private static final String TARGET = ColorUtil.wrapWithColorTag("Target", JagexColors.MENU_TARGET);
+    private static final String TEST = ColorUtil.wrapWithColorTag("Test Target", JagexColors.MENU_TARGET);
+
+    public static final BufferedImage MARKER_IMAGE = ImageUtil.loadImageResource(ShortestPathPlugin.class, "marker.png");
+
+    @Inject
+    private Client client;
+
+    @Getter
+    @Inject
+    private ClientThread clientThread;
+
+    @Inject
+    @Getter(AccessLevel.PACKAGE)
+    private ShortestPathConfig config;
+
+    @Inject
+    private OverlayManager overlayManager;
+
+    @Inject
+    private PathTileOverlay pathOverlay;
+
+    @Inject
+    private PathMinimapOverlay pathMinimapOverlay;
+
+    @Inject
+    private PathMapOverlay pathMapOverlay;
+
+    @Inject
+    private PathMapTooltipOverlay pathMapTooltipOverlay;
+
+    @Inject
+    private ClientToolbar clientToolbar;
+
+    @Inject
+    private DebugOverlayPanel debugOverlayPanel;
+
+    @Inject
+    private ETAOverlayPanel etaOverlayPanel;
+
+    @Inject
+    private SpriteManager spriteManager;
+
+    @Inject
+    private WorldMapPointManager worldMapPointManager;
+    @Inject
+    private KeyManager keyManager;
+
+    @Inject
+    private ConfigManager configManager;
+
+	boolean drawCollisionMap;
+	boolean drawMap;
+	boolean drawMinimap;
+	boolean drawTiles;
+	boolean drawTransports;
+	boolean showTransportInfo;
+	Color colourCollisionMap;
+	Color colourPath;
+	Color colourPathCalculating;
+	Color colourText;
+	Color colourTransports;
+	int tileCounterStep;
+	TileCounter showTileCounter;
+	TileStyle pathStyle;
+
+    private Point lastMenuOpenedPoint;
+    private ShortestPathPanel panel;
+    private PohPanel pohPanel;
+    @Getter
+    @Setter
+    public static WorldMapPoint marker;
+    @Setter
+    public static volatile WorldPoint lastLocation = new WorldPoint(0, 0, 0);
+    private NavigationButton navButton, pohNavButton;
+    private Shape minimapClipFixed;
+    private Shape minimapClipResizeable;
+    private BufferedImage minimapSpriteFixed;
+    private BufferedImage minimapSpriteResizeable;
+    private Rectangle minimapRectangle = new Rectangle();
+
+    @Getter
+    @Setter
+    public static volatile ExecutorService pathfindingExecutor = Executors.newSingleThreadExecutor();
+    @Getter
+    @Setter
+    public static volatile Future<?> pathfinderFuture;
+    @Getter
+    public static final Object pathfinderMutex = new Object();
+	private static final Map<String, Object> configOverride = new HashMap<>(50);
+    @Getter
+    @Setter
+    public static volatile Pathfinder pathfinder;
+    @Getter
+    public static PathfinderConfig pathfinderConfig;
+    @Getter
+    @Setter
+    public static boolean startPointSet = false;
+    @Setter
+    private static int reachedDistance;
+    @Getter(AccessLevel.PACKAGE)
+    private ShortestPathScript shortestPathScript;
+
+    // Set by onGameStateChanged when the client transitions to LOGGED_IN. Consumed on the next
+    // game tick so varbits, quest states, inventory, and bank containers are hydrated before
+    // PathfinderConfig#refresh rebuilds the transport availability cache. Without this the
+    // cache holds pre-login state after world-hops or re-logins.
+    volatile boolean pendingLoginRefresh = false;
+    @Provides
+    public ShortestPathConfig provideConfig(ConfigManager configManager) {
+        return configManager.getConfig(ShortestPathConfig.class);
+    }
+
+    @Override
+    protected void startUp() {
+		cacheConfigValues();
+        applyVerboseWalkerLogging(config.verboseWalkerLogging());
+        SplitFlagMap map = SplitFlagMap.fromResources();
+        staticCollisionData = map;
+        Map<WorldPoint, Set<Transport>> transports = Transport.loadAllFromResources();
+
+        List<Restriction> restrictions = Restriction.loadAllFromResources();
+        pathfinderConfig = new PathfinderConfig(map, transports, restrictions, client, config);
+
+        panel = injector.getInstance(ShortestPathPanel.class);
+        pohPanel = new PohPanel(config);
+        final BufferedImage icon = ImageUtil.loadImageResource(ShortestPathPlugin.class, "panel_icon.png");
+        navButton = NavigationButton.builder()
+                .tooltip("Web Walker")
+                .icon(icon)
+                .priority(8)
+                .panel(panel)
+                .build();
+        clientToolbar.addNavigation(navButton);
+
+        final BufferedImage pohIcon = ImageUtil.loadImageResource(ShortestPathPlugin.class, "poh_icon.png");
+        pohNavButton = NavigationButton.builder()
+                .tooltip("Poh Web Config")
+                .icon(pohIcon)
+                .priority(9)
+                .panel(pohPanel)
+                .build();
+        clientToolbar.addNavigation(pohNavButton);
+
+        Rs2Walker.setConfig(config);
+        shortestPathScript = new ShortestPathScript();
+        shortestPathScript.run(config);
+
+        overlayManager.add(pathOverlay);
+        overlayManager.add(pathMinimapOverlay);
+        overlayManager.add(pathMapOverlay);
+        overlayManager.add(pathMapTooltipOverlay);
+        if (config.showETA()) {
+            overlayManager.add(etaOverlayPanel);
+        }
+
+        if (config.drawDebugPanel()) {
+            overlayManager.add(debugOverlayPanel);
+        }
+        keyManager.registerKeyListener(this);
+        keyManager.registerKeyListener(customLocationHotkeyListener);
+        keyManager.registerKeyListener(bankHotkeyListener);
+        keyManager.registerKeyListener(nearestBankHotkeyListener);
+        keyManager.registerKeyListener(depositBoxHotkeyListener);
+        keyManager.registerKeyListener(nearestDepositBoxHotkeyListener);
+        keyManager.registerKeyListener(slayerMasterHotkeyListener);
+        keyManager.registerKeyListener(questHotkeyListener);
+        keyManager.registerKeyListener(clueHotkeyListener);
+        keyManager.registerKeyListener(farmingHotkeyListener);
+        keyManager.registerKeyListener(hunterHotkeyListener);
+    }
+
+    @Override
+    protected void shutDown() {
+        // Unregister hotkey listeners first so any in-flight keystroke can't
+        // dereference panel/shortestPathScript after we null/tear them down.
+        keyManager.unregisterKeyListener(hunterHotkeyListener);
+        keyManager.unregisterKeyListener(farmingHotkeyListener);
+        keyManager.unregisterKeyListener(clueHotkeyListener);
+        keyManager.unregisterKeyListener(questHotkeyListener);
+        keyManager.unregisterKeyListener(slayerMasterHotkeyListener);
+        keyManager.unregisterKeyListener(nearestDepositBoxHotkeyListener);
+        keyManager.unregisterKeyListener(depositBoxHotkeyListener);
+        keyManager.unregisterKeyListener(nearestBankHotkeyListener);
+        keyManager.unregisterKeyListener(bankHotkeyListener);
+        keyManager.unregisterKeyListener(customLocationHotkeyListener);
+        keyManager.unregisterKeyListener(this);
+
+        // Flush any live-collision the last capture learned and stop the I/O thread.
+        if (liveCollisionPersistence != null) {
+            if (pathfinderConfig != null) {
+                liveCollisionPersistence.persist(pathfinderConfig.getLiveCollisionOverlay().drainDirty());
+            }
+            liveCollisionPersistence.shutdown();
+            liveCollisionPersistence = null;
+        }
+
+        overlayManager.remove(pathOverlay);
+        overlayManager.remove(pathMinimapOverlay);
+        overlayManager.remove(pathMapOverlay);
+        overlayManager.remove(pathMapTooltipOverlay);
+        overlayManager.remove(debugOverlayPanel);
+        clientToolbar.removeNavigation(navButton);
+        clientToolbar.removeNavigation(pohNavButton);
+        navButton = null;
+        pohNavButton = null;
+        if (panel != null) {
+            panel.disposeTimers();
+        }
+        panel = null;
+        PohPanel.instance = null;
+        pohPanel = null;
+
+        shortestPathScript.shutdown();
+
+        exit();
+    }
+
+    //Method from projectx
+    public static void exit() {
+        if (pathfindingExecutor != null) {
+            Rs2Walker.clearWalkingRoute("shortest-path-plugin:exit");
+            pathfindingExecutor.shutdownNow();
+            pathfindingExecutor = null;
+        }
+    }
+
+    public void restartPathfinding(WorldPoint start, Set<WorldPoint> ends, boolean canReviveFiltered) {
+        ExecutorService executor;
+        synchronized (pathfinderMutex) {
+            if (pathfinder != null) {
+                pathfinder.cancel();
+                pathfinderFuture.cancel(true);
+            }
+
+            if ((executor = pathfindingExecutor) == null) {
+                ThreadFactory shortestPathNaming = new ThreadFactoryBuilder().setNameFormat("shortest-path-%d").build();
+                executor = Executors.newSingleThreadExecutor(shortestPathNaming);
+                pathfindingExecutor = executor;
+            }
+        }
+
+        final ExecutorService finalExecutor = executor;
+        final long scheduleTime = System.currentTimeMillis();
+        getClientThread().invokeLater(() -> {
+            long invokeLaterDelay = System.currentTimeMillis() - scheduleTime;
+            long refreshStart = System.currentTimeMillis();
+            pathfinderConfig.refresh();
+            long refreshTime = System.currentTimeMillis() - refreshStart;
+            pathfinderConfig.filterLocations(ends, canReviveFiltered);
+            synchronized (pathfinderMutex) {
+                if (ends.isEmpty()) {
+                    setTarget(null);
+                } else {
+                    pathfinder = new Pathfinder(pathfinderConfig, start, ends);
+                    pathfinderFuture = finalExecutor.submit(pathfinder);
+                }
+            }
+            log.info("[ShortestPath] restartPathfinding: invokeLater delay={}ms, config.refresh={}ms",
+                    invokeLaterDelay, refreshTime);
+        });
+    }
+
+    public void restartPathfinding(WorldPoint start, Set<WorldPoint> ends) {
+        restartPathfinding(start, ends, true);
+    }
+
+    public void restartPathfinding(WorldPoint start, WorldPoint end) {
+        restartPathfinding(start, Set.of(end), true);
+    }
+
+    public boolean isNearPath(WorldPoint location) {
+        if (pathfinder == null || !pathfinder.isDone() || pathfinder.getPath() == null || pathfinder.getPath().isEmpty() ||
+                config.recalculateDistance() < 0 || lastLocation.equals(lastLocation = location)) {
+            return true;
+        }
+
+        var reachableTiles = Rs2Tile.getReachableTilesFromTile(location, config.recalculateDistance() - 1);
+        for (WorldPoint point : pathfinder.getPath()) {
+            if (reachableTiles.containsKey(point)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static final Set<String> PATH_REFRESH_CONFIG_KEYS = Set.of(
+            "avoidWilderness",
+            "distanceBeforeUsingTeleports",
+            "recalculateDistance",
+            "finishDistance",
+            "calculationCutoff",
+            "walkWithBankedTransports",
+            "minBankRouteSavings",
+            "bankTripWhenCacheUnavailable",
+            "preferTransportToTarget",
+            "maxSimilarTransportDistance"
+    );
+    private static final String RELOAD_TRANSPORT_DEFINITIONS_KEY = "reloadTransportDefinitions";
+    private static final String RESET_LEARNED_COLLISION_KEY = "resetLearnedCollision";
+
+    /**
+     * Logger packages the "Verbose console logging" debug toggle controls. Setting them to DEBUG at
+     * runtime surfaces the walker's debug detail (walkerDiag, partial_seg, interim continuation clicks,
+     * pathfinder diagnostics) in the console without restarting the client with a debug logback config.
+     * Console only: GameChatAppender's chat mirror has its own WARN threshold and is unaffected.
+     */
+    private static final String[] VERBOSE_WALKER_LOGGER_PACKAGES = {
+            "net.runelite.client.plugins.projectx.util.walker",
+            "net.runelite.client.plugins.projectx.shortestpath"
+    };
+
+    private static void applyVerboseWalkerLogging(boolean verbose) {
+        for (String pkg : VERBOSE_WALKER_LOGGER_PACKAGES) {
+            ch.qos.logback.classic.Logger logger =
+                    (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(pkg);
+            // null = inherit the parent level (normal INFO); DEBUG opts the subtree in.
+            logger.setLevel(verbose ? ch.qos.logback.classic.Level.DEBUG : null);
+        }
+        log.info("[ShortestPath] verbose walker console logging {}", verbose ? "enabled" : "disabled");
+    }
+    private final Pattern TRANSPORT_OPTIONS_REGEX = Pattern.compile("^use\\w+$");
+
+    @Subscribe
+    public void onConfigChanged(ConfigChanged event) {
+        if (!CONFIG_GROUP.equals(event.getGroup())) {
+            return;
+        }
+
+        cacheConfigValues();
+
+		// Reset config in Rs2Walker when changed
+		Rs2Walker.setConfig(config);
+
+        if ("verboseWalkerLogging".equals(event.getKey())) {
+            applyVerboseWalkerLogging(config.verboseWalkerLogging());
+            return;
+        }
+
+        if ("drawDebugPanel".equals(event.getKey())) {
+            if (config.drawDebugPanel()) {
+                overlayManager.add(debugOverlayPanel);
+            } else {
+                overlayManager.remove(debugOverlayPanel);
+            }
+            return;
+        }
+
+        if ("showETA".equals(event.getKey())) {
+            if (config.showETA()) {
+                overlayManager.add(etaOverlayPanel);
+            } else {
+                overlayManager.remove(etaOverlayPanel);
+            }
+            return;
+        }
+
+        // One-shot developer action: wipe everything the live overlay has learned (memory + disk).
+        if (RESET_LEARNED_COLLISION_KEY.equals(event.getKey()) && Boolean.parseBoolean(event.getNewValue())) {
+            resetLearnedCollision();
+            if (pathfinder != null) {
+                restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+            }
+            configManager.setConfiguration(CONFIG_GROUP, RESET_LEARNED_COLLISION_KEY, false);
+            return;
+        }
+
+        boolean reloadRequested = RELOAD_TRANSPORT_DEFINITIONS_KEY.equals(event.getKey())
+                && Boolean.parseBoolean(event.getNewValue());
+        if (reloadRequested && pathfinderConfig != null) {
+            int reloadedOrigins = pathfinderConfig.reloadTransportDefinitionsFromResources();
+            log.info("[ShortestPath] Reloaded transport TSV definitions from resources (origins={})", reloadedOrigins);
+        }
+
+        // Transport/path option changed; rerun pathfinding so PathfinderConfig.refresh() rehydrates snapshots.
+        if (reloadRequested
+                || TRANSPORT_OPTIONS_REGEX.matcher(event.getKey()).matches()
+                || PATH_REFRESH_CONFIG_KEYS.contains(event.getKey())) {
+            if (pathfinderConfig != null) {
+                pathfinderConfig.invalidateTransportRefreshCache();
+            }
+            if (pathfinder != null) {
+                restartPathfinding(pathfinder.getStart(), pathfinder.getTargets());
+            }
+        }
+
+        // One-shot developer toggle: switch itself back off after handling.
+        if (reloadRequested) {
+            configManager.setConfiguration(CONFIG_GROUP, RELOAD_TRANSPORT_DEFINITIONS_KEY, false);
+        }
+    }
+
+	@Subscribe
+	public void onPluginMessage(PluginMessage event) {
+		if (!CONFIG_GROUP.equals(event.getNamespace())) {
+			return;
+		}
+
+		String action = event.getName();
+		if (PLUGIN_MESSAGE_PATH.equals(action)) {
+			Map<String, Object> data = event.getData();
+			Object objStart = data.getOrDefault(PLUGIN_MESSAGE_START, null);
+			Object objTarget = data.getOrDefault(PLUGIN_MESSAGE_TARGET, null);
+			Object objConfigOverride = data.getOrDefault(PLUGIN_MESSAGE_CONFIG_OVERRIDE, null);
+
+			@SuppressWarnings("unchecked")
+			Map<String, Object> configOverride = (objConfigOverride instanceof Map<?,?>) ? ((Map<String, Object>) objConfigOverride) : null;
+			if (configOverride != null && !configOverride.isEmpty()) {
+				ShortestPathPlugin.configOverride.clear();
+				for (String key : configOverride.keySet()) {
+                    ShortestPathPlugin.configOverride.put(key, configOverride.get(key));
+				}
+				cacheConfigValues();
+			}
+
+			if (objStart == null && objTarget == null) {
+				return;
+			}
+
+			WorldPoint start = (objStart instanceof WorldPoint) ? (WorldPoint) objStart
+				: ((objStart instanceof Integer) ? WorldPointUtil.unpackWorldPoint((int) objStart) : new WorldPoint(WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED));
+
+			if (start.equals(new WorldPoint(WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED))) {
+				if (client.getLocalPlayer() == null) {
+					return;
+				}
+				start = client.getLocalPlayer().getWorldLocation();
+			}
+
+			Set<WorldPoint> targets = new HashSet<>();
+			if (objTarget instanceof Integer) {
+				int packedPoint = (Integer) objTarget;
+				if (packedPoint == WorldPointUtil.UNDEFINED) {
+					return;
+				}
+				targets.add(WorldPointUtil.unpackWorldPoint(packedPoint));
+			} else if (objTarget instanceof WorldPoint) {
+				WorldPoint point = (WorldPoint) objTarget;
+				if (point.equals(new WorldPoint(WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED))) {
+					return;
+				}
+				targets.add(point);
+			} else if (objTarget instanceof Set<?>) {
+				@SuppressWarnings("unchecked")
+				Set<Object> objTargets = (Set<Object>) objTarget;
+				for (Object obj : objTargets) {
+					WorldPoint point = new WorldPoint(WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED);
+					if (obj instanceof Integer) {
+						point = WorldPointUtil.unpackWorldPoint((Integer) obj);
+					} else if (obj instanceof WorldPoint) {
+						point = (WorldPoint) obj;
+					}
+					if (point.equals(new WorldPoint(WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED, WorldPointUtil.UNDEFINED))) {
+						return;
+					}
+					targets.add(point);
+				}
+			}
+
+			boolean useOld = targets.isEmpty() && pathfinder != null;
+			restartPathfinding(start, useOld ? pathfinder.getTargets() : targets, useOld);
+		} else if (PLUGIN_MESSAGE_CLEAR.equals(action)) {
+			ShortestPathPlugin.configOverride.clear();
+			cacheConfigValues();
+			setTarget(null);
+		}
+	}
+
+	private void cacheConfigValues() {
+		drawCollisionMap = override("drawCollisionMap", config.drawCollisionMap());
+		drawMap = override("drawMap", config.drawMap());
+		drawMinimap = override("drawMinimap", config.drawMinimap());
+		drawTiles = override("drawTiles", config.drawTiles());
+		drawTransports = override("drawTransports", config.drawTransports());
+		showTransportInfo = override("showTransportInfo", config.showTransportInfo());
+
+		colourCollisionMap = override("colourCollisionMap", config.colourCollisionMap());
+		colourPath = override("colourPath", config.colourPath());
+		colourPathCalculating = override("colourPathCalculating", config.colourPathCalculating());
+		colourText = override("colourText", config.colourText());
+		colourTransports = override("colourTransports", config.colourTransports());
+
+		tileCounterStep = override("tileCounterStep", config.tileCounterStep());
+
+		showTileCounter = override("showTileCounter", config.showTileCounter());
+		pathStyle = override("pathStyle", config.pathStyle());
+	}
+
+    @Subscribe
+    public void onMenuOpened(MenuOpened event) {
+        lastMenuOpenedPoint = client.getMouseCanvasPosition();
+    }
+
+    @Subscribe
+    public void onGameStateChanged(GameStateChanged event) {
+        if (event.getGameState() == GameState.LOGGED_IN) {
+            pendingLoginRefresh = true;
+        }
+    }
+
+    void handlePendingLoginRefresh() {
+        if (pendingLoginRefresh && pathfinderConfig != null) {
+            try {
+                pathfinderConfig.refresh();
+                pendingLoginRefresh = false;
+            } catch (Exception e) {
+                log.warn("[ShortestPath] post-login refresh failed", e);
+            }
+        }
+    }
+
+    // Scene base of the last live-collision capture, so the snapshot is only rebuilt when the scene
+    // actually reloads rather than every tick (avoids the per-tick allocation the design warns against).
+    private int lastLiveCaptureBaseX = Integer.MIN_VALUE;
+    private int lastLiveCaptureBaseY = Integer.MIN_VALUE;
+    // Static-vs-live conflict telemetry (log-only): the shipped map, kept for comparing each fresh
+    // capture, and a rate limit so frequent recaptures (every object spawn) log at most occasionally.
+    private SplitFlagMap staticCollisionData;
+    private long lastCollisionConflictLogAtMs;
+    private static final long COLLISION_CONFLICT_LOG_INTERVAL_MS = 30_000L;
+    // Set by object spawn/despawn events so a mid-scene change (door, temp object) triggers one recapture
+    // on the next tick. Debounced to at most one rebuild per tick regardless of how many objects changed.
+    private volatile boolean liveCollisionDirty = false;
+    // Kept set until the active route has actually been checked against the newest successful capture.
+    // This is intentionally separate from capture dirtiness: cooldown/pathfinder gates defer validation
+    // without losing it.
+    private boolean liveRouteValidationPending = false;
+    // Cooldown so a run of live changes cannot spam route recalculation.
+    private long lastLiveRecalcMs = 0L;
+    private static final long LIVE_RECALC_COOLDOWN_MS = 3000L;
+    // Only the next few tiles of the route matter — far-ahead changes are re-checked as the player nears
+    // them, and may clear before then.
+    private static final int LIVE_RECALC_LOOKAHEAD = 15;
+    // Disk backing for the accumulated live-collision store. Created when the flag is enabled (needs the
+    // client's cache revision as the invalidation key) and torn down when it is disabled or the plugin stops.
+    private LiveCollisionPersistence liveCollisionPersistence = null;
+
+    /** Flags the live-collision snapshot for rebuild. Cheap (a volatile write); fired from object events. */
+    private void markLiveCollisionDirty() {
+        liveCollisionDirty = true;
+    }
+
+    /**
+     * Wipes everything the live overlay has learned — the in-memory accumulation and the on-disk store for
+     * every cache revision — then forces an immediate recapture so, while the flag is still on, the store
+     * refills from scratch. The developer escape hatch for a bad capture that has corrupted routing.
+     */
+    /**
+     * Static-vs-live conflict telemetry: one throttled summary per capture window quantifying how much
+     * the live scene disagrees with the shipped map. Log-only — feeds the persistent-live-store
+     * decision with magnitudes instead of anecdotes. Runs off the fresh immutable snapshot, never on
+     * the pathfinder hot path.
+     */
+    private void logLiveStaticConflicts(LiveCollisionSnapshot snapshot) {
+        if (staticCollisionData == null) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (now - lastCollisionConflictLogAtMs < COLLISION_CONFLICT_LOG_INTERVAL_MS) {
+            return;
+        }
+        LiveCollisionConflicts.Tally tally = LiveCollisionConflicts.tally(snapshot, staticCollisionData);
+        if (tally.isEmpty() && tally.liveOpensSealed == 0) {
+            return;
+        }
+        lastCollisionConflictLogAtMs = now;
+        WebWalkLog.spInfo("collision_conflict | liveOpensStatic={} liveBlocksStatic={} sealedOpens={} base={},{} — live scene disagrees with the shipped map",
+                tally.liveOpensStatic, tally.liveBlocksStatic, tally.liveOpensSealed,
+                snapshot.getBaseX(), snapshot.getBaseY());
+    }
+
+    private void resetLearnedCollision() {
+        if (pathfinderConfig != null) {
+            pathfinderConfig.getLiveCollisionOverlay().clear();
+        }
+        if (liveCollisionPersistence != null) {
+            liveCollisionPersistence.deleteAllAsync();
+        } else if (client != null) {
+            // Flag is off, so no active store — delete the on-disk tree via a transient handle.
+            final LiveCollisionPersistence tmpStore = new LiveCollisionPersistence(client.getRevision());
+            tmpStore.deleteAllNow();
+            tmpStore.shutdown();
+        }
+        lastLiveCaptureBaseX = Integer.MIN_VALUE;
+        lastLiveCaptureBaseY = Integer.MIN_VALUE;
+        liveCollisionDirty = true;
+        liveRouteValidationPending = false;
+        log.info("[ShortestPath] Live collision store reset (in-memory + disk)");
+    }
+
+    @Subscribe
+    public void onGameObjectSpawned(net.runelite.api.events.GameObjectSpawned event) {
+        markLiveCollisionDirty();
+    }
+
+    @Subscribe
+    public void onGameObjectDespawned(net.runelite.api.events.GameObjectDespawned event) {
+        markLiveCollisionDirty();
+    }
+
+    @Subscribe
+    public void onWallObjectSpawned(net.runelite.api.events.WallObjectSpawned event) {
+        markLiveCollisionDirty();
+    }
+
+    @Subscribe
+    public void onWallObjectDespawned(net.runelite.api.events.WallObjectDespawned event) {
+        markLiveCollisionDirty();
+    }
+
+    /**
+     * Keeps the shared live-collision overlay in step with the config flag and the loaded scene, and
+     * proactively recalculates the walker's route when a mid-scene change has blocked the road ahead.
+     * Runs on the client thread from {@link #onGameTick}. Rebuilds the immutable snapshot only when the
+     * scene base changes (a reload) or an object changed since the last rebuild.
+     */
+    void refreshLiveCollision() {
+        if (pathfinderConfig == null) {
+            return;
+        }
+        final LiveCollisionOverlay overlay = pathfinderConfig.getLiveCollisionOverlay();
+        final boolean enabled = config.useLiveCollision();
+        if (enabled != overlay.isEnabled()) {
+            overlay.setEnabled(enabled);
+            // Invalidate both base-axis values (as resetLearnedCollision does) so the next capture is
+            // forced regardless of which axis the base-change check reads first.
+            lastLiveCaptureBaseX = Integer.MIN_VALUE; // force a capture on enable, drop snapshot on disable
+            lastLiveCaptureBaseY = Integer.MIN_VALUE;
+            liveCollisionDirty = enabled;
+            liveRouteValidationPending = false;
+            if (enabled) {
+                // Seed the freshly enabled store with everything learned in earlier sessions for this cache
+                // revision, then let live captures accumulate on top.
+                if (liveCollisionPersistence == null) {
+                    liveCollisionPersistence = new LiveCollisionPersistence(client.getRevision());
+                }
+                liveCollisionPersistence.loadIntoAsync(overlay);
+            } else if (liveCollisionPersistence != null) {
+                liveCollisionPersistence.shutdown();
+                liveCollisionPersistence = null;
+            }
+        }
+        if (!enabled) {
+            liveCollisionDirty = false;
+            liveRouteValidationPending = false;
+            return;
+        }
+
+        final WorldView wv = client.getTopLevelWorldView();
+        if (wv == null) {
+            return;
+        }
+        final int baseX = wv.getBaseX();
+        final int baseY = wv.getBaseY();
+        final boolean baseChanged = baseX != lastLiveCaptureBaseX || baseY != lastLiveCaptureBaseY;
+        final boolean captureNeeded = baseChanged || liveCollisionDirty
+                || (overlay.current() == null && !wv.isInstance());
+        if (captureNeeded) {
+            final LiveCollisionSnapshot snapshot = LiveCollisionCapture.captureOnClientThread();
+            if (snapshot == null) {
+                // Do NOT clear: the overlay now accumulates every scene it has seen, so entering an
+                // instance or a transient loading gap must not discard already-learned regions. The static
+                // map is used for the instance simply because no accumulated region covers its coordinates.
+                if (wv.isInstance()) {
+                    // Instances intentionally use static collision. Latch this scene so we do not retry
+                    // every tick; leaving it changes the base or produces a non-instance capture request.
+                    lastLiveCaptureBaseX = baseX;
+                    lastLiveCaptureBaseY = baseY;
+                    liveCollisionDirty = false;
+                    liveRouteValidationPending = false;
+                } else {
+                    // Collision data can be briefly unavailable during loading. Keep the capture pending
+                    // and do not claim this scene base was successfully captured.
+                    liveCollisionDirty = true;
+                }
+                return;
+            }
+
+            overlay.set(snapshot);
+            logLiveStaticConflicts(snapshot);
+            // Persist the regions this capture just changed so the learned collision survives a restart.
+            if (liveCollisionPersistence != null) {
+                liveCollisionPersistence.persist(overlay.drainDirty());
+            }
+            lastLiveCaptureBaseX = baseX;
+            lastLiveCaptureBaseY = baseY;
+            liveCollisionDirty = false;
+            // The newly trusted interior can invalidate a route which was calculated while those tiles
+            // were outside the old scene, so recenter captures need the same validation as object changes.
+            liveRouteValidationPending = true;
+        }
+
+        if (liveRouteValidationPending && validateRouteAgainstLiveCollision(overlay)) {
+            liveRouteValidationPending = false;
+        }
+    }
+
+    /**
+     * If the walker is mid-route and live collision now blocks a walking step within the look-ahead,
+     * restart pathfinding so it routes around before stalling into the block. Cooldown-gated. Openable
+     * doors and transports are skipped by {@link LiveRouteValidator} (door edges are unknown in the
+     * overlay, transport jumps are non-adjacent), so this does not fight the runtime door handler.
+     */
+    private boolean validateRouteAgainstLiveCollision(LiveCollisionOverlay overlay) {
+        if (overlay.current() == null || Rs2Walker.getCurrentTarget() == null) {
+            return true;
+        }
+        final long now = System.currentTimeMillis();
+        if (now - lastLiveRecalcMs < LIVE_RECALC_COOLDOWN_MS) {
+            return false;
+        }
+        final Pathfinder pf = ShortestPathPlugin.pathfinder;
+        if (pf == null || !pf.isDone()) {
+            return false;
+        }
+        final List<WorldPoint> path = pf.getPath();
+        if (path == null || path.size() < 2) {
+            return true;
+        }
+        final WorldPoint me = Rs2Player.getWorldLocation();
+        if (me == null) {
+            return false;
+        }
+
+        final CollisionMap map = pathfinderConfig.getMap();
+        map.beginSearch(); // pin the freshly captured snapshot for this validation
+        final int from = LiveRouteValidator.nearestIndex(path, me);
+        final int blocked = LiveRouteValidator.firstBlockedStep(path, from, LIVE_RECALC_LOOKAHEAD, map);
+        if (blocked >= 0) {
+            lastLiveRecalcMs = now;
+            log.debug("[LiveCollision] route step {} -> {} now blocked; recalculating",
+                    path.get(blocked), path.get(blocked + 1));
+            Rs2Walker.recalculatePath();
+        }
+        return true;
+    }
+
+    @Subscribe
+    public void onGameTick(GameTick tick) {
+        handlePendingLoginRefresh();
+        refreshLiveCollision();
+
+        if (Rs2Walker.getCurrentTarget() != null) {
+            return;
+        }
+
+        final WorldPoint myLoc = Rs2Player.getWorldLocation();
+        final Pathfinder pathfinder = ShortestPathPlugin.pathfinder;
+        if (myLoc == null || pathfinder == null || !pathfinder.isDone()) {
+            return;
+        }
+
+        final List<WorldPoint> path = pathfinder.getPath();
+        if (path == null) return;
+
+        for (WorldPoint target : pathfinder.getTargets()) {
+            if (myLoc.distanceTo(target) < reachedDistance
+                    && Rs2Tile.getReachableTilesFromTile(myLoc, reachedDistance).containsKey(path.get(path.size() - 1))) {
+                setTarget(null);
+                if (ProjectX.getClientThread().scheduledFuture != null) {
+                    ProjectX.getClientThread().scheduledFuture.cancel(true);
+                }
+            }
+        }
+    }
+
+    @Subscribe
+    public void onMenuEntryAdded(MenuEntryAdded event) {
+        if (client.isKeyPressed(KeyCode.KC_SHIFT)
+                && event.getType() == MenuAction.WALK.getId()) {
+            addMenuEntry(event, SET, TARGET, 1);
+            if (pathfinder != null) {
+                if (!pathfinder.getTargets().isEmpty()) {
+                    addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
+                            (pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 1);
+                }
+                for (WorldPoint target : pathfinder.getTargets()) {
+                    if (target != null) {
+                        addMenuEntry(event, SET, START, 1);
+                        break;
+                    }
+                }
+                WorldPoint selectedTile = getSelectedWorldPoint();
+                if (pathfinder.isDone() && pathfinder.getPath() != null) {
+                    for (WorldPoint tile : pathfinder.getPath()) {
+                        if (tile.equals(selectedTile)) {
+                            addMenuEntry(event, CLEAR, PATH, 1);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        final Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
+
+        if (map != null
+                && map.getBounds().contains(
+                client.getMouseCanvasPosition().getX(),
+                client.getMouseCanvasPosition().getY())) {
+            addMenuEntry(event, SET, TARGET, 0);
+            if (ProjectX.isDebug()) {
+                addMenuEntry(event, SET, TEST, 0);
+            }
+            final Pathfinder pathfinder = ShortestPathPlugin.pathfinder;
+            if (pathfinder != null) {
+                if (!pathfinder.getTargets().isEmpty()) {
+                    addMenuEntry(event, SET, TARGET + ColorUtil.wrapWithColorTag(" " +
+                            (pathfinder.getTargets().size() + 1), JagexColors.MENU_TARGET), 0);
+                }
+                for (WorldPoint target : pathfinder.getTargets()) {
+                    if (target != null) {
+                        addMenuEntry(event, SET, START, 0);
+                        addMenuEntry(event, CLEAR, PATH, 0);
+                    }
+                }
+            }
+        }
+
+        final Shape minimap = getMinimapClipArea();
+
+        if (minimap != null && pathfinder != null
+                && minimap.contains(
+                client.getMouseCanvasPosition().getX(),
+                client.getMouseCanvasPosition().getY())) {
+            addMenuEntry(event, CLEAR, PATH, 0);
+        }
+
+        if (minimap != null && pathfinder != null
+                && ("Floating World Map".equals(Text.removeTags(event.getOption()))
+                || "Close Floating panel".equals(Text.removeTags(event.getOption())))) {
+            addMenuEntry(event, CLEAR, PATH, 1);
+        }
+    }
+
+    public static Map<WorldPoint, Set<Transport>> getTransports() {
+        return pathfinderConfig.getTransports();
+    }
+
+    public CollisionMap getMap() {
+        return pathfinderConfig.getMap();
+    }
+
+	public static boolean override(String configOverrideKey, boolean defaultValue) {
+		if (!configOverride.isEmpty()) {
+			Object value = configOverride.get(configOverrideKey);
+			if (value instanceof Boolean) {
+				return (boolean) value;
+			}
+		}
+		return defaultValue;
+	}
+
+	private Color override(String configOverrideKey, Color defaultValue) {
+		if (!configOverride.isEmpty()) {
+			Object value = configOverride.get(configOverrideKey);
+			if (value instanceof Color) {
+				return (Color) value;
+			}
+		}
+		return defaultValue;
+	}
+
+	public static int override(String configOverrideKey, int defaultValue) {
+		if (!configOverride.isEmpty()) {
+			Object value = configOverride.get(configOverrideKey);
+			if (value instanceof Integer) {
+				return (int) value;
+			}
+		}
+		return defaultValue;
+	}
+
+	public static TeleportationItem override(String configOverrideKey, TeleportationItem defaultValue) {
+		if (!configOverride.isEmpty()) {
+			Object value = configOverride.get(configOverrideKey);
+			if (value instanceof String) {
+				TeleportationItem teleportationItem = TeleportationItem.fromType((String) value);
+				if (teleportationItem != null) {
+					return teleportationItem;
+				}
+			}
+		}
+		return defaultValue;
+	}
+
+	private TileCounter override(String configOverrideKey, TileCounter defaultValue) {
+		if (!configOverride.isEmpty()) {
+			Object value = configOverride.get(configOverrideKey);
+			if (value instanceof String) {
+				TileCounter tileCounter = TileCounter.fromType((String) value);
+				if (tileCounter != null) {
+					return tileCounter;
+				}
+			}
+		}
+		return defaultValue;
+	}
+
+	private TileStyle override(String configOverrideKey, TileStyle defaultValue) {
+		if (!configOverride.isEmpty()) {
+			Object value = configOverride.get(configOverrideKey);
+			if (value instanceof String) {
+				TileStyle tileStyle = TileStyle.fromType((String) value);
+				if (tileStyle != null) {
+					return tileStyle;
+				}
+			}
+		}
+		return defaultValue;
+	}
+
+    private void onMenuOptionClicked(MenuEntry entry) {
+        if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET)) {
+            WorldPoint worldPoint = getSelectedWorldPoint();
+            shortestPathScript.setTriggerWalker(worldPoint);
+        }
+        if (entry.getOption().equals(SET) && entry.getTarget().equals(TEST)) {
+            //For debugging you can use setTarget, it will calculate path without walking
+            WorldPoint worldPoint = getSelectedWorldPoint();
+            setTarget(worldPoint);
+        }
+
+        if (entry.getOption().equals(SET) && entry.getTarget().equals(START)) {
+            setStart(getSelectedWorldPoint());
+        }
+
+        if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH)) {
+			shortestPathScript.setTriggerWalker(null);
+        }
+    }
+
+    private WorldPoint getSelectedWorldPoint() {
+        if (client.getWidget(ComponentID.WORLD_MAP_MAPVIEW) == null) {
+            if (client.getSelectedSceneTile() != null) {
+                return client.isInInstancedRegion()
+                        ? WorldPoint.fromLocalInstance(client, client.getSelectedSceneTile().getLocalLocation())
+                        : client.getSelectedSceneTile().getWorldLocation();
+            }
+        } else {
+            WorldPoint mapPoint = calculateMapPoint(client.isMenuOpen() ? lastMenuOpenedPoint : client.getMouseCanvasPosition());
+            if (mapPoint != null) {
+                WorldMapData worldMapData = client.getWorldMap().getWorldMapData();
+                if (worldMapData != null && !worldMapData.surfaceContainsPosition(mapPoint.getX(), mapPoint.getY())) {
+                    log.warn("[ShortestPath] World map target {} is a dungeon display coordinate (not on surface map). " +
+                            "The actual game tiles may be at different coordinates. " +
+                            "For accurate dungeon navigation, close the world map and right-click a tile in the game view instead.",
+                            mapPoint);
+                    return null;
+                }
+            }
+            return mapPoint;
+        }
+        return null;
+    }
+
+    public void setTarget(WorldPoint target) {
+        setTarget(target, false);
+    }
+
+    private void setTarget(WorldPoint target, boolean append) {
+        Set<WorldPoint> targets = new HashSet<>();
+        if (target != null) {
+            targets.add(target);
+        }
+        setTargets(targets, append);
+    }
+
+    private void setTargets(Set<WorldPoint> targets, boolean append) {
+        if (targets == null || targets.isEmpty()) {
+            synchronized (pathfinderMutex) {
+                if (pathfinder != null) {
+                    pathfinder.cancel();
+                }
+                pathfinder = null;
+            }
+
+            worldMapPointManager.removeIf(x -> x == marker);
+            marker = null;
+            startPointSet = false;
+        } else {
+            Player localPlayer = client.getLocalPlayer();
+            if (!startPointSet && localPlayer == null) {
+                return;
+            }
+            worldMapPointManager.removeIf(x -> x == marker);
+            if (targets.size() == 1) {
+                marker = new WorldMapPoint(targets.iterator().next(), MARKER_IMAGE);
+                marker.setName("Target");
+                marker.setTarget(marker.getWorldPoint());
+                marker.setJumpOnClick(true);
+                worldMapPointManager.add(marker);
+            }
+
+            final Pathfinder pathfinder = ShortestPathPlugin.pathfinder;
+            final WorldPoint start;
+            if (startPointSet && pathfinder != null) {
+                start = pathfinder.getStart();
+                lastLocation = WorldPoint.fromLocalInstance(client, localPlayer.getLocalLocation());
+            } else {
+                WorldPoint rawStart = WorldPoint.fromLocalInstance(client, localPlayer.getLocalLocation());
+                // When the player is inside a POH instance, the raw instance-template tile
+                // (e.g. (1941,7052,3)) doesn't match any registered POH transport origin — the
+                // POH transports are keyed to PohPanel.instance.tilePanel.getTile() (the exit
+                // portal). Without this remap the pathfinder never considers any POH teleport
+                // and the walker tight-loops on null LocalPoint canvas-walks.
+                //
+                // We gate on "in an instance AND the POH panel has an exit-portal tile
+                // configured". PohTeleports.isInHouse() is too strict — it additionally
+                // requires POH_EXIT_PORTAL to be currently loaded in the scene, which fails
+                // on larger houses where the portal is out of render range.
+                WorldPoint exitPortal = PohPanel.getExitPortalTile();
+                boolean inInstance = client.getTopLevelWorldView().getScene().isInstance();
+                if (exitPortal != null && inInstance) {
+                    ProjectX.log("[ShortestPath] In POH instance — remapping pathfinder start "
+                            + rawStart + " -> exit portal " + exitPortal);
+                    start = exitPortal;
+                } else {
+                    start = rawStart;
+                }
+                lastLocation = start;
+            }
+            final Set<WorldPoint> destinations = new HashSet<>(targets);
+            if (pathfinder != null && append) {
+                destinations.addAll(pathfinder.getTargets());
+            }
+            restartPathfinding(start, destinations, append);
+        }
+    }
+
+    private void setStart(WorldPoint start) {
+        if (pathfinder == null) {
+            return;
+        }
+        startPointSet = true;
+        restartPathfinding(start, pathfinder.getTargets());
+    }
+
+    public WorldPoint calculateMapPoint(Point point) {
+        WorldMap worldMap = client.getWorldMap();
+        float zoom = worldMap.getWorldMapZoom();
+        final WorldPoint mapPoint = new WorldPoint(worldMap.getWorldMapPosition().getX(), worldMap.getWorldMapPosition().getY(), 0);
+        final Point middle = mapWorldPointToGraphicsPoint(mapPoint);
+
+        if (point == null || middle == null) {
+            return null;
+        }
+
+        final int dx = (int) ((point.getX() - middle.getX()) / zoom);
+        final int dy = (int) ((-(point.getY() - middle.getY())) / zoom);
+
+        return mapPoint.dx(dx).dy(dy);
+    }
+
+    public Point mapWorldPointToGraphicsPoint(WorldPoint worldPoint) {
+        WorldMap worldMap = client.getWorldMap();
+
+        float pixelsPerTile = worldMap.getWorldMapZoom();
+
+        Widget map = client.getWidget(ComponentID.WORLD_MAP_MAPVIEW);
+        if (map != null) {
+            Rectangle worldMapRect = map.getBounds();
+
+            int widthInTiles = (int) Math.ceil(worldMapRect.getWidth() / pixelsPerTile);
+            int heightInTiles = (int) Math.ceil(worldMapRect.getHeight() / pixelsPerTile);
+
+            Point worldMapPosition = worldMap.getWorldMapPosition();
+
+            int yTileMax = worldMapPosition.getY() - heightInTiles / 2;
+            int yTileOffset = (yTileMax - worldPoint.getY() - 1) * -1;
+            int xTileOffset = worldPoint.getX() + widthInTiles / 2 - worldMapPosition.getX();
+
+            int xGraphDiff = ((int) (xTileOffset * pixelsPerTile));
+            int yGraphDiff = (int) (yTileOffset * pixelsPerTile);
+
+            yGraphDiff -= pixelsPerTile - Math.ceil(pixelsPerTile / 2);
+            xGraphDiff += pixelsPerTile - Math.ceil(pixelsPerTile / 2);
+
+            yGraphDiff = worldMapRect.height - yGraphDiff;
+            yGraphDiff += (int) worldMapRect.getY();
+            xGraphDiff += (int) worldMapRect.getX();
+
+            return new Point(xGraphDiff, yGraphDiff);
+        }
+        return null;
+    }
+
+    private void addMenuEntry(MenuEntryAdded event, String option, String target, int position) {
+        List<MenuEntry> entries = new LinkedList<>(Arrays.asList(client.getMenuEntries()));
+
+        if (entries.stream().anyMatch(e -> e.getOption().equals(option) && e.getTarget().equals(target))) {
+            return;
+        }
+
+        client.createMenuEntry(position)
+                .setOption(option)
+                .setTarget(target)
+                .setParam0(event.getActionParam0())
+                .setParam1(event.getActionParam1())
+                .setIdentifier(event.getIdentifier())
+                .setType(MenuAction.RUNELITE)
+                .onClick(this::onMenuOptionClicked);
+    }
+
+    private Widget getMinimapDrawWidget() {
+        if (client.isResized()) {
+            if (client.getVarbitValue(Varbits.SIDE_PANELS) == 1) {
+                return client.getWidget(ComponentID.RESIZABLE_VIEWPORT_BOTTOM_LINE_MINIMAP_DRAW_AREA);
+            }
+            return client.getWidget(ComponentID.RESIZABLE_VIEWPORT_MINIMAP_DRAW_AREA);
+        }
+        return client.getWidget(ComponentID.FIXED_VIEWPORT_MINIMAP_DRAW_AREA);
+    }
+
+    private Shape getMinimapClipAreaSimple() {
+        Widget minimapDrawArea = getMinimapDrawWidget();
+
+        if (minimapDrawArea == null || minimapDrawArea.isHidden()) {
+            return null;
+        }
+
+        Rectangle bounds = minimapDrawArea.getBounds();
+
+        return new Ellipse2D.Double(bounds.getX(), bounds.getY(), bounds.getWidth(), bounds.getHeight());
+    }
+
+    public Shape getMinimapClipArea() {
+        Widget minimapWidget = getMinimapDrawWidget();
+
+        if (minimapWidget == null || minimapWidget.isHidden() || !minimapRectangle.equals(minimapRectangle = minimapWidget.getBounds())) {
+            minimapClipFixed = null;
+            minimapClipResizeable = null;
+            minimapSpriteFixed = null;
+            minimapSpriteResizeable = null;
+        }
+
+        if (minimapWidget == null || minimapWidget.isHidden()) {
+            return null;
+        }
+
+        if (client.isResized()) {
+            if (minimapClipResizeable != null) {
+                return minimapClipResizeable;
+            }
+            if (minimapSpriteResizeable == null) {
+                minimapSpriteResizeable = spriteManager.getSprite(SpriteID.RESIZEABLE_MODE_MINIMAP_ALPHA_MASK, 0);
+            }
+            if (minimapSpriteResizeable != null) {
+                minimapClipResizeable = bufferedImageToPolygon(minimapSpriteResizeable);
+                return minimapClipResizeable;
+            }
+            return getMinimapClipAreaSimple();
+        }
+        if (minimapClipFixed != null) {
+            return minimapClipFixed;
+        }
+        if (minimapSpriteFixed == null) {
+            minimapSpriteFixed = spriteManager.getSprite(SpriteID.FIXED_MODE_MINIMAP_ALPHA_MASK, 0);
+        }
+        if (minimapSpriteFixed != null) {
+            minimapClipFixed = bufferedImageToPolygon(minimapSpriteFixed);
+            return minimapClipFixed;
+        }
+        return getMinimapClipAreaSimple();
+    }
+
+    private Polygon bufferedImageToPolygon(BufferedImage image) {
+        Color outsideColour = null;
+        Color previousColour;
+        final int width = image.getWidth();
+        final int height = image.getHeight();
+        List<java.awt.Point> points = new ArrayList<>();
+        for (int y = 0; y < height; y++) {
+            previousColour = outsideColour;
+            for (int x = 0; x < width; x++) {
+                int rgb = image.getRGB(x, y);
+                int a = (rgb & 0xff000000) >>> 24;
+                int r = (rgb & 0x00ff0000) >> 16;
+                int g = (rgb & 0x0000ff00) >> 8;
+                int b = (rgb & 0x000000ff) >> 0;
+                Color colour = new Color(r, g, b, a);
+                if (x == 0 && y == 0) {
+                    outsideColour = colour;
+                    previousColour = colour;
+                }
+                if (!colour.equals(outsideColour) && previousColour.equals(outsideColour)) {
+                    points.add(new java.awt.Point(x, y));
+                }
+                if ((colour.equals(outsideColour) || x == (width - 1)) && !previousColour.equals(outsideColour)) {
+                    points.add(0, new java.awt.Point(x, y));
+                }
+                previousColour = colour;
+            }
+        }
+        int offsetX = minimapRectangle.x;
+        int offsetY = minimapRectangle.y;
+        Polygon polygon = new Polygon();
+        for (java.awt.Point point : points) {
+            polygon.addPoint(point.x + offsetX, point.y + offsetY);
+        }
+        return polygon;
+    }
+
+    private void toggleCategory(String categoryName, Function<ShortestPathPanel, WorldPoint> targetFn) {
+        // Capture panel locally so the null check is effective. Call sites
+        // pass unbound method references (ShortestPathPanel::get...) so panel
+        // is not dereferenced until after we've confirmed it's non-null.
+        ShortestPathPanel p = panel;
+        if (p == null || !ProjectX.isLoggedIn()) {
+            return;
+        }
+        WorldPoint target = targetFn.apply(p);
+        if (target == null) {
+            ProjectX.log("WebWalker: no " + categoryName + " selected in the panel.");
+            return;
+        }
+        WorldPoint current = shortestPathScript.getTriggerWalker();
+        if (target.equals(current)) {
+            p.stopWalking();
+        } else {
+            p.startWalking(target);
+        }
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        if (client == null || !ProjectX.isLoggedIn())
+        {
+            return;
+        }
+        /**
+         * We took decided to avoid "ESC" as this conflicts with the
+         * osrs keybindings and closing the world map
+         * Therefor CTRL + X seemed a bit more robust and userfriendly
+         */
+        if (e.getKeyCode() == KeyEvent.VK_X && e.isControlDown()) {
+			shortestPathScript.setTriggerWalker(null);
+            e.consume();
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+
+    }
+
+    private final HotkeyListener customLocationHotkeyListener = new HotkeyListener(() -> config.customLocationToggleHotkey()) {
+        @Override
+        public void hotkeyPressed() {
+            toggleCategory("custom location", ShortestPathPanel::getCustomLocation);
+        }
+    };
+
+    private final HotkeyListener bankHotkeyListener = new HotkeyListener(() -> config.bankToggleHotkey()) {
+        @Override
+        public void hotkeyPressed() {
+            toggleCategory("bank", ShortestPathPanel::getBankTarget);
+        }
+    };
+
+    private final HotkeyListener nearestBankHotkeyListener = new HotkeyListener(() -> config.nearestBankHotkey()) {
+        @Override
+        public void hotkeyPressed() {
+            if (panel == null || !ProjectX.isLoggedIn()) return;
+            if (shortestPathScript.getTriggerWalker() != null) {
+                panel.stopWalking();
+            } else {
+                panel.startWalkingNearestBank();
+            }
+        }
+    };
+
+    private final HotkeyListener depositBoxHotkeyListener = new HotkeyListener(() -> config.depositBoxToggleHotkey()) {
+        @Override
+        public void hotkeyPressed() {
+            toggleCategory("deposit box", ShortestPathPanel::getDepositBoxTarget);
+        }
+    };
+
+    private final HotkeyListener nearestDepositBoxHotkeyListener = new HotkeyListener(() -> config.nearestDepositBoxHotkey()) {
+        @Override
+        public void hotkeyPressed() {
+            if (panel == null || !ProjectX.isLoggedIn()) return;
+            if (shortestPathScript.getTriggerWalker() != null) {
+                panel.stopWalking();
+            } else {
+                panel.startWalkingNearestDepositBox();
+            }
+        }
+    };
+
+    private final HotkeyListener slayerMasterHotkeyListener = new HotkeyListener(() -> config.slayerMasterToggleHotkey()) {
+        @Override
+        public void hotkeyPressed() {
+            toggleCategory("slayer master", ShortestPathPanel::getSlayerMasterTarget);
+        }
+    };
+
+    private final HotkeyListener questHotkeyListener = new HotkeyListener(() -> config.questToggleHotkey()) {
+        @Override
+        public void hotkeyPressed() {
+            toggleCategory("quest location", ShortestPathPanel::getCurrentQuestLocation);
+        }
+    };
+
+    private final HotkeyListener clueHotkeyListener = new HotkeyListener(() -> config.clueToggleHotkey()) {
+        @Override
+        public void hotkeyPressed() {
+            toggleCategory("clue location", ShortestPathPanel::getCurrentClueLocation);
+        }
+    };
+
+    private final HotkeyListener farmingHotkeyListener = new HotkeyListener(() -> config.farmingToggleHotkey()) {
+        @Override
+        public void hotkeyPressed() {
+            toggleCategory("farming location", ShortestPathPanel::getSelectedFarmingLocation);
+        }
+    };
+
+    private final HotkeyListener hunterHotkeyListener = new HotkeyListener(() -> config.hunterToggleHotkey()) {
+        @Override
+        public void hotkeyPressed() {
+            toggleCategory("hunter area", ShortestPathPanel::getSelectedHuntingArea);
+        }
+    };
+}
