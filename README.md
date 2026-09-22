@@ -51,7 +51,7 @@ Build the jar your plugin compiles against with `./gradlew :client:assemble`, or
 - Runtime agent tooling: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/agentserver`
 
 ## Discord
-[![Discord Banner 1](https://discord.com/api/guilds/1521062459446657125)]([https://discord.gg/zaGrfqFEWE](https://discord.gg/UUwfkXFcub))
+[![Discord Banner 1](https://discord.com/api/guilds/1521062459446657125/widget.png?style=banner1)]([https://discord.gg/zaGrfqFEWE](https://discord.gg/UUwfkXFcub))
 
 If you have any questions, please join our [Discord]([https://discord.gg/zaGrfqFEWE](https://discord.gg/UUwfkXFcub)) server. 
 
