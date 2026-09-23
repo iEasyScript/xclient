@@ -2,7 +2,7 @@
 
 ## Download A Release
 
-Download the latest shaded release jar from https://github.com/chsami/microbot/releases.
+Download the latest shaded release jar from https://github.com/iEasyScript/xclient/releases.
 
 Nightly builds are development builds. Use a release build unless you are intentionally testing new changes.
 

@@ -1,6 +1,7 @@
 package net.runelite.client.plugins.projectx;
 
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXSite;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -15,7 +16,7 @@ import java.util.function.Consumer;
  */
 @Slf4j
 public class RandomFactClient {
-    private static final String PROJECTX_API_URL = "https://microbot.cloud/api";
+    private static final String PROJECTX_API_URL = ProjectXSite.baseUrl() + "api";
     private static final OkHttpClient client = new OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(10, TimeUnit.SECONDS)

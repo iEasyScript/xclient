@@ -57,9 +57,8 @@ If you have any questions, please join our [Discord]([https://discord.gg/zaGrfqF
 
 ## Credits and licence
 
-Project X [xclient](https://github.com/iEasyScript/xclient) by Cryptic, which is itself
-a fork of [RuneLite](https://github.com/runelite/runelite). Released under the BSD 2-Clause
-licence &mdash; see [LICENSE](LICENSE). Copyright notices of both upstream projects are retained
-throughout the source.
+Project X is built on [RuneLite](https://github.com/runelite/runelite) and released under the
+BSD 2-Clause licence &mdash; see [LICENSE](LICENSE). Copyright notices are retained throughout
+the source, as that licence requires.
 
 Not affiliated with, endorsed by, or sponsored by Jagex/Runescape Ltd.

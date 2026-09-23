@@ -31,7 +31,7 @@ Grouped by category and severity. Severity reflects **how trivially** a determin
 | S1 | Critical | `MouseEvent.setSource("ProjectX")` tagged on every synthetic mouse event — literal watermark visible to any listener on the AWT event queue. | `runelite-client/.../util/mouse/VirtualMouse.java:150,160,171,185,199,230,236,242,248,254,260` |
 | S2 | Critical | Window title is literally `ProjectX`. Any JNI-capable observer sampling `GetWindowTextW` / `_NET_WM_NAME` gets the string. | `runelite-client/src/main/resources/net/runelite/client/runelite.properties:1` |
 | S3 | Critical | Dedicated config dir `~/.projectx/` with `agent-token` file. Filesystem probe is a one-liner. | `.../projectx/agentserver/AgentServerPlugin.java:164` |
-| S4 | Critical | Outbound calls to `microbot.cloud` (version check every ~10 min, random-fact fetch). SNI visible in TLS ClientHello even under HTTPS. | `.../projectx/ProjectXApi.java:27,33`; `.../ProjectXVersionChecker.java:27,182`; `.../RandomFactClient.java:18` |
+| S4 | Critical | Outbound calls to `xclient.dev` (version check every ~10 min, random-fact fetch). SNI visible in TLS ClientHello even under HTTPS. | `.../projectx/ProjectXApi.java:27,33`; `.../ProjectXVersionChecker.java:27,182`; `.../RandomFactClient.java:18` |
 | S5 | Critical | Agent server binds `127.0.0.1:<port>` (default 8081) with projectx-specific endpoints (`/varp`, `/ground-items`, `/scripts/deploy`, etc.). Port-scan + response shape = instant ID. | `.../projectx/agentserver/AgentServerPlugin.java:87`; `AgentServerConfig.java:21-23` |
 | S6 | High | Package namespace `net.runelite.client.plugins.projectx.*` exposed via `ClassLoader.getResources`, `Class.getName`, any loaded-class enumeration. | Pervasive across `runelite-client/src/main/java/net/runelite/client/plugins/projectx/` |
 | S7 | High | `projectx.version` / `projectx.commit` baked into `runelite.properties` — trivially readable JAR resource. | `runelite-client/src/main/resources/net/runelite/client/runelite.properties:3-4` |
@@ -108,7 +108,7 @@ P1-d. **Strip the Chrome-11 `User-Agent`.** Use the default OkHttp/`HttpURLConne
 P1-e. **Strip or rename `projectx.version` / `projectx.commit`** in `runelite.properties`. Version info is useful; it does not need to be resource-discoverable by that name. Prefer a non-resource constant, or merge into an existing RuneLite property with a neutral name.
 — addresses **S7**.
 
-### Phase 2 — retire the `microbot.cloud` SNI signal
+### Phase 2 — retire the `xclient.dev` SNI signal
 
 P2-a. **Make the version-check and random-fact endpoints configurable**, with the ability to disable them. Even with SNI, user-controlled DNS avoids a fixed signature tied to the client build.
 
@@ -201,11 +201,11 @@ Status against the remediation plan in section 3. Each item links to the commit 
 | P1-d | S8 Chrome-11 User-Agent | ✅ | `chore(http): drop dead Chrome-11 User-Agent path in GlobalConfiguration` |
 | P1-e | S7 property key names | ✅ | `chore(ui,resources): neutralize window title and rename projectx.* property keys` |
 
-### Phase 2 — retire the `microbot.cloud` SNI signal ✅ complete
+### Phase 2 — retire the `xclient.dev` SNI signal ✅ complete
 
 | Item | Finding | Status | Commit |
 |---|---|---|---|
-| P2-a | S4 make calls configurable / disableable | ✅ | `feat(projectx): disableTelemetry toggle + per-install identity seed, gate microbot.cloud calls` |
+| P2-a | S4 make calls configurable / disableable | ✅ | `feat(projectx): disableTelemetry toggle + per-install identity seed, gate xclient.dev calls` |
 | P2-b | S4 drop periodic 10-min version-check heartbeat | ✅ | (same commit) |
 
 ### Phase 3 — agent server surface reduction ✅ complete

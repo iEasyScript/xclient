@@ -21,7 +21,8 @@ public class ProxyChecker {
      */
     public static String getDetectedIp(OkHttpClient okHttpClient) {
         List<String> endpoints = List.of(
-                "https://microbot.cloud/api/network/ip"
+                "https://api.ipify.org",
+                "https://icanhazip.com"
         );
 
         for (String url : endpoints) {

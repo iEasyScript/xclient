@@ -306,7 +306,7 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
             SwingUtil.removeButtonDecorations(help);
             help.setBorder(null);
             help.setToolTipText("Open help");
-            help.addActionListener(ev -> LinkBrowser.browse("https://chsami.github.io/Microbot-Hub/" + manifest.getInternalName()));
+            help.addActionListener(ev -> LinkBrowser.browse("https://ieasyscript.github.io/xclient-hub/" + manifest.getInternalName()));
 
             JButton configure = new JButton(CONFIGURE_ICON);
             SwingUtil.removeButtonDecorations(configure);

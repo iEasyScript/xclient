@@ -6,7 +6,7 @@
 - **Queryable caches**: Guice-injected caches (`Rs2NpcCache`, `Rs2PlayerCache`, `Rs2TileItemCache`, `Rs2TileObjectCache`, `Rs2BoatCache`, `Rs2PlayerStateCache`) updated per tick and accessed via `ProjectX.getRs2XxxCache().query()` or `.getStream()`. World-view aware for boats.
 - **Utilities (`projectx/util`)**: Facades over RuneLite APIs for player, inventory, banking, walking, etc.; expected to run on script threads, not the client thread.
 - **Included builds**: `runelite-api` (shared API artifacts), `runelite-gradle-plugin` (assemble/index/jarsign tasks), `cache` (cache tooling), `runelite-jshell` (JShell support). Root Gradle orchestrates via composite build.
-- **Telemetry/API**: `ProjectXApi`, `ProjectXVersionChecker`, and related clients can call `https://microbot.cloud/api`; users can disable this with `-Dprojectx.disableTelemetry=true` or the ProjectX config toggle.
+- **Telemetry/API**: `ProjectXApi`, `ProjectXVersionChecker`, and related clients can call `https://xclient.dev/api`; users can disable this with `-Dprojectx.disableTelemetry=true` or the ProjectX config toggle.
 - **Agent Server**: Optional local control surface under `agentserver`; defaults to TCP on `127.0.0.1:8081`, token-gates requests, and can run in UDS or stealth-bind modes.
 
 ## Key Data Flows

@@ -255,7 +255,7 @@ public interface ProjectXConfig extends Config
 	@ConfigItem(
 		keyName = keyDisableTelemetry,
 		name = "Disable telemetry",
-		description = "Stop outbound calls to microbot.cloud (update check, random-fact splash, session ping). " +
+		description = "Stop outbound calls to the Project X site (update check, random-fact splash, session ping). " +
 				"Equivalent to launching with -Dprojectx.disableTelemetry=true.",
 		position = 6,
 		section = generalSection

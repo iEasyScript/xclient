@@ -1161,7 +1161,7 @@ npcCache.query()
 - **CLAUDE.md** - Full framework documentation
 - **Example Scripts** - See `api/*/ApiExample.java` files
 - **Discord** - https://discord.gg/zaGrfqFEWE
-- **Website** - https://themicrobot.com
+- **Website** - https://xclient.dev
 
 ---
 

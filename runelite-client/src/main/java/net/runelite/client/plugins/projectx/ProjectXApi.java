@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXSite;
 import net.runelite.client.RuneLiteProperties;
 import net.runelite.http.api.RuneLiteAPI;
 import okhttp3.OkHttpClient;
@@ -30,7 +31,9 @@ public class ProjectXApi {
     private final Gson gson;
     private final String pluginTelemetryToken;
 
-    private final String projectxApiUrl = "https://microbot.cloud/api";
+    // Our own site. Until it is hosted these calls simply fail, which every
+    // caller already tolerates -- they are telemetry, not features.
+    private final String projectxApiUrl = ProjectXSite.baseUrl() + "api";
     @Inject
     ProjectXApi(OkHttpClient client, Gson gson) {
         this.client = client;

@@ -75,12 +75,12 @@ public class ProjectXPluginConfigurationDescriptor
 		if (iname != null)
 		{
 			JMenuItem menuItem = new JMenuItem("Wiki");
-			menuItem.addActionListener(e -> LinkBrowser.browse("https://chsami.github.io/Microbot-Hub/" + iname));
+			menuItem.addActionListener(e -> LinkBrowser.browse("https://ieasyscript.github.io/xclient-hub/" + iname));
 			return menuItem;
 		}
 
 		JMenuItem menuItem = new JMenuItem("Wiki");
-		menuItem.addActionListener(e -> LinkBrowser.browse("https://chsami.github.io/Microbot-Hub/" + (plugin != null ? plugin.getClass().getSimpleName() : "")));
+		menuItem.addActionListener(e -> LinkBrowser.browse("https://ieasyscript.github.io/xclient-hub/" + (plugin != null ? plugin.getClass().getSimpleName() : "")));
 		return menuItem;
 	}
 

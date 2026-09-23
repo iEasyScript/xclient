@@ -54,10 +54,10 @@ import java.util.Set;
 @Slf4j
 public class ProjectXPluginClient
 {
-    // Our own hub, served by the Project X website. chsami's Microbot-Hub is not
-    // usable: its jars are compiled against the old `microbot` package.
-    // Resolved per call, not cached in a static, so changing the site URL in the
-    // settings takes effect without restarting the client.
+    // Our own hub, served by the Project X website. The URL is resolved per call
+    // rather than cached in a static, so changing the site in the settings takes
+    // effect without restarting the client.
+    //
     // The site serves one version per plugin (downloadUrl in the manifest), so
     // there is no release history to browse. Kept null rather than deleting the
     // version-picker plumbing, which the hub panel still calls.

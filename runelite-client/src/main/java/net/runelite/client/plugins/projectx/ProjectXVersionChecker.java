@@ -16,15 +16,20 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Slf4j
 @Singleton
 public class ProjectXVersionChecker
 {
+	private static final Pattern TAG_NAME = Pattern.compile("\"tag_name\"\\s*:\\s*\"v?([^\"]+)\"");
+
 	private final AtomicBoolean newVersionAvailable = new AtomicBoolean(false);
 	private final AtomicBoolean scheduled = new AtomicBoolean(false);
 	private volatile ScheduledFuture<?> future;
-	private final String REMOTE_VERSION_URL = "https://microbot.cloud/api/version/client";
+	// The newest published client is whatever the latest release is tagged.
+	private final String REMOTE_VERSION_URL = "https://api.github.com/repos/iEasyScript/xclient/releases/latest";
 
 	private final boolean disableTelemetry;
 
@@ -84,8 +89,14 @@ public class ProjectXVersionChecker
 				log.debug("Version check responded with HTTP {}", conn.getResponseCode());
 				return null;
 			}
-			String line = reader.readLine();
-			return line != null ? line.trim() : null;
+			StringBuilder body = new StringBuilder();
+			for (String line = reader.readLine(); line != null; line = reader.readLine())
+			{
+				body.append(line);
+			}
+			// {"tag_name":"2.6.22", ...} -- the tag is the version.
+			Matcher tag = TAG_NAME.matcher(body);
+			return tag.find() ? tag.group(1) : null;
 		}
 		finally
 		{
