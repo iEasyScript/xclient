@@ -14,19 +14,18 @@ import java.util.Objects;
  * entitlement authority, so everything that talks to "our servers" starts here.
  *
  * <p>Resolved in order: {@code -Dprojectx.siteUrl}, {@code PROJECTX_SITE_URL},
- * the "Site URL" setting in the Project X config, then the default below. The
- * default is still localhost because {@value #PRODUCTION_SITE_URL} is not hosted
- * yet -- when it is, change {@link #DEFAULT_SITE_URL} to it and nothing else
- * needs touching.
+ * the "Site URL" setting in the Project X config, then the default below.
+ *
+ * <p>The default is production. Point a development client at a local site with
+ * {@code -Dprojectx.siteUrl=http://localhost:3000/} rather than by editing this.
  */
 @Slf4j
 public final class ProjectXSite
 {
-    /** The domain we own. Not hosted yet. */
+    /** The live site: plugin hub, entitlement authority and account system. */
     public static final String PRODUCTION_SITE_URL = "https://xclient.dev/";
 
-    /** Until the site is hosted, a local {@code npm run dev}. */
-    private static final String DEFAULT_SITE_URL = "http://localhost:3000/";
+    private static final String DEFAULT_SITE_URL = PRODUCTION_SITE_URL;
 
     private static volatile HttpUrl cachedUrl;
     private static volatile String cachedSource;

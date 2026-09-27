@@ -36,6 +36,7 @@ import com.google.inject.Module;
 import com.google.inject.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXDeveloperGate;
 import net.runelite.client.RuneLite;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigManager;
@@ -280,6 +281,10 @@ public class PluginManager {
         ClassPath classPath = ClassPath.from(getClass().getClassLoader());
 
         List<Class<?>> plugins = classPath.getTopLevelClassesRecursive(PLUGIN_PACKAGE).stream()
+                // Developer-only plugins are filtered by name before the class is
+                // loaded, so a user without the role has no plugin, no sidebar
+                // button and no config entry to find.
+                .filter(classInfo -> !ProjectXDeveloperGate.isHidden(classInfo.getName()))
                 .map(ClassInfo::load)
                 .collect(Collectors.toList());
 

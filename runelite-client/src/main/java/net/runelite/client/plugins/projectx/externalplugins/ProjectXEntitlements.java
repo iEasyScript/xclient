@@ -227,7 +227,7 @@ public class ProjectXEntitlements
             return;
         }
 
-        String token = configManager.getConfiguration(ProjectXConfig.configGroup, ProjectXConfig.keyAccountToken);
+        String token = ProjectXAccount.token(configManager);
         if (Strings.isNullOrEmpty(token))
         {
             expiries.clear();
@@ -302,9 +302,9 @@ public class ProjectXEntitlements
         PluginDescriptor descriptor = plugin.getClass().getAnnotation(PluginDescriptor.class);
         String name = descriptor != null ? descriptor.name().replaceAll("<[^>]*>", "") : internalName;
 
-        String token = configManager.getConfiguration(ProjectXConfig.configGroup, ProjectXConfig.keyAccountToken);
+        String token = ProjectXAccount.token(configManager);
         String fix = Strings.isNullOrEmpty(token)
-                ? " Add your Project X API token in the Project X settings."
+                ? " Sign in to Project X in the launcher, or add your API token in the Project X settings."
                 : " Buy access at " + storeUrls.getOrDefault(internalName, ProjectXSite.baseUrl().toString());
 
         log.info("{} {}{}", name, problem, fix);

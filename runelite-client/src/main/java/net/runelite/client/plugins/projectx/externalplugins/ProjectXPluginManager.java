@@ -100,6 +100,7 @@ public class ProjectXPluginManager {
     private final ConfigManager configManager;
     private final ProjectXApi projectxApi;
     private final ProjectXEntitlements entitlements;
+    private final ProjectXAccount account;
 
     private final Map<String, URLClassLoader> loaders = new ConcurrentHashMap<>();
 
@@ -123,7 +124,8 @@ public class ProjectXPluginManager {
             Gson gson,
             ConfigManager configManager,
             ProjectXApi projectxApi,
-            ProjectXEntitlements entitlements
+            ProjectXEntitlements entitlements,
+            ProjectXAccount account
     ) {
         this.okHttpClient = okHttpClient;
         this.projectxPluginClient = projectxPluginClient;
@@ -134,6 +136,7 @@ public class ProjectXPluginManager {
         this.configManager = configManager;
         this.projectxApi = projectxApi;
         this.entitlements = entitlements;
+        this.account = account;
 
         PLUGIN_DIR.mkdirs();
     }
@@ -142,6 +145,15 @@ public class ProjectXPluginManager {
      * Initializes the ProjectXPluginManager
      */
     public void init() {
+        /*
+         * Who is signed in has to be settled before the plugins load: the gate
+         * filters classes out of that load, and a role that arrived afterwards
+         * would be too late to hide anything. One request, and a failure leaves
+         * the user as a plain USER.
+         */
+        account.refresh();
+        ProjectXDeveloperGate.bind(account);
+
         loadManifest();
     }
 
@@ -272,6 +284,65 @@ public class ProjectXPluginManager {
     }
 
     /**
+     * Makes sure the jar on disk is the one the site published, and refuses to
+     * load it otherwise.
+     *
+     * <p>Previously a failed hash check logged a warning and loaded the plugin
+     * anyway, which made the published SHA-256 decorative: a swapped or
+     * tampered jar ran exactly like the reviewed one. For a marketplace whose
+     * whole promise is "the code we read is the code you run", that was the
+     * one place that promise had to be kept, and was not.
+     *
+     * <p>A mismatch is usually a stale local copy rather than an attack -- the
+     * plugin was updated and this machine still has the old jar -- so the jar
+     * is discarded and fetched again before any conclusion is drawn. Only a
+     * freshly downloaded jar that still disagrees is treated as untrustworthy.
+     *
+     * @return true when the plugin may be loaded
+     */
+    private boolean ensureIntegrity(String internalName) {
+        if (verifyHash(internalName)) {
+            return true;
+        }
+
+        ProjectXPluginManifest manifest = manifestMap.get(internalName);
+        if (manifest == null) {
+            // Nothing to check against: a side-loaded jar the site has never
+            // heard of. Left to the existing side-load path rather than blocked,
+            // since nobody published a hash to disagree with.
+            log.debug("No manifest for {}; skipping integrity check", internalName);
+            return true;
+        }
+
+        log.warn("Plugin {} does not match its published hash; re-downloading", internalName);
+
+        File pluginFile = getPluginJarFile(internalName);
+        if (pluginFile.exists() && !pluginFile.delete()) {
+            log.error("Could not remove the mismatched jar for {}; refusing to load it", internalName);
+            return false;
+        }
+        // The stored record is about to be wrong either way, and leaving it
+        // would let the re-downloaded jar be checked against a stale hash.
+        clearInstalledPluginVersion(internalName);
+
+        if (!downloadPlugin(internalName, null)) {
+            log.error("Could not re-download {}; refusing to load it", internalName);
+            return false;
+        }
+
+        if (!verifyHash(internalName)) {
+            log.error(
+                "Plugin {} still does not match its published hash after a fresh download. "
+                    + "Refusing to load it -- this is a corrupted or tampered jar.",
+                internalName);
+            return false;
+        }
+
+        log.info("Plugin {} re-downloaded and verified", internalName);
+        return true;
+    }
+
+    /**
      * Calculates the SHA-256 hash of the given JAR data.
      *
      * @param interalName
@@ -341,8 +412,8 @@ public class ProjectXPluginManager {
             return;
         }
         try {
-            if (!verifyHash(internalName)) {
-                log.warn("Plugin hash verification failed for: {}", internalName);
+            if (!ensureIntegrity(internalName)) {
+                return;
             }
             List<Class<?>> plugins = new ArrayList<>();
             PluginJarClassLoader classLoader = new PluginJarClassLoader(pluginFile, getClass().getClassLoader());
@@ -959,7 +1030,7 @@ public class ProjectXPluginManager {
             OkHttpClient clientWithoutProxy = noProxy(okHttpClient);
             Request.Builder requestBuilder = new Request.Builder().url(jarUrl);
             // Paid jars need the user's token. It only ever goes to our own site.
-            String token = configManager.getConfiguration(ProjectXConfig.configGroup, ProjectXConfig.keyAccountToken);
+            String token = ProjectXAccount.token(configManager);
             if (manifest.isPaid() && ProjectXSite.isSite(jarUrl) && !Strings.isNullOrEmpty(token)) {
                 requestBuilder.header("Authorization", "Bearer " + token.trim());
             }
