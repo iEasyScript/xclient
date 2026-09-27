@@ -3,128 +3,138 @@ package net.runelite.client.plugins.projectx.util.antiban.ui;
 import net.runelite.client.plugins.projectx.util.antiban.Rs2Antiban;
 import net.runelite.client.plugins.projectx.util.antiban.Rs2AntibanSettings;
 import net.runelite.client.plugins.projectx.util.antiban.enums.ActivityIntensity;
-import net.runelite.client.ui.ColorScheme;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.BoxLayout;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
 
-import static net.runelite.client.plugins.projectx.util.antiban.ui.UiHelper.setupSlider;
-
+/**
+ * Mouse movement, and the intensity that drives its speed.
+ *
+ * <p>Each percentage is a caption with its value on the right and a plain slider
+ * under it. The previous version put the number inside the caption text and
+ * painted a tick scale under every slider, so the numbers moved as they changed
+ * and the scale was unreadable at sidebar width.
+ */
 public class MousePanel extends JPanel
 {
-    private final JCheckBox useNaturalMouse = new JCheckBox("Use Natural Mouse");
-    private final JCheckBox simulateMistakes = new JCheckBox("Simulate Mistakes");
-    private final JCheckBox moveMouseOffScreen = new JCheckBox("Move Mouse Off Screen");
-    private final JSlider moveMouseOffScreenChance = new JSlider(0, 100, (int) (Rs2AntibanSettings.moveMouseOffScreenChance * 100));
-    private final JLabel moveMouseOffScreenChanceLabel = new JLabel("Move Mouse Off Screen (%): " + (int) (Rs2AntibanSettings.moveMouseOffScreenChance * 100));
-    private final JCheckBox moveMouseRandomly = new JCheckBox("Move Mouse Randomly");
-    private final JSlider moveMouseRandomlyChance = new JSlider(0, 100, (int) (Rs2AntibanSettings.moveMouseRandomlyChance * 100));
-    private final JLabel moveMouseRandomlyChanceLabel = new JLabel("Random Mouse Movement (%): " + (int) (Rs2AntibanSettings.moveMouseRandomlyChance * 100));
+    /** The slider positions map to this fixed order of intensities. */
+    private static final ActivityIntensity[] INTENSITIES = {
+        ActivityIntensity.VERY_LOW,
+        ActivityIntensity.LOW,
+        ActivityIntensity.MODERATE,
+        ActivityIntensity.HIGH,
+        ActivityIntensity.EXTREME
+    };
 
-    // 1) Add new components for Activity Intensity
-    private final JLabel mouseSpeedLabel = new JLabel();
-    private final JSlider mouseSpeedSlider = new JSlider(0, 4, 2); // default to index=2 (MODERATE)
+    private static final int DEFAULT_INTENSITY_INDEX = 2;
+
+    private final JCheckBox useNaturalMouse = AntibanUi.toggle("Natural mouse",
+        "Simulate human-like mouse movements");
+
+    private final JCheckBox simulateMistakes = AntibanUi.toggle("Simulate mistakes",
+        "Simulate mistakes in mouse movements");
+
+    private final JCheckBox moveMouseOffScreen = AntibanUi.toggle("Move off screen when idle",
+        "Move the mouse off screen if activity cooldown is active");
+
+    private final JLabel offScreenValue = new JLabel();
+    private final JSlider moveMouseOffScreenChance =
+        AntibanUi.slider(0, 100, (int) (Rs2AntibanSettings.moveMouseOffScreenChance * 100));
+
+    private final JCheckBox moveMouseRandomly = AntibanUi.toggle("Move randomly when idle",
+        "Move the mouse randomly when activity cooldown is active");
+
+    private final JLabel randomlyValue = new JLabel();
+    private final JSlider moveMouseRandomlyChance =
+        AntibanUi.slider(0, 100, (int) (Rs2AntibanSettings.moveMouseRandomlyChance * 100));
+
+    private final JLabel intensityValue = new JLabel();
+    private final JSlider mouseSpeedSlider = AntibanUi.slider(0, INTENSITIES.length - 1, DEFAULT_INTENSITY_INDEX);
 
     public MousePanel()
     {
-        useNaturalMouse.setToolTipText("Simulate human-like mouse movements");
-        simulateMistakes.setToolTipText("Simulate mistakes in mouse movements");
-        moveMouseOffScreen.setToolTipText("Move the mouse off screen if activity cooldown is active");
-        moveMouseOffScreenChance.setToolTipText("Chance to move the mouse off screen when activity cooldown is active");
-        moveMouseRandomly.setToolTipText("Move the mouse randomly when activity cooldown is active");
-        moveMouseRandomlyChance.setToolTipText("Chance to move the mouse randomly when activity cooldown is active");
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setBackground(AntibanUi.BACKGROUND);
 
-        // Configure the new mouseSpeedSlider
+        JPanel movement = AntibanUi.card("Movement");
+        movement.add(useNaturalMouse);
+        movement.add(simulateMistakes);
+
+        JPanel idle = AntibanUi.card("While on cooldown");
+        idle.add(moveMouseOffScreen);
+        idle.add(AntibanUi.readout(new JLabel("Off screen chance"), offScreenValue));
+        idle.add(moveMouseOffScreenChance);
+        idle.add(AntibanUi.gap(4));
+        idle.add(moveMouseRandomly);
+        idle.add(AntibanUi.readout(new JLabel("Random move chance"), randomlyValue));
+        idle.add(moveMouseRandomlyChance);
+
+        JPanel speed = AntibanUi.card("Speed");
+        speed.add(AntibanUi.readout(new JLabel("Activity intensity"), intensityValue));
+        speed.add(mouseSpeedSlider);
+        speed.add(AntibanUi.hint("Higher intensity means faster, less careful movement."));
+
         mouseSpeedSlider.setToolTipText("Controls the overall mouse speed/intensity");
-        mouseSpeedSlider.setPaintTicks(true);
-        mouseSpeedSlider.setPaintLabels(true);
-        // This helper can be used if you'd like consistent look, or you can do it manually:
-        setupSlider(mouseSpeedSlider, 0, 4, 1);
+        mouseSpeedSlider.setSnapToTicks(true);
 
-        setLayout(new GridBagLayout());
-        setBackground(ColorScheme.DARK_GRAY_HOVER_COLOR);
-        setupSlider(moveMouseRandomlyChance, 20, 100, 10);
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.gridx = 0;
-        gbc.gridy = GridBagConstraints.RELATIVE;
-
-        // Add the "Use Natural Mouse" checkbox
-        add(useNaturalMouse, gbc);
-
-        // Add a gap
-        gbc.insets = new Insets(20, 5, 5, 5);
-        add(Box.createVerticalStrut(15), gbc);
-
-        gbc.insets = new Insets(5, 5, 5, 5);
-        add(simulateMistakes, gbc);
-
-        add(moveMouseOffScreen, gbc);
-        add(moveMouseOffScreenChanceLabel, gbc);
-
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        add(moveMouseOffScreenChance, gbc);
-
-        gbc.fill = GridBagConstraints.NONE;
-        add(moveMouseRandomly, gbc);
-
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        add(moveMouseRandomlyChanceLabel, gbc);
-        add(moveMouseRandomlyChance, gbc);
-
-        // 2) Add new label and slider for "Mouse Speed" (ActivityIntensity)
-        gbc.fill = GridBagConstraints.NONE;
-        add(mouseSpeedLabel, gbc);
-
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        add(mouseSpeedSlider, gbc);
+        add(movement);
+        add(idle);
+        add(speed);
 
         setupActionListeners();
-
-        // Make sure the default values on the UI match the current settings
         updateValues();
     }
 
     private void setupActionListeners()
     {
-        useNaturalMouse.addActionListener(e -> {
+        useNaturalMouse.addActionListener(e ->
+        {
             Rs2AntibanSettings.naturalMouse = useNaturalMouse.isSelected();
             Rs2AntibanSettings.saveToProfile();
         });
-        simulateMistakes.addActionListener(e -> {
+        simulateMistakes.addActionListener(e ->
+        {
             Rs2AntibanSettings.simulateMistakes = simulateMistakes.isSelected();
             Rs2AntibanSettings.saveToProfile();
         });
-        moveMouseOffScreen.addActionListener(e -> {
+        moveMouseOffScreen.addActionListener(e ->
+        {
             Rs2AntibanSettings.moveMouseOffScreen = moveMouseOffScreen.isSelected();
             Rs2AntibanSettings.saveToProfile();
         });
-        moveMouseOffScreenChance.addChangeListener(e -> {
+        moveMouseOffScreenChance.addChangeListener(e ->
+        {
             Rs2AntibanSettings.moveMouseOffScreenChance = moveMouseOffScreenChance.getValue() / 100.0;
-            moveMouseOffScreenChanceLabel.setText("Move Mouse Off Screen (%): " + moveMouseOffScreenChance.getValue());
-            if (!moveMouseOffScreenChance.getValueIsAdjusting()) {
+            offScreenValue.setText(moveMouseOffScreenChance.getValue() + "%");
+            // Saving on every intermediate value of a drag would write the
+            // profile hundreds of times for one adjustment.
+            if (!moveMouseOffScreenChance.getValueIsAdjusting())
+            {
                 Rs2AntibanSettings.saveToProfile();
             }
         });
-        moveMouseRandomly.addActionListener(e -> {
+        moveMouseRandomly.addActionListener(e ->
+        {
             Rs2AntibanSettings.moveMouseRandomly = moveMouseRandomly.isSelected();
             Rs2AntibanSettings.saveToProfile();
         });
-        moveMouseRandomlyChance.addChangeListener(e -> {
+        moveMouseRandomlyChance.addChangeListener(e ->
+        {
             Rs2AntibanSettings.moveMouseRandomlyChance = moveMouseRandomlyChance.getValue() / 100.0;
-            moveMouseRandomlyChanceLabel.setText("Random Mouse Movement (%): " + moveMouseRandomlyChance.getValue());
-            if (!moveMouseRandomlyChance.getValueIsAdjusting()) {
+            randomlyValue.setText(moveMouseRandomlyChance.getValue() + "%");
+            if (!moveMouseRandomlyChance.getValueIsAdjusting())
+            {
                 Rs2AntibanSettings.saveToProfile();
             }
         });
-
-        // 3) When mouseSpeedSlider changes, update the ActivityIntensity
-        mouseSpeedSlider.addChangeListener(e -> {
-            ActivityIntensity intensity = getActivityIntensityFromIndex(mouseSpeedSlider.getValue());
+        mouseSpeedSlider.addChangeListener(e ->
+        {
+            ActivityIntensity intensity = intensityAt(mouseSpeedSlider.getValue());
             Rs2Antiban.setActivityIntensity(intensity);
-            mouseSpeedLabel.setText("Mouse Speed: " + intensity.getName()); // or getName(), etc.
+            intensityValue.setText(intensity.getName());
         });
     }
 
@@ -132,43 +142,34 @@ public class MousePanel extends JPanel
     {
         useNaturalMouse.setSelected(Rs2AntibanSettings.naturalMouse);
         simulateMistakes.setSelected(Rs2AntibanSettings.simulateMistakes);
+
         moveMouseOffScreen.setSelected(Rs2AntibanSettings.moveMouseOffScreen);
         moveMouseOffScreenChance.setValue((int) (Rs2AntibanSettings.moveMouseOffScreenChance * 100));
+        offScreenValue.setText(moveMouseOffScreenChance.getValue() + "%");
+
         moveMouseRandomly.setSelected(Rs2AntibanSettings.moveMouseRandomly);
         moveMouseRandomlyChance.setValue((int) (Rs2AntibanSettings.moveMouseRandomlyChance * 100));
-        moveMouseRandomlyChanceLabel.setText("Random Mouse Movement (%): " + moveMouseRandomlyChance.getValue());
+        randomlyValue.setText(moveMouseRandomlyChance.getValue() + "%");
 
-        // 4) Sync the ActivityIntensity slider + label with current settings
-        ActivityIntensity currentIntensity = Rs2Antiban.getActivityIntensity();
-        mouseSpeedSlider.setValue(getIndexFromActivityIntensity(currentIntensity));
-        mouseSpeedLabel.setText("Mouse Speed: " + currentIntensity.getName());
+        ActivityIntensity current = Rs2Antiban.getActivityIntensity();
+        mouseSpeedSlider.setValue(indexOf(current));
+        intensityValue.setText(current == null ? AntibanUi.NO_VALUE : current.getName());
     }
 
-    // Helper to convert ActivityIntensity -> slider index
-    private int getIndexFromActivityIntensity(ActivityIntensity intensity)
+    private static ActivityIntensity intensityAt(int index)
     {
-        switch (intensity)
-        {
-            case VERY_LOW: return 0;
-            case LOW: return 1;
-            case MODERATE: return 2;
-            case HIGH: return 3;
-            case EXTREME: return 4;
-            default: return 2;
-        }
+        return index >= 0 && index < INTENSITIES.length ? INTENSITIES[index] : INTENSITIES[DEFAULT_INTENSITY_INDEX];
     }
 
-    // Helper to convert slider index -> ActivityIntensity
-    private ActivityIntensity getActivityIntensityFromIndex(int index)
+    private static int indexOf(ActivityIntensity intensity)
     {
-        switch (index)
+        for (int i = 0; i < INTENSITIES.length; i++)
         {
-            case 0: return ActivityIntensity.VERY_LOW;
-            case 1: return ActivityIntensity.LOW;
-            case 2: return ActivityIntensity.MODERATE;
-            case 3: return ActivityIntensity.HIGH;
-            case 4: return ActivityIntensity.EXTREME;
-            default: return ActivityIntensity.MODERATE;
+            if (INTENSITIES[i] == intensity)
+            {
+                return i;
+            }
         }
+        return DEFAULT_INTENSITY_INDEX;
     }
 }

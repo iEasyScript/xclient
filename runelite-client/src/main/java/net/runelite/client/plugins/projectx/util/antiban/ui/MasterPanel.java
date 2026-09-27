@@ -1,193 +1,144 @@
 package net.runelite.client.plugins.projectx.util.antiban.ui;
 
-import net.runelite.client.plugins.projectx.ProjectX;
-import net.runelite.client.plugins.projectx.util.antiban.AntibanPlugin;
 import net.runelite.client.plugins.projectx.util.antiban.Rs2Antiban;
 import net.runelite.client.plugins.projectx.util.antiban.Rs2AntibanSettings;
-import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
-import net.runelite.client.util.ImageUtil;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Dimension;
 
 /**
- * The MasterPanel is a user interface panel for configuring anti-ban settings.
+ * The antiban panel: what the system is doing, and every setting that shapes it.
  *
- * <p>
- * This panel allows users to adjust settings related to the anti-ban system, such as enabling micro-breaks,
- * adjusting action cooldown probabilities, and configuring behavioral simulations like fatigue or attention span.
- * The panel is divided into different categories, each focusing on specific aspects of anti-ban behavior,
- * including activity settings, mouse behavior, and cooldown management.
- * </p>
+ * <p>The layout is three fixed parts and one scrolling one. The header reports
+ * live state, the tabs pick a section, the chosen section scrolls in the middle,
+ * and Reset stays reachable at the bottom. Nothing is centred in dead space and
+ * nothing is animated -- the previous version spent roughly a third of its
+ * height on a banner and a bouncing GIF, which pushed the six settings that
+ * matter below the fold on a short sidebar.
  *
- * <p>
- * Users can interact with various checkboxes and sliders to tailor the bot's anti-ban features to their preferences,
- * making it behave more like a human player during automated tasks.
- * </p>
- *
- * <h3>Main Features:</h3>
- * <ul>
- *   <li>Enable or disable anti-ban features like action cooldowns and micro-breaks.</li>
- *   <li>Customize the bot's behavior with random intervals, dynamic activity, and simulated fatigue.</li>
- *   <li>Adjust the duration and probability of micro-breaks and action cooldowns.</li>
- *   <li>Fine-tune mouse behavior, including natural movements and random actions.</li>
- *   <li>View real-time information about the current play style, activity, and bot status.</li>
- * </ul>
- *
- * <p>
- * This panel is automatically integrated into the bot's user interface and does not require manual initialization by the user.
- * </p>
+ * <p>Refreshed wholesale every 600ms by {@code AntibanPlugin}'s timer, so
+ * {@link #loadSettings()} only ever updates the text and selection of widgets
+ * that already exist.
  */
-public class MasterPanel extends PluginPanel {
-    private static final int BOUNDARY_RIGHT = 150; // Adjust for how far you want the GIF to move
-    private static final int BOUNDARY_LEFT = 0;
-    // Additional Info Panel
-    private final JLabel playStyleLabel = new JLabel("Play Style: " + (Rs2Antiban.getPlayStyle() != null ? Rs2Antiban.getPlayStyle().getName() : "null"));
-    private final JLabel playStyleChangeLabel = new JLabel("Play Style Change: " + (Rs2Antiban.getPlayStyle() != null ? Rs2Antiban.getPlayStyle().getTimeLeftUntilNextSwitch() : "null"));
-    private final JLabel profileLabel = new JLabel("Category: " + (Rs2Antiban.getCategory() != null ? Rs2Antiban.getCategory().getName() : "null"));
-    private final JLabel activityLabel = new JLabel("Activity: " + (Rs2Antiban.getActivity() != null ? Rs2Antiban.getActivity().getMethod() : "null"));
-    private final JLabel activityIntensityLabel = new JLabel("Activity Intensity: " + (Rs2Antiban.getActivityIntensity() != null ? Rs2Antiban.getActivityIntensity().getName() : "null"));
-    private final JLabel busyLabel = new JLabel("Busy: " + (Rs2Antiban.getCategory() != null ? Rs2Antiban.getCategory().isBusy() : "null"));
-    private final boolean isFlipped = false; // Track if the image is flipped
-    private final FlippableLabel label;
-    private final JLayeredPane layeredPane; // Use a layered pane for positioning the GIF
-    GeneralPanel generalPanel = new GeneralPanel();
-    ActivityPanel activityPanel = new ActivityPanel();
-    ProfilePanel profilePanel = new ProfilePanel();
-    MousePanel mousePanel = new MousePanel();
-    MicroBreakPanel microBreakPanel = new MicroBreakPanel();
-    CooldownPanel cooldownPanel = new CooldownPanel();
-    JButton resetButton = new JButton("Reset");
-    private int xPosition = 0;
-    private int xVelocity = 1; // Change this value to control the speed of movement
+public class MasterPanel extends PluginPanel
+{
+    private static final String GENERAL = "General";
+    private static final String ACTIVITY = "Activity";
+    private static final String PROFILE = "Profile";
+    private static final String MOUSE = "Mouse";
+    private static final String BREAKS = "Breaks";
+    private static final String COOLDOWN = "Cooldown";
 
-    public MasterPanel() {
+    private final AntibanStatusHeader header = new AntibanStatusHeader();
+
+    private final GeneralPanel generalPanel = new GeneralPanel();
+    private final ActivityPanel activityPanel = new ActivityPanel();
+    private final ProfilePanel profilePanel = new ProfilePanel();
+    private final MousePanel mousePanel = new MousePanel();
+    private final MicroBreakPanel microBreakPanel = new MicroBreakPanel();
+    private final CooldownPanel cooldownPanel = new CooldownPanel();
+
+    private final JPanel sections = new JPanel(new CardLayout());
+
+    public MasterPanel()
+    {
+        // The default PluginPanel wrapper adds its own scroll pane and padding;
+        // this panel manages its own, so the header and tabs can stay put while
+        // only the section scrolls.
+        super(false);
+
         setLayout(new BorderLayout());
+        setBackground(AntibanUi.BACKGROUND);
 
-        // Create the CardPanel (which contains the CardLayout)
-        CardPanel cardPanel = new CardPanel();
+        sections.setBackground(AntibanUi.BACKGROUND);
+        sections.add(wrap(generalPanel), GENERAL);
+        sections.add(wrap(activityPanel), ACTIVITY);
+        sections.add(wrap(profilePanel), PROFILE);
+        sections.add(wrap(mousePanel), MOUSE);
+        sections.add(wrap(microBreakPanel), BREAKS);
+        sections.add(wrap(cooldownPanel), COOLDOWN);
 
-        // Add panels to the CardPanel with unique names
-        cardPanel.addPanel(generalPanel, "General");
-        cardPanel.addPanel(activityPanel, "Activity");
-        cardPanel.addPanel(profilePanel, "Profile");
-        cardPanel.addPanel(mousePanel, "Mouse");
-        cardPanel.addPanel(microBreakPanel, "MicroBreak");
-        cardPanel.addPanel(cooldownPanel, "Cooldown");
+        AntibanTabs tabs = new AntibanTabs(
+            name -> ((CardLayout) sections.getLayout()).show(sections, name),
+            GENERAL, ACTIVITY, PROFILE, MOUSE, BREAKS, COOLDOWN);
 
-        // Create the NavigationPanel and pass the CardPanel to it
-        NavigationPanel navigationPanel = new NavigationPanel(cardPanel);
+        JPanel top = new JPanel();
+        top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
+        top.setBackground(AntibanUi.BACKGROUND);
+        top.add(header);
+        top.add(tabs);
 
-        JPanel headerPanel = createHeaderPanel(navigationPanel);
-        JPanel mainDisplayPanel = new JPanel();
+        JScrollPane scroller = new JScrollPane(sections,
+            ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+            ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scroller.setBorder(BorderFactory.createEmptyBorder());
+        scroller.setBackground(AntibanUi.BACKGROUND);
+        scroller.getViewport().setBackground(AntibanUi.BACKGROUND);
+        scroller.getVerticalScrollBar().setUnitIncrement(16);
 
-        mainDisplayPanel.add(cardPanel);
-        mainDisplayPanel.setLayout(new BoxLayout(mainDisplayPanel, BoxLayout.Y_AXIS));
-        mainDisplayPanel.add(createInfoPanel());
-        mainDisplayPanel.add(Box.createVerticalStrut(100));
-        mainDisplayPanel.add(new Box(BoxLayout.Y_AXIS));
-        layeredPane = new JLayeredPane();
-        layeredPane.setPreferredSize(new Dimension(250, 32));
+        add(top, BorderLayout.NORTH);
+        add(scroller, BorderLayout.CENTER);
+        add(buildFooter(), BorderLayout.SOUTH);
 
-        // Create and position the GIF JLabel
-        ImageIcon icon = new ImageIcon(Rs2Antiban.class.getResource("walkingduckparty.gif"));
-        label = new FlippableLabel(icon);
-        label.setBounds(xPosition, 0, icon.getIconWidth(), icon.getIconHeight()); // Initial position
-        layeredPane.add(label, JLayeredPane.DEFAULT_LAYER); // Add label to the default layer
-        mainDisplayPanel.add(layeredPane);
-
-        // Timer to move the GIF back and forth
-        Timer timer = new Timer(80, new ActionListener() { // Update every 20ms (50fps)
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                // Update the position
-                xPosition += xVelocity;
-
-                // Check boundaries and reverse direction if needed
-                if (xPosition >= 250 || xPosition <= BOUNDARY_LEFT) {
-                    xVelocity = -xVelocity; // Reverse direction
-                    label.flip(); // Flip the image when direction changes
-                }
-
-                // Update the label's position
-                label.updatePosition(xPosition);
-            }
-        });
-        timer.start(); // Start the movement timer
-
-
-        add(headerPanel, BorderLayout.NORTH);
-        add(mainDisplayPanel, BorderLayout.CENTER);
-        add(resetButton, BorderLayout.SOUTH);
-
-        cardPanel.showPanel("General");
-        setupResetButton();
-
+        tabs.select(GENERAL);
+        loadSettings();
     }
 
-    private JPanel createHeaderPanel(NavigationPanel navigationPanel) {
-        // load your image (resource or file)
-        BufferedImage icon = ImageUtil.loadImageResource(
-                AntibanPlugin.class, "antibanHeader.png");
-
-        // we don't need to pre-scale it here; let paintComponent handle resizing
-        Image bgImage = icon;
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        // “rubber-duck” yellow; feel free to tweak the RGB if you want
-        titlePanel.setBackground(new Color(255, 223, 0));
-        // label-only, centered
-        JLabel titleLabel = new JLabel("ANTIBAN", SwingConstants.CENTER);
-        titleLabel.setFont(FontManager.getRunescapeBoldFont().deriveFont(32.0f));
-        titleLabel.setForeground(Color.BLACK);
-        // add some vertical padding
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
-        titlePanel.add(titleLabel, BorderLayout.CENTER);
-
-        // use our custom panel
-        BackgroundPanel headerPanel = new BackgroundPanel(bgImage);
-        headerPanel.setBackground(new Color(27, 27, 27));  // fallback color
-
-        // your title label
-        JLabel headerLabel = new JLabel("", SwingConstants.CENTER);
-        headerLabel.setVerticalTextPosition(SwingConstants.BOTTOM);
-        headerLabel.setHorizontalTextPosition(SwingConstants.CENTER);
-        headerLabel.setFont(FontManager.getRunescapeBoldFont().deriveFont(36.0f));
-        headerLabel.setBorder(BorderFactory.createEmptyBorder(30, 0, 30, 0));
-        // (optionally) make the text opaque or give it a contrasting color
-        headerLabel.setForeground(Color.BLACK);
-
-
-
-        // add components on top of the background
-        headerPanel.add(headerLabel, BorderLayout.NORTH);
-        headerPanel.add(navigationPanel, BorderLayout.SOUTH);
-
-        // Create a wrapper panel for the title and header
-        JPanel wrapperPanel = new JPanel(new BorderLayout());
-        wrapperPanel.setBackground(new Color(27, 27, 27)); // Set the background color
-        wrapperPanel.add(titlePanel, BorderLayout.NORTH);
-        wrapperPanel.add(headerPanel, BorderLayout.CENTER);
-
-
-        return wrapperPanel;
+    /**
+     * Pins a section to the top of its scroll area. Without this a short section
+     * is centred by the CardLayout and its controls float in the middle of the
+     * panel, which is the specific thing that made the old General tab look
+     * broken.
+     */
+    private static JPanel wrap(JPanel section)
+    {
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setBackground(AntibanUi.BACKGROUND);
+        wrapper.add(section, BorderLayout.NORTH);
+        return wrapper;
     }
 
-    //set up the reset button to reset all settings
-    public void setupResetButton() {
-        resetButton.addActionListener(e -> {
+    private JPanel buildFooter()
+    {
+        JButton reset = new JButton("Reset all antiban settings");
+        reset.setFont(AntibanUi.small());
+        reset.setForeground(AntibanUi.TEXT);
+        reset.setBackground(AntibanUi.CARD);
+        reset.setFocusPainted(false);
+        reset.setBorder(BorderFactory.createEmptyBorder(7, 8, 7, 8));
+        reset.setToolTipText("Puts every setting on every tab back to its default.");
+        reset.addActionListener(e ->
+        {
             Rs2Antiban.resetAntibanSettings(true);
             Rs2AntibanSettings.saveToProfile();
             loadSettings();
         });
+
+        JPanel footer = new JPanel(new BorderLayout());
+        footer.setBackground(AntibanUi.BACKGROUND);
+        footer.setBorder(BorderFactory.createEmptyBorder(6, 8, 8, 8));
+        footer.add(reset, BorderLayout.CENTER);
+        footer.setMaximumSize(new Dimension(Integer.MAX_VALUE, footer.getPreferredSize().height));
+        return footer;
     }
 
-    public void loadSettings() {
-        // Load settings from the settings object and set the checkboxes accordingly
+    /**
+     * Pulls every control back into line with the settings object.
+     *
+     * <p>Called on a timer, so the settings may have been changed by a script
+     * rather than by the user -- the panel is a view of {@link Rs2AntibanSettings},
+     * never the owner of it.
+     */
+    public void loadSettings()
+    {
         generalPanel.updateValues();
         activityPanel.updateValues();
         profilePanel.updateValues();
@@ -195,69 +146,6 @@ public class MasterPanel extends PluginPanel {
         microBreakPanel.updateValues();
         cooldownPanel.updateValues();
 
-        if (!ProjectX.isLoggedIn())
-            return;
-
-        playStyleLabel.setText("Play Style: " + (Rs2Antiban.getPlayStyle() != null ? Rs2Antiban.getPlayStyle().getName() : "null"));
-        playStyleChangeLabel.setText("Play Style Change: " + (Rs2Antiban.getPlayStyle() != null ? Rs2Antiban.getPlayStyle().getTimeLeftUntilNextSwitch() : "null"));
-        profileLabel.setText("Category: " + (Rs2Antiban.getCategory() != null ? Rs2Antiban.getCategory().getName() : "null"));
-        activityLabel.setText("Activity: " + (Rs2Antiban.getActivity() != null ? Rs2Antiban.getActivity().getMethod() : "null"));
-        activityIntensityLabel.setText("Activity Intensity: " + (Rs2Antiban.getActivityIntensity() != null ? Rs2Antiban.getActivityIntensity().getName() : "null"));
-        busyLabel.setText("Busy: " + (Rs2Antiban.getCategory() != null ? Rs2Antiban.getCategory().isBusy() : "null"));
-    }
-
-    private JPanel createInfoPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("Additional Info"));
-
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0;
-        gbc.gridy = GridBagConstraints.RELATIVE;
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.insets = new Insets(5, 5, 5, 5);
-
-        panel.add(playStyleLabel, gbc);
-        panel.add(playStyleChangeLabel, gbc);
-        panel.add(profileLabel, gbc);
-        panel.add(activityLabel, gbc);
-        panel.add(activityIntensityLabel, gbc);
-        panel.add(busyLabel, gbc);
-
-        return panel;
-    }
-
-    // Custom JLabel class that supports flipping the image
-    private class FlippableLabel extends JLabel {
-        private boolean isFlipped = false;
-
-        public FlippableLabel(ImageIcon icon) {
-            super(icon);
-            setDoubleBuffered(true); // Enable double buffering to prevent flickering
-        }
-
-        public void flip() {
-            isFlipped = !isFlipped;
-            repaint(); // Request a repaint to apply the flip
-        }
-
-        public void updatePosition(int x) {
-            // Safely update the label position without interfering with other UI events
-            SwingUtilities.invokeLater(() -> setBounds(x, getY(), getWidth(), getHeight()));
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            Graphics2D g2d = (Graphics2D) g.create(); // Create a copy of Graphics2D to avoid modifying the original
-
-            if (isFlipped) {
-                // Apply horizontal flip by flipping the x-axis
-                AffineTransform transform = AffineTransform.getScaleInstance(-1, 1);
-                transform.translate(-getWidth(), 0);
-                g2d.setTransform(transform);
-            }
-
-            super.paintComponent(g2d); // Let JLabel handle the image rendering
-            g2d.dispose(); // Dispose of the copy to release resources
-        }
+        header.refresh();
     }
 }

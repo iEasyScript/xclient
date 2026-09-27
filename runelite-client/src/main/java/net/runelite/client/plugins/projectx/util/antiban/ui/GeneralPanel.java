@@ -2,93 +2,116 @@ package net.runelite.client.plugins.projectx.util.antiban.ui;
 
 import net.runelite.client.plugins.projectx.util.antiban.Rs2Antiban;
 import net.runelite.client.plugins.projectx.util.antiban.Rs2AntibanSettings;
-import net.runelite.client.ui.ColorScheme;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JPanel;
+import java.awt.Component;
 
-public class GeneralPanel extends JPanel {
+/**
+ * The switches that decide whether antiban runs at all, split into what a normal
+ * user touches and what only a script author should.
+ */
+public class GeneralPanel extends JPanel
+{
+    private final JCheckBox isEnabled = AntibanUi.toggle("Enabled",
+        "Enable the antiban system");
 
-    private final JCheckBox isEnabled = new JCheckBox("Enabled");
-    private final JCheckBox universalAntiban = new JCheckBox("Universal Antiban");
-    private final JCheckBox useContextualVariability = new JCheckBox("Use Contextual Variability");
-    private final JCheckBox devDebug = new JCheckBox("Dev Debug");
-    private final JCheckBox overwriteScriptSetting = new JCheckBox("Apply settings to all scripts");
-    private final JButton universalAntibanSettings = new JButton("Universal Antiban Settings");
+    private final JCheckBox universalAntiban = AntibanUi.toggle("Universal antiban",
+        "Only enable universal antiban for plugins that hasn't implemented antiban");
 
-    public GeneralPanel() {
+    private final JCheckBox useContextualVariability = AntibanUi.toggle("Contextual variability",
+        "Adjusts antiban behaviors based on the context of the players actions/activity. "
+            + "This is required for the universal antiban to work properly. "
+            + "Also vital for plugins that switch between different activities.");
 
-        isEnabled.setToolTipText("Enable the antiban system");
-        universalAntiban.setToolTipText("Only enable universal antiban for plugins that hasn't implemented antiban");
-        useContextualVariability.setToolTipText("Adjusts antiban behaviors based on the context of the players actions/activity. This is required for the universal antiban to work properly. Also vital for plugins that switch between different activities.");
-        devDebug.setToolTipText("Enable debug messages for the antiban system");
-        overwriteScriptSetting.setToolTipText("This is a dangerous setting and should be used with caution. It will apply the settings to all scripts, even if they have their own settings.");
-        universalAntibanSettings.setToolTipText("Setups the universal antiban settings for plugins that hasn't implemented antiban");
+    private final JCheckBox devDebug = AntibanUi.toggle("Dev debug",
+        "Enable debug messages for the antiban system");
 
-        // Set the layout manager for the panel to GridBagLayout
-        setLayout(new GridBagLayout());
-        setBackground(ColorScheme.DARK_GRAY_HOVER_COLOR);
-        // Create a GridBagConstraints object to define the layout settings for each component
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5); // Padding around components
-        gbc.anchor = GridBagConstraints.WEST; // Align components to the left
-        gbc.gridx = 0; // All components will be in column 0
-        gbc.gridy = GridBagConstraints.RELATIVE; // Components will be placed in consecutive rows
+    private final JCheckBox overwriteScriptSetting = AntibanUi.toggle("Override every script",
+        "This is a dangerous setting and should be used with caution. It will apply the "
+            + "settings to all scripts, even if they have their own settings.");
 
-        // Add the "Enabled" checkbox
-        add(isEnabled, gbc);
+    private final JButton universalAntibanSettings = new JButton("Apply universal setup");
 
-        // Add the "Universal Antiban" checkbox
-        add(universalAntiban, gbc);
+    public GeneralPanel()
+    {
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        setBackground(AntibanUi.BACKGROUND);
 
-        // Add the "Use Contextual Variability" checkbox
-        add(useContextualVariability, gbc);
+        JPanel system = AntibanUi.card("System");
+        system.add(isEnabled);
+        system.add(universalAntiban);
+        system.add(useContextualVariability);
 
-        // Add the "Dev Debug" checkbox
-        add(devDebug, gbc);
+        universalAntibanSettings.setFont(AntibanUi.small());
+        universalAntibanSettings.setForeground(AntibanUi.TEXT);
+        universalAntibanSettings.setBackground(AntibanUi.DIVIDER);
+        universalAntibanSettings.setFocusPainted(false);
+        universalAntibanSettings.setAlignmentX(Component.LEFT_ALIGNMENT);
+        universalAntibanSettings.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
+        universalAntibanSettings.setToolTipText(
+            "Setups the universal antiban settings for plugins that hasn't implemented antiban");
+        AntibanUi.constrainHeight(universalAntibanSettings);
 
-        // Add the "Apply settings to all scripts (use at your own risk" checkbox)
-        add(overwriteScriptSetting, gbc);
+        system.add(AntibanUi.gap(6));
+        system.add(universalAntibanSettings);
 
-        // Add the "Universal Antiban Settings" button
-        add(universalAntibanSettings, gbc);
+        JPanel advanced = AntibanUi.card("Advanced");
+        advanced.add(devDebug);
+        advanced.add(overwriteScriptSetting);
+        advanced.add(AntibanUi.hint(
+            "Overriding forces these settings onto scripts that ship their own. "
+                + "Leave it off unless you know the script you are running."));
+
+        add(system);
+        add(advanced);
 
         setupActionListeners();
     }
 
-    private void setupActionListeners() {
-        isEnabled.addActionListener(e -> {
+    private void setupActionListeners()
+    {
+        isEnabled.addActionListener(e ->
+        {
             Rs2AntibanSettings.antibanEnabled = isEnabled.isSelected();
             Rs2AntibanSettings.saveToProfile();
         });
-        universalAntiban.addActionListener(e -> {
+        universalAntiban.addActionListener(e ->
+        {
             Rs2AntibanSettings.universalAntiban = universalAntiban.isSelected();
             Rs2AntibanSettings.saveToProfile();
         });
-        useContextualVariability.addActionListener(e -> {
+        useContextualVariability.addActionListener(e ->
+        {
             Rs2AntibanSettings.contextualVariability = useContextualVariability.isSelected();
             Rs2AntibanSettings.saveToProfile();
         });
-        devDebug.addActionListener(e -> {
+        devDebug.addActionListener(e ->
+        {
             Rs2AntibanSettings.devDebug = devDebug.isSelected();
             Rs2AntibanSettings.saveToProfile();
         });
-        overwriteScriptSetting.addActionListener(e -> {
+        overwriteScriptSetting.addActionListener(e ->
+        {
             Rs2AntibanSettings.overwriteScriptSettings = overwriteScriptSetting.isSelected();
             Rs2AntibanSettings.saveToProfile();
         });
-        universalAntibanSettings.addActionListener(e -> {
+        universalAntibanSettings.addActionListener(e ->
+        {
             Rs2Antiban.antibanSetupTemplates.applyUniversalAntibanSetup();
             Rs2AntibanSettings.saveToProfile();
         });
     }
 
-    public void updateValues() {
+    public void updateValues()
+    {
         isEnabled.setSelected(Rs2AntibanSettings.antibanEnabled);
         universalAntiban.setSelected(Rs2AntibanSettings.universalAntiban);
         useContextualVariability.setSelected(Rs2AntibanSettings.contextualVariability);
         devDebug.setSelected(Rs2AntibanSettings.devDebug);
         overwriteScriptSetting.setSelected(Rs2AntibanSettings.overwriteScriptSettings);
     }
-
 }
