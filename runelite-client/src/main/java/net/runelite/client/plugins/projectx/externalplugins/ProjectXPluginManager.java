@@ -77,6 +77,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
@@ -90,6 +91,11 @@ public class ProjectXPluginManager {
     private static final String INSTALLED_VERSION_KEY_PREFIX = "plugin.";
     private static final String UPDATE_NOTIFICATION_GROUP = "projectxPluginUpdateNotifications";
     private static final String UPDATE_NOTIFICATION_KEY_PREFIX = "plugin.";
+
+    /** Long enough for start-up to finish before the first reconciliation. */
+    private static final long RECONCILE_DELAY_SECONDS = 30;
+    /** How often a purchase made while the client is running is noticed. */
+    private static final long RECONCILE_INTERVAL_SECONDS = 5 * 60;
 
     private final OkHttpClient okHttpClient;
     private final ProjectXPluginClient projectxPluginClient;
@@ -175,6 +181,71 @@ public class ProjectXPluginManager {
         ProjectXDeveloperGate.bind(account);
 
         loadManifest();
+
+        /*
+         * Nothing used to bring a purchase down on its own.
+         *
+         * A script bought on the website only ever reached the client when the
+         * user opened the plugin hub and pressed Install: refresh() reconciles
+         * against the plugins already loaded, so it could never fetch one that
+         * was not there yet, and nothing called it in any case. The first delay
+         * lets start-up finish -- entitlements are started just after this -- and
+         * the interval is what makes a purchase arrive in a running client.
+         */
+        executor.scheduleWithFixedDelay(
+            this::reconcile, RECONCILE_DELAY_SECONDS, RECONCILE_INTERVAL_SECONDS, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Brings this machine into line with what the account is entitled to.
+     *
+     * <p>Deliberately tolerant: every step is safe to repeat, and a failure in
+     * one pass is retried by the next rather than reported to the user, because
+     * the ordinary cause is a network that came back a minute later.
+     */
+    private void reconcile() {
+        if (safeMode || isShuttingDown.get()) {
+            return;
+        }
+
+        try {
+            account.refreshIfStale();
+            entitlements.refresh();
+            installEntitled();
+            refresh();
+        } catch (Exception e) {
+            log.warn("Could not reconcile installed plugins: {}", e.getMessage());
+            log.debug("Reconciliation error", e);
+        }
+    }
+
+    /**
+     * Installs anything the account has paid for and this machine does not have.
+     *
+     * <p>Only paid scripts, and only entitled ones. The free catalogue is browsed
+     * and chosen from; a purchase is an instruction, so it is acted on.
+     */
+    private void installEntitled() {
+        for (ProjectXPluginManifest manifest : manifestMap.values()) {
+            String internalName = manifest.getInternalName();
+            if (internalName == null || internalName.isEmpty() || manifest.isDisable()) {
+                continue;
+            }
+            if (!entitlements.isPaid(internalName) || !entitlements.isEntitled(internalName)) {
+                continue;
+            }
+            if (isKnownUnloadable(internalName) || loadedExternalNames().contains(internalName)) {
+                continue;
+            }
+            if (getPluginJarFile(internalName).exists()) {
+                // Present but not loaded: a load attempt, not another download.
+                loadSideLoadPlugin(internalName);
+                continue;
+            }
+
+            log.info("Installing {}, which this account has access to", internalName);
+            install(manifest, null);
+        }
     }
 
     /**
@@ -1198,6 +1269,18 @@ public class ProjectXPluginManager {
             log.warn("Cannot install plugin '{}' ({}): This plugin has been disabled upstream by the developers. " +
                             "This usually means the plugin is no longer functional, has security issues, or has been deprecated.",
                     manifest.getDisplayName(), internalName);
+            return;
+        }
+
+        /*
+         * Installing is reached on every entitlement sync, not just from a
+         * click, so a build that cannot load would be fetched again on each
+         * pass -- the download the memo is meant to prevent, arriving by a
+         * different route.
+         */
+        if (isKnownUnloadable(internalName)) {
+            log.info("Not reinstalling {}: this build has already failed to load", internalName);
+            eventBus.post(new ExternalPluginsChanged());
             return;
         }
 

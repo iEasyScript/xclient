@@ -112,6 +112,14 @@ public class ProjectXPluginClient
      */
     public BufferedImage downloadIcon(String iconUrl) throws IOException
     {
+        // Not every script has an icon, and HttpUrl.parse throws rather than
+        // returning null when handed one -- which the hub panel then did on
+        // every repaint, filling the log with identical stack traces.
+        if (iconUrl == null || iconUrl.isEmpty())
+        {
+            return null;
+        }
+
         HttpUrl url = HttpUrl.parse(iconUrl);
         if (url == null)
         {

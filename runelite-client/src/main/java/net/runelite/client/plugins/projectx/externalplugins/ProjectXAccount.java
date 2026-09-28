@@ -40,6 +40,11 @@ import okhttp3.Response;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Who is signed in, and what they are allowed to see.
@@ -75,9 +80,40 @@ public class ProjectXAccount
     private final Gson gson;
     private final ConfigManager configManager;
 
+    /**
+     * How long an answer from the site is trusted before asking again.
+     *
+     * <p>Matches the cache header {@code /api/v1/me} sets, so re-asking at this
+     * interval costs nothing when the answer has not changed.
+     */
+    private static final long REFRESH_INTERVAL_SECONDS = 60;
+
+    /** What was last said about the sign-in state, so it is said once and not every minute. */
+    private enum Reported
+    {
+        NOTHING,
+        NO_TOKEN,
+        REJECTED,
+        SIGNED_IN
+    }
+
     /** Null until the site has answered at least once. */
     @Getter
     private volatile Identity identity;
+
+    private volatile long lastRefreshMillis;
+    private volatile Reported reported = Reported.NOTHING;
+
+    /**
+     * The token the site has actually accepted, once one has been.
+     *
+     * <p>Static because {@link #token(ConfigManager)} is what every other caller
+     * -- entitlements, jar downloads -- uses to build its Authorization header,
+     * and they must all send the token this class signed in with. Otherwise the
+     * client can be signed in on one token while asking for a customer's paid
+     * scripts with another.
+     */
+    private static volatile String provenToken;
 
     @Inject
     private ProjectXAccount(OkHttpClient okHttpClient, Gson gson, ConfigManager configManager)
@@ -95,24 +131,60 @@ public class ProjectXAccount
      */
     public static String token(ConfigManager configManager)
     {
-        String token = System.getProperty("projectx.accountToken");
-        if (Strings.isNullOrEmpty(token))
+        List<String> candidates = candidates(configManager);
+        if (candidates.isEmpty())
         {
-            token = System.getenv("PROJECTX_ACCOUNT_TOKEN");
+            return null;
         }
-        if (Strings.isNullOrEmpty(token) && configManager != null)
+
+        /*
+         * A token that has been accepted beats one that merely ranks higher.
+         *
+         * The launcher's token normally wins, and should: it owns the session,
+         * and signing out there must not fall back to a stale token in a config
+         * file. But when the launcher hands over a token the site refuses --
+         * revoked, or belonging to an account that has since been replaced --
+         * ranking alone leaves the client signed out while a perfectly good
+         * token sits in the settings, and the customer's paid scripts will not
+         * run. The proven token still has to be one of the current candidates,
+         * so removing it really does sign the user out.
+         */
+        String proven = provenToken;
+        if (proven != null && candidates.contains(proven))
+        {
+            return proven;
+        }
+        return candidates.get(0);
+    }
+
+    /** Every token this machine offers, best-ranked first, without duplicates. */
+    private static List<String> candidates(ConfigManager configManager)
+    {
+        Set<String> ordered = new LinkedHashSet<>();
+        add(ordered, System.getProperty("projectx.accountToken"));
+        add(ordered, System.getenv("PROJECTX_ACCOUNT_TOKEN"));
+
+        if (configManager != null)
         {
             try
             {
-                token = configManager.getConfiguration(ProjectXConfig.configGroup, ProjectXConfig.keyAccountToken);
+                add(ordered, configManager.getConfiguration(
+                    ProjectXConfig.configGroup, ProjectXConfig.keyAccountToken));
             }
             catch (Exception e)
             {
                 // The config is not loaded during early start-up.
-                return null;
             }
         }
-        return Strings.isNullOrEmpty(token) ? null : token.trim();
+        return new ArrayList<>(ordered);
+    }
+
+    private static void add(Set<String> into, String token)
+    {
+        if (!Strings.isNullOrEmpty(token))
+        {
+            into.add(token.trim());
+        }
     }
 
     /** As {@link #token(ConfigManager)}, for callers with no ConfigManager to hand. */
@@ -133,15 +205,122 @@ public class ProjectXAccount
      * should not silently demote a developer mid-session. A token the site
      * actively rejects does clear it, because that token is no longer anyone.
      */
+    /**
+     * Refreshes only when the cached answer has gone stale, or when there is a
+     * token but no identity yet.
+     *
+     * <p>The identity used to be fetched exactly once, at start-up. That made a
+     * single failed request permanent for the session: a customer who opened the
+     * client while the site was restarting, or before their network was up, was
+     * treated as signed out until they restarted -- and the paid plugins they
+     * had bought would not run. The second condition is what fixes that, because
+     * an unknown identity is retried rather than accepted.
+     */
+    public Identity refreshIfStale()
+    {
+        boolean stale = System.currentTimeMillis() - lastRefreshMillis
+            >= TimeUnit.SECONDS.toMillis(REFRESH_INTERVAL_SECONDS);
+        boolean unresolved = identity == null && currentToken() != null;
+
+        if (stale || unresolved)
+        {
+            return refresh();
+        }
+        return identity;
+    }
+
+    /**
+     * Says what changed about the sign-in state, once per change.
+     *
+     * <p>Called on every refresh, so it has to stay quiet while nothing moves:
+     * the point is that a customer whose token stops working gets a line in the
+     * log saying so, not that the log fills up with the same line every minute.
+     */
+    private void report(Reported now)
+    {
+        if (reported == now)
+        {
+            return;
+        }
+        reported = now;
+
+        switch (now)
+        {
+            case NO_TOKEN:
+                log.info("Not signed in to Project X. Sign in through the launcher, or paste an "
+                    + "API token into the Project X settings. Paid scripts will not run until then.");
+                break;
+            case REJECTED:
+                log.warn("The Project X API token was rejected, so paid scripts cannot run. "
+                    + "It was probably revoked -- sign in again in the launcher to get a new one.");
+                break;
+            case SIGNED_IN:
+                Identity current = identity;
+                log.info("Signed in to Project X as {} ({})",
+                    current == null ? "?" : current.displayName(),
+                    current == null ? Role.USER : current.role());
+                break;
+            default:
+                break;
+        }
+    }
+
     public Identity refresh()
     {
-        String token = currentToken();
-        if (token == null)
+        lastRefreshMillis = System.currentTimeMillis();
+
+        List<String> candidates = candidates(configManager);
+        if (candidates.isEmpty())
         {
             identity = null;
+            provenToken = null;
+            report(Reported.NO_TOKEN);
             return null;
         }
 
+        for (int i = 0; i < candidates.size(); i++)
+        {
+            String candidate = candidates.get(i);
+            switch (ask(candidate))
+            {
+                case ACCEPTED:
+                    if (i > 0)
+                    {
+                        log.warn("The preferred Project X token was rejected; signed in with a "
+                            + "lower-ranked one instead. Sign in again in the launcher to "
+                            + "replace the dead one.");
+                    }
+                    provenToken = candidate;
+                    report(Reported.SIGNED_IN);
+                    return identity;
+
+                case REJECTED:
+                    continue;
+
+                default:
+                    // Unreachable rather than refused: nothing has been learned
+                    // about any token, so the previous answer stands. Losing the
+                    // network must not sign a paying customer out.
+                    return identity;
+            }
+        }
+
+        identity = null;
+        provenToken = null;
+        report(Reported.REJECTED);
+        return null;
+    }
+
+    private enum Outcome
+    {
+        ACCEPTED,
+        REJECTED,
+        UNREACHABLE
+    }
+
+    /** Asks the site about one token, setting {@link #identity} if it is accepted. */
+    private Outcome ask(String token)
+    {
         Request request = new Request.Builder()
             .url(ProjectXSite.api("me"))
             .header("Authorization", "Bearer " + token)
@@ -151,28 +330,27 @@ public class ProjectXAccount
         {
             if (response.code() == 401 || response.code() == 403)
             {
-                log.warn("Project X API token was rejected; signed out");
-                identity = null;
-                return null;
+                return Outcome.REJECTED;
             }
 
             if (!response.isSuccessful() || response.body() == null)
             {
                 log.debug("Could not read the Project X account: HTTP {}", response.code());
-                return identity;
+                return Outcome.UNREACHABLE;
             }
 
             Identity parsed = gson.fromJson(response.body().charStream(), Identity.class);
-            if (parsed != null)
+            if (parsed == null)
             {
-                identity = parsed;
+                return Outcome.UNREACHABLE;
             }
-            return identity;
+            identity = parsed;
+            return Outcome.ACCEPTED;
         }
         catch (IOException | JsonSyntaxException e)
         {
             log.debug("Could not reach the Project X site for the account: {}", e.getMessage());
-            return identity;
+            return Outcome.UNREACHABLE;
         }
     }
 
