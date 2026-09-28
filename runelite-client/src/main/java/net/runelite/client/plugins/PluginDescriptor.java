@@ -32,46 +32,52 @@ import java.lang.annotation.*;
 @Documented
 public @interface PluginDescriptor
 {
-    String Bee = "<html>[<font color=#FFD700><b>B</b></font>] ";
-    String Nate = "<html>[<font color=orange>N</font>] ";
-    /**
-     * The inherited "[M]" badge, now empty.
+    /*
+     * Author badges, all empty.
      *
-     * Kept as a constant rather than deleted because thirty-two plugins in the
-     * Hub prefix their name with it, and they are built from a separate
-     * checkout -- removing it here would break that build. Empty, every one of
-     * them loses the badge without a single descriptor being edited.
+     * Each of these was an HTML fragment -- a coloured letter in brackets --
+     * glued to the front of a plugin's name. Across a list of a hundred and
+     * sixty that is a column of tags nobody can read, in front of the words
+     * people are actually looking for.
+     *
+     * Emptied rather than deleted, deliberately. The constants stay public and
+     * keep their names, so every plugin that prefixes its name with one still
+     * compiles, plugins are built from separate checkouts that would otherwise
+     * break, and putting a badge back is a matter of putting a string in one of
+     * these. Nothing has been taken away except what was on screen.
      */
+    String Bee = "";
+    String Nate = "";
     String Mocrosoft = "";
-    String Default = "<html>[<font color=green>D</font>] ";
-    String Bank = "<html>[<font color=#9900ff>B</font>] ";
-    String Forn = "<html>[<font color=#AF2B1E>F</font>] ";
-    String See1Duck = "<html>[<font color=#ffff1a>\uD83E\uDD86</font>] ";
-    String TaFCat = "<html>[<font color=#ffff1a>\uD83D\uDC31</font>] ";
-    String GMason = "<html>[<font color=#0077B6>G</font>] ";
-    String Pumster = "<html>[<font color=#03ff4e>P</font>] ";
-    String Basche = "<html>[<font color=#07A6F0>B</font>] ";
-    String Vince = "<html>[<font color=#5bffe4>V</font>] ";
-    String Basm = "<html>[<font color=#b3b3b3>W</font>] ";
-    String Geoff = "<html>[<font color=#ffbc03>G</font>] ";
-    String Bttqjs = "<html>[<font color=#e57373>J</font>] ";
-	String VOX = "<html>[<font color=#5F0F40>\uD83C\uDF33</font>] ";
-    String Gabulhas = "<html>[<font color=#F44FB0>Gab</font>] ";
-    String zerozero ="<html>[<font color=#000000>00</font>] " ;
-    String LiftedMango = "<html>[<font color=#00FFFF>LM</font>] ";
-    String eXioStorm = "<html>[<font color=#ff00dc>§</font>] "; Color stormColor = new Color(255, 0, 220);
-    String Girdy = "<html>[<font color=#3DED97>\u01E5</font>] ";
-    String Cicire = "<html>[<font color=#68ff00>Ci</font>] ";
-    String ChillX = "<html>[<font color=#05e1f5>C</font>] ";
-    String Gage = "<html>[<font color=#00008B>Gage</font>] ";
-	String Bradley = "<html>[<font color=#E32636>BR</font>] ";
-	String Frosty = "<html>[<font color=#00FFFF>\u2744</font>] ";
-	String Maxxin = "<html>[<font color='#8B0000'>MX</font>] ";
-	String Hal = "<html>[<font color=#000000>Hal</font>] ";
-	String Funk = "<html>[<font color=#ffff1a>\uD83C\uDF19</font>] ";
-  	String Cardew = "<html>[<font color=#824BA3>CD</font>]";
-	String Bolado = "<html>[<font color=#FF0000><b>\uD83D\uDE21</b></font>] ";
- 	String Choken = "<html>[<font color=#8A2BE2>\u03A9</font>] ";
+    String Default = "";
+    String Bank = "";
+    String Forn = "";
+    String See1Duck = "";
+    String TaFCat = "";
+    String GMason = "";
+    String Pumster = "";
+    String Basche = "";
+    String Vince = "";
+    String Basm = "";
+    String Geoff = "";
+    String Bttqjs = "";
+	String VOX = "";
+    String Gabulhas = "";
+    String zerozero ="" ;
+    String LiftedMango = "";
+    String eXioStorm = ""; Color stormColor = new Color(255, 0, 220);
+    String Girdy = "";
+    String Cicire = "";
+    String ChillX = "";
+    String Gage = "";
+	String Bradley = "";
+	String Frosty = "";
+	String Maxxin = "";
+	String Hal = "";
+	String Funk = "";
+  	String Cardew = "";
+	String Bolado = "";
+ 	String Choken = "";
 
 	String name();
 
