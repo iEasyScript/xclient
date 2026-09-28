@@ -101,13 +101,15 @@ public class ProjectXTopLevelConfigPanel extends PluginPanel {
 
         this.pluginListPanel = pluginListPanel;
 
-        // Create text-based icons instead of using image files for better clarity
-        ImageIcon installedIcon = createTextIcon("Installed", Color.YELLOW, null, 80, 32);
-        ImageIcon hubIcon = createTextIcon("Plugin Hub", Color.YELLOW, null, 80, 32);
-
-        pluginListPanelTab = addTab(pluginListPanel.getMuxer(), installedIcon, "Installed ProjectX Plugins");
+        /*
+         * Real text tabs rather than labels painted into a bitmap. The painted
+         * ones were a fixed yellow that matched nothing else in the client, could
+         * not show which tab was selected, and resampled badly at any scaling.
+         * MaterialTab already handles selected and unselected states.
+         */
+        pluginListPanelTab = addTextTab(pluginListPanel.getMuxer(), "Installed", "Installed ProjectX Plugins");
         profilePanelTab = addTab(profilePanel, "profile_icon.png", "Profiles");
-        addTab(projectxPluginHubPanelProvider, hubIcon, "ProjectX Hub");
+        addTextTab(projectxPluginHubPanelProvider, "Hub", "ProjectX Hub");
 
         tabGroup.select(pluginListPanelTab);
     }
@@ -134,6 +136,38 @@ public class ProjectXTopLevelConfigPanel extends PluginPanel {
         }
 
         return footer;
+    }
+
+    private MaterialTab addTextTab(ProjectXPluginPanel panel, String label, String tooltip) {
+        MaterialTab mt = new MaterialTab(label, tabGroup, null);
+        mt.setToolTipText(tooltip);
+        tabGroup.addTab(mt);
+
+        content.add(tooltip, panel.getWrappedPanel());
+        eventBus.register(panel);
+
+        mt.setOnSelectEvent(() ->
+        {
+            switchTo(tooltip, panel, false);
+            return true;
+        });
+        return mt;
+    }
+
+    private MaterialTab addTextTab(Provider<? extends ProjectXPluginPanel> panelProvider, String label, String tooltip) {
+        MaterialTab mt = new MaterialTab(label, tabGroup, null);
+        mt.setToolTipText(tooltip);
+        tabGroup.addTab(mt);
+
+        mt.setOnSelectEvent(() ->
+        {
+            ProjectXPluginPanel panel = panelProvider.get();
+            content.add(tooltip, panel.getWrappedPanel());
+            eventBus.register(panel);
+            switchTo(tooltip, panel, true);
+            return true;
+        });
+        return mt;
     }
 
     private MaterialTab addTab(ProjectXPluginPanel panel, ImageIcon icon, String tooltip) {

@@ -79,8 +79,6 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
     private static final ImageIcon CONFIGURE_ICON;
     private static final Pattern SPACES = Pattern.compile(" +");
     private static final String NEWLY_ADDED_FILTER_QUERY = "New";
-    private static final Color PASTEL_GREEN = new Color(0x7CB987);
-    private static final Color PASTEL_ORANGE = new Color(0xD4A574);
 
     static {
         BufferedImage missingIcon = ImageUtil.loadImageResource(ProjectXPluginHubPanel.class, "pluginhub_missingicon.png");
@@ -240,7 +238,7 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
                 keywords.add("newly added");
             }
 
-            setBackground(ColorScheme.DARKER_GRAY_COLOR);
+            setBackground(HubUi.CARD);
             setOpaque(true);
 
             GroupLayout layout = new GroupLayout(this);
@@ -248,6 +246,7 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
 
             JLabel pluginName = new JLabel(manifest.getDisplayName());
             pluginName.setFont(FontManager.getRunescapeBoldFont());
+            pluginName.setForeground(HubUi.TEXT);
             pluginName.setToolTipText(manifest.getDisplayName());
             pluginName.setHorizontalAlignment(JLabel.LEFT);
 
@@ -267,6 +266,7 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
             }
             JLabel author = new JLabel(authorText);
             author.setFont(FontManager.getRunescapeSmallFont());
+            author.setForeground(HubUi.TEXT_FAINT);
             author.setToolTipText(authorTooltip);
             author.setHorizontalAlignment(JLabel.LEFT);
             author.setBorder(new EmptyBorder(0, 0, 0, 5));
@@ -294,6 +294,8 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
             }
 
             JLabel description = new JLabel(descriptionText);
+            description.setFont(FontManager.getRunescapeSmallFont());
+            description.setForeground(HubUi.TEXT_DIM);
             description.setVerticalAlignment(JLabel.TOP);
             description.setToolTipText(descriptionText);
 
@@ -397,24 +399,21 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
 			return userCount;
 		}
 
+		/**
+		 * Shows what this row is, in one stripe down its left edge.
+		 *
+		 * <p>Nothing for a plugin that is not installed, green once it is, orange
+		 * when a newer build has been published. Previously the whole row was
+		 * outlined in those colours, which in a list of a hundred and sixty read
+		 * as a wall of boxes and left no way to tell the name from the frame.
+		 */
 		private void updateBorder(String selectedVersion)
 		{
 			boolean outdated = installed
 				&& !Strings.isNullOrEmpty(latestVersion)
 				&& !latestVersion.equals(selectedVersion);
 
-			if (!installed)
-			{
-				setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
-			}
-			else if (outdated)
-			{
-				setBorder(BorderFactory.createLineBorder(PASTEL_ORANGE, 2));
-			}
-			else
-			{
-				setBorder(BorderFactory.createLineBorder(PASTEL_GREEN, 2));
-			}
+			setBorder(HubUi.row(!installed ? null : outdated ? HubUi.UPDATE : HubUi.INSTALLED));
 		}
 
 		private void setInstalled(boolean installed, String selectedVersion)
@@ -503,20 +502,20 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
 				{
 					case DOWNLOAD:
 						actionButton.setText("\u2B07");
-						actionButton.setForeground(PASTEL_GREEN);
+						actionButton.setForeground(HubUi.INSTALLED);
 						actionButton.setToolTipText(Strings.isNullOrEmpty(selected)
 							? "Download plugin"
 							: "Download version " + selected);
 						break;
 					case REFRESH:
 						actionButton.setText("\u27F3");
-						actionButton.setForeground(PASTEL_ORANGE);
+						actionButton.setForeground(HubUi.UPDATE);
 						actionButton.setToolTipText("Update to latest version (" + latestVersion + ")");
 						break;
 					case REMOVE:
 					default:
 						actionButton.setText("\u2715");
-						actionButton.setForeground(new Color(0xBE2828));
+						actionButton.setForeground(HubUi.DANGER);
 						actionButton.setToolTipText("Remove plugin");
 						break;
 				}
@@ -705,11 +704,11 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
             });
         }
 
-        setBackground(ColorScheme.DARK_GRAY_COLOR);
+        setBackground(HubUi.BACKGROUND);
 
         searchBar = new IconTextField();
         searchBar.setIcon(IconTextField.Icon.SEARCH);
-        searchBar.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        searchBar.setBackground(HubUi.CARD);
         searchBar.setHoverBackgroundColor(ColorScheme.DARK_GRAY_HOVER_COLOR);
         searchBar.getSuggestionListModel().addElement(NEWLY_ADDED_FILTER_QUERY);
         searchBar.getDocument().addDocumentListener(new DocumentListener() {
@@ -730,8 +729,12 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
         });
 
         mainPanel = new JPanel();
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(0, 7, 7, 7));
-        mainPanel.setLayout(new DynamicGridLayout(0, 1, 0, 5));
+        mainPanel.setBackground(HubUi.BACKGROUND);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(0, 6, 6, 6));
+        // No gap between rows: each one draws its own hairline underneath, so a
+        // gap as well would leave the list looking like a stack of loose cards
+        // rather than one list.
+        mainPanel.setLayout(new DynamicGridLayout(0, 1, 0, 0));
         mainPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         refreshing = new JLabel("Loading...");
