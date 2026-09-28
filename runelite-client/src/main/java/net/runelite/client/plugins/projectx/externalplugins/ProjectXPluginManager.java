@@ -416,8 +416,35 @@ public class ProjectXPluginManager {
         InstalledPluginVersion storedVersion = lookupInstalledPluginVersion(internalName).orElse(null);
 
         String localHash = calculateHash(internalName);
-        String authoritativeHash = storedVersion != null ? storedVersion.getSha256()
-                : authoritativeManifest != null ? authoritativeManifest.getSha256() : null;
+
+        /*
+         * The site's hash wins whenever it is talking about the build we are
+         * meant to be running.
+         *
+         * This used to prefer the hash recorded when the jar was downloaded,
+         * which only ever answered "has this file changed since we fetched it" --
+         * never "is this what the site is publishing". So a build republished
+         * under the same version was invisible: the local file still matched
+         * what we had written down, the check passed, and the new bytes were
+         * never fetched. Rebuilding every plugin without bumping a version left
+         * every client running the old jars indefinitely.
+         *
+         * The stored hash is still used when the installed version is not the
+         * published one, because then the manifest is describing a different
+         * build and has nothing to say about this file.
+         */
+        String publishedVersion = authoritativeManifest == null ? null : authoritativeManifest.getVersion();
+        boolean onPublishedVersion = storedVersion == null
+                || publishedVersion == null
+                || publishedVersion.equals(storedVersion.getVersion());
+
+        String authoritativeHash;
+        if (onPublishedVersion && authoritativeManifest != null
+                && !Strings.isNullOrEmpty(authoritativeManifest.getSha256())) {
+            authoritativeHash = authoritativeManifest.getSha256();
+        } else {
+            authoritativeHash = storedVersion != null ? storedVersion.getSha256() : null;
+        }
 
         if (Strings.isNullOrEmpty(localHash) || Strings.isNullOrEmpty(authoritativeHash)) {
             return false;
