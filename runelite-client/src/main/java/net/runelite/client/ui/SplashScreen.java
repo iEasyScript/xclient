@@ -26,7 +26,7 @@
 package net.runelite.client.ui;
 
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.client.plugins.projectx.RandomFactClient;
+import net.runelite.client.plugins.projectx.ProjectXTips;
 import net.runelite.client.ui.laf.RuneLiteLAF;
 import net.runelite.client.util.ImageUtil;
 
@@ -387,7 +387,7 @@ public class SplashScreen extends JFrame implements ActionListener {
         scheduledRandomFactExecutorService = Executors.newSingleThreadScheduledExecutor();
         scheduledRandomFactFuture = scheduledRandomFactExecutorService.scheduleAtFixedRate(
                 () -> {
-                    RandomFactClient.getRandomFactAsync(SplashScreen::setFact);
+                    ProjectXTips.nextTip(SplashScreen::setFact);
                 },
                 0, 20, TimeUnit.SECONDS);
     }
