@@ -34,7 +34,15 @@ public @interface PluginDescriptor
 {
     String Bee = "<html>[<font color=#FFD700><b>B</b></font>] ";
     String Nate = "<html>[<font color=orange>N</font>] ";
-    String Mocrosoft = "<html>[<font color=#b8f704M>M</font>] ";
+    /**
+     * The inherited "[M]" badge, now empty.
+     *
+     * Kept as a constant rather than deleted because thirty-two plugins in the
+     * Hub prefix their name with it, and they are built from a separate
+     * checkout -- removing it here would break that build. Empty, every one of
+     * them loses the badge without a single descriptor being edited.
+     */
+    String Mocrosoft = "";
     String Default = "<html>[<font color=green>D</font>] ";
     String Bank = "<html>[<font color=#9900ff>B</font>] ";
     String Forn = "<html>[<font color=#AF2B1E>F</font>] ";

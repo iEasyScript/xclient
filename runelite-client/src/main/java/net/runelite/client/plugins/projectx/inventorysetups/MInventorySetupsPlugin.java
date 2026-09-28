@@ -98,7 +98,7 @@ import static net.runelite.client.plugins.projectx.util.bank.Rs2Bank.isLockedSlo
 
 
 @PluginDescriptor(
-		name = PluginDescriptor.Mocrosoft + "MInventory Setups",
+		name = PluginDescriptor.Mocrosoft + "Inventory Setups",
 		description = "Save gear setups for specific activities",
 		enabledByDefault = true,
 		alwaysOn = true
