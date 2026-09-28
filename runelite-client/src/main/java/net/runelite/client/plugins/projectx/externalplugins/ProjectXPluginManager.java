@@ -212,6 +212,7 @@ public class ProjectXPluginManager {
             account.refreshIfStale();
             entitlements.refresh();
             installEntitled();
+            updateOutdated();
             refresh();
         } catch (Exception e) {
             log.warn("Could not reconcile installed plugins: {}", e.getMessage());
@@ -245,6 +246,63 @@ public class ProjectXPluginManager {
 
             log.info("Installing {}, which this account has access to", internalName);
             install(manifest, null);
+        }
+    }
+
+    /**
+     * Moves installed plugins onto the build the site is currently publishing.
+     *
+     * <p>Without this an author cannot reach the people already running their
+     * script. A new version is reviewed, approved and published, and every
+     * client that already had the old one kept it: the periodic refresh asks for
+     * the version it already has, and the only thing that ever offered an
+     * upgrade was a dialog shown when the user happened to start the plugin by
+     * hand, telling them to go and update it themselves. A fix nobody receives
+     * is not a fix.
+     *
+     * <p>A paid script still has to be paid for -- an expired subscription is
+     * left on what it has rather than handed a newer build.
+     */
+    private void updateOutdated() {
+        for (ProjectXPluginManifest manifest : manifestMap.values()) {
+            String internalName = manifest.getInternalName();
+            if (internalName == null || internalName.isEmpty() || manifest.isDisable()) {
+                continue;
+            }
+
+            String latest = manifest.getVersion();
+            if (Strings.isNullOrEmpty(latest) || !getPluginJarFile(internalName).exists()) {
+                continue;
+            }
+            if (isKnownUnloadable(internalName)) {
+                continue;
+            }
+            if (entitlements.isPaid(internalName) && !entitlements.isEntitled(internalName)) {
+                continue;
+            }
+
+            String installed = getInstalledPluginVersion(internalName).orElse(null);
+            if (installed == null || latest.equals(installed)) {
+                continue;
+            }
+
+            log.info("Updating {} from {} to {}", internalName, installed, latest);
+
+            /*
+             * Fetch before disturbing anything. downloadPlugin reads the whole
+             * body into memory before it touches the file, so a fetch that fails
+             * leaves the working version exactly where it was -- whereas the
+             * obvious remove()-then-install() would have deleted it first and
+             * left the user with nothing to run.
+             */
+            if (!downloadPlugin(internalName, null)) {
+                log.warn("Could not fetch {} {}; staying on {}", internalName, latest, installed);
+                continue;
+            }
+
+            unloadPlugin(internalName);
+            loadSideLoadPlugin(internalName);
+            eventBus.post(new ExternalPluginsChanged());
         }
     }
 
@@ -1300,6 +1358,56 @@ public class ProjectXPluginManager {
      *
      * @param manifest the manifest of the plugin to remove
      */
+    /**
+     * Stops a side-loaded plugin and releases its classloader, leaving its jar
+     * on disk.
+     *
+     * <p>Separated from {@link #remove} so a plugin can be swapped for a newer
+     * build without the old one being deleted first -- which would leave nothing
+     * installed if the replacement then failed to arrive.
+     *
+     * @return false when the plugin is loaded but its classloader is not known,
+     *     in which case nothing was unloaded and the old classes are still live.
+     */
+    private boolean unloadPlugin(String internalName) {
+        var pluginToRemove = pluginManager.getPlugins().stream()
+                .filter(x -> x.getClass().getSimpleName().equalsIgnoreCase(internalName))
+                .findFirst();
+
+        if (pluginToRemove.isEmpty()) {
+            log.warn("Plugin to remove not found in plugin manager: {}", internalName);
+            return true;
+        }
+
+        URLClassLoader cl = loaders.remove(internalName);
+        if (cl == null) {
+            return false;
+        }
+
+        var plugin = pluginToRemove.get();
+        try {
+            SwingUtilities.invokeAndWait(() ->
+            {
+                try {
+                    pluginManager.stopPlugin(plugin);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (InterruptedException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
+        pluginManager.remove(plugin);
+
+        try {
+            cl.close();
+        } catch (Exception ignored) {
+        }
+
+        return true;
+    }
+
     public void remove(ProjectXPluginManifest manifest) {
         if (manifest == null || !manifestMap.containsValue(manifest)) {
             log.error("Can't install plugin: unable to identify manifest");
@@ -1320,33 +1428,8 @@ public class ProjectXPluginManager {
         }
 
         File jar = getPluginJarFile(internalName);
-        var pluginToRemove = pluginManager.getPlugins().stream().filter(x -> x.getClass().getSimpleName().equalsIgnoreCase(internalName)).findFirst();
-        if (pluginToRemove.isPresent()) {
-            URLClassLoader cl = loaders.remove(internalName);
-            if (cl == null) return;
-
-            var plugin = pluginToRemove.get();
-            try {
-                SwingUtilities.invokeAndWait(() ->
-                {
-                    try {
-                        pluginManager.stopPlugin(plugin);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            } catch (InterruptedException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
-
-            pluginManager.remove(plugin);
-
-            try {
-                cl.close();
-            } catch (Exception ignored) {
-            }
-        } else {
-            log.warn("Plugin to remove not found in plugin manager: {}", internalName);
+        if (!unloadPlugin(internalName)) {
+            return;
         }
 
         if (jar.exists() && !jar.delete()) {
