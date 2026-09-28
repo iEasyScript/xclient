@@ -138,7 +138,7 @@ public class Rs2TileItemModel implements TileItem, IEntity {
         return ProjectX.getClientThread().invoke((Supplier<Boolean>) () -> {
             ItemComposition itemComposition = ProjectX.getClient().getItemDefinition(tileItem.getId());
             int highAlchValue = itemComposition.getPrice() * 60 / 100;
-            int marketPrice = ProjectX.getItemManager().getItemPrice(itemComposition.getId());
+            long marketPrice = ProjectX.getItemManager().getItemPrice(itemComposition.getId());
             return marketPrice > highAlchValue;
         });
     }
@@ -182,10 +182,10 @@ public class Rs2TileItemModel implements TileItem, IEntity {
         });
     }
 
-    public int getTotalValue() {
+    public long getTotalValue() {
         return ProjectX.getClientThread().invoke(() -> {
             ItemComposition itemComposition = ProjectX.getClient().getItemDefinition(tileItem.getId());
-            int price = ProjectX.getItemManager().getItemPrice(itemComposition.getId());
+            long price = ProjectX.getItemManager().getItemPrice(itemComposition.getId());
             return price * tileItem.getQuantity();
         });
     }

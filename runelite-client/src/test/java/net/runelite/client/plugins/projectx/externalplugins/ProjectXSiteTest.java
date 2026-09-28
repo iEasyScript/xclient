@@ -42,7 +42,11 @@ public class ProjectXSiteTest
     {
         System.setProperty("projectx.siteUrl", "not a url");
 
-        assertEquals("localhost", ProjectXSite.baseUrl().host());
+        // Falls back to the built-in default, which is the live site. This
+        // asserted localhost back when the default was a dev server; a client
+        // that quietly pointed itself at localhost because a setting was
+        // malformed would simply fail to find anything.
+        assertEquals("xclient.dev", ProjectXSite.baseUrl().host());
     }
 
     @Test

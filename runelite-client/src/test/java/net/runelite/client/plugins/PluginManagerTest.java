@@ -24,6 +24,8 @@
  */
 package net.runelite.client.plugins;
 
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXDeveloperGate;
+
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import com.google.common.reflect.ClassPath;
@@ -139,7 +141,7 @@ public class PluginManagerTest
 	@Test
 	public void testLoadPlugins() throws Exception
 	{
-		var pluginManager = new PluginManager(false, null, null, null, null);
+		var pluginManager = new PluginManager(false, null, null, null, null, new PluginModuleFactory());
 		pluginManager.loadCorePlugins();
 		var plugins = pluginManager.getPlugins();
 
@@ -147,9 +149,13 @@ public class PluginManagerTest
 		EventBus eventBus = new EventBus();
 		plugins.forEach(eventBus::register);
 
+		// Developer-only plugins are filtered out of the load by
+		// ProjectXDeveloperGate, and nobody is signed in here, so counting every
+		// annotated class would expect one more plugin than may legitimately
+		// load.
 		var expected = pluginClasses.stream()
-			.map(cl -> cl.getAnnotation(PluginDescriptor.class))
-			.filter(Objects::nonNull)
+			.filter(cl -> cl.getAnnotation(PluginDescriptor.class) != null)
+			.filter(cl -> !ProjectXDeveloperGate.isHidden(cl.getName()))
 			.count();
 		assertEquals(expected, plugins.size());
 	}
@@ -160,7 +166,7 @@ public class PluginManagerTest
 	@Ignore
 	public void dumpGraph() throws Exception
 	{
-		PluginManager pluginManager = new PluginManager(false, null, null, null, null);
+		PluginManager pluginManager = new PluginManager(false, null, null, null, null, new PluginModuleFactory());
 		pluginManager.loadCorePlugins();
 
 		Injector graphvizInjector = Guice.createInjector(new GraphvizModule());
