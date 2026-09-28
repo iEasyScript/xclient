@@ -188,7 +188,14 @@ public class Rs2UiHelper {
 	}
 
 	/**
-	 * Check if the current client version is compatible with the required minimum version
+	 * Check if the current client version is compatible with the required minimum version.
+	 *
+	 * <p>Compared against the plugin API level, not the release version. A
+	 * plugin's {@code minClientVersion} says which API it was written against,
+	 * and the catalogue was written against the 1.9-2.6 line this client
+	 * inherited its API from. The release version is a separate, product-facing
+	 * number that restarted at 1.0.0; comparing against that would declare
+	 * every existing plugin incompatible purely because of a rename.
 	 */
 	public static boolean isClientVersionCompatible(String minClientVersion) {
 		if (ProjectX.isDebug()) {
@@ -198,13 +205,13 @@ public class Rs2UiHelper {
 			return true;
 		}
 
-		String currentVersion = RuneLiteProperties.getProjectXVersion();
-		if (currentVersion == null) {
-			log.warn("Unable to determine current ProjectX version");
+		String apiVersion = RuneLiteProperties.getProjectXPluginApiVersion();
+		if (apiVersion == null || apiVersion.isEmpty()) {
+			log.warn("Unable to determine the ProjectX plugin API version");
 			return false;
 		}
 
-		return compareVersions(currentVersion, minClientVersion) >= 0;
+		return compareVersions(apiVersion, minClientVersion) >= 0;
 	}
 
 	/**

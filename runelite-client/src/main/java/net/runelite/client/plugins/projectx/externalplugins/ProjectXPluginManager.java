@@ -104,6 +104,26 @@ public class ProjectXPluginManager {
 
     private final Map<String, URLClassLoader> loaders = new ConcurrentHashMap<>();
 
+    /**
+     * Jars that downloaded cleanly but yielded no usable plugin, against the
+     * fingerprint of the jar that failed.
+     *
+     * <p>Without this the refresh loop is unbounded. A plugin is considered
+     * loaded by looking for it among the registered plugins, so a jar
+     * containing no {@code @PluginDescriptor(isExternal = true)} class -- a
+     * broken build, a placeholder, a jar whose classes will not link against
+     * this client -- never appears there, is therefore still "missing" on the
+     * next pass, and is fetched and retried forever. That is a request every
+     * few seconds, from every client that has the plugin installed, for as long
+     * as the client runs.
+     *
+     * <p>Keyed by fingerprint rather than by name so that publishing a fixed
+     * build clears the memo by itself: the new jar has a different hash, does
+     * not match the recorded failure, and is tried again. Only the exact bytes
+     * already known not to work are skipped.
+     */
+    private final Map<String, String> unloadableJars = new ConcurrentHashMap<>();
+
     @Inject
     @Named("safeMode")
     private boolean safeMode;
@@ -394,6 +414,46 @@ public class ProjectXPluginManager {
         return PLUGIN_DIR.listFiles();
     }
 
+    /** The internal names of the external plugins currently registered. */
+    private Set<String> loadedExternalNames() {
+        return pluginManager.getPlugins().stream()
+                .filter(p -> p.getClass().isAnnotationPresent(PluginDescriptor.class))
+                .filter(p -> p.getClass().getAnnotation(PluginDescriptor.class).isExternal())
+                .map(p -> p.getClass().getSimpleName())
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * What identifies the current bytes of a plugin, for the unloadable memo.
+     *
+     * <p>The published hash is preferred over the local one: it is what changes
+     * when the author releases a fix, and it is known before the jar is even
+     * fetched.
+     */
+    @Nullable
+    private String jarFingerprint(String internalName) {
+        ProjectXPluginManifest manifest = manifestMap.get(internalName);
+        if (manifest != null && !Strings.isNullOrEmpty(manifest.getSha256())) {
+            return manifest.getSha256();
+        }
+        String local = calculateHash(internalName);
+        return Strings.isNullOrEmpty(local) ? null : local;
+    }
+
+    /** True when this exact jar has already been tried and produced no plugin. */
+    private boolean isKnownUnloadable(String internalName) {
+        String recorded = unloadableJars.get(internalName);
+        if (recorded == null) {
+            return false;
+        }
+        if (recorded.equals(jarFingerprint(internalName))) {
+            return true;
+        }
+        // Different bytes: a new build deserves a fresh attempt.
+        unloadableJars.remove(internalName);
+        return false;
+    }
+
     /**
      * Loads a single plugin from the sideload folder if not already loaded.
      */
@@ -403,11 +463,11 @@ public class ProjectXPluginManager {
             log.debug("Plugin file {} does not exist", pluginFile);
             return;
         }
-        Set<String> loadedInternalNames = pluginManager.getPlugins().stream()
-                .filter(p -> p.getClass().isAnnotationPresent(PluginDescriptor.class))
-                .filter(p -> p.getClass().getAnnotation(PluginDescriptor.class).isExternal())
-                .map(p -> p.getClass().getSimpleName())
-                .collect(Collectors.toSet());
+        if (isKnownUnloadable(internalName)) {
+            log.debug("Skipping {}: this build has already failed to load", internalName);
+            return;
+        }
+        Set<String> loadedInternalNames = loadedExternalNames();
         if (loadedInternalNames.contains(internalName)) {
             return;
         }
@@ -429,6 +489,18 @@ public class ProjectXPluginManager {
                 }
             }
             loadPlugins(plugins, null);
+
+            if (!loadedExternalNames().contains(internalName)) {
+                String fingerprint = jarFingerprint(internalName);
+                if (fingerprint != null) {
+                    unloadableJars.put(internalName, fingerprint);
+                }
+                log.warn(
+                    "{} downloaded but registered no plugin -- it has no external "
+                        + "@PluginDescriptor class, or its classes could not be linked. "
+                        + "Not retrying this build.",
+                    internalName);
+            }
         } catch (PluginInstantiationException | IOException e) {
             log.trace("Error loading side-loaded plugin!", e);
         }
@@ -530,8 +602,8 @@ public class ProjectXPluginManager {
             }
 
             if (pluginDescriptor.isExternal() && !Rs2UiHelper.isClientVersionCompatible(pluginDescriptor.minClientVersion())) {
-                log.error("Plugin {} requires client version {} or higher, but current version is {}. Skipping plugin loading.",
-                        clazz.getSimpleName(), pluginDescriptor.minClientVersion(), RuneLiteProperties.getProjectXVersion());
+                log.error("Plugin {} needs plugin API {} or higher; this client provides {}. Skipping plugin loading.",
+                        clazz.getSimpleName(), pluginDescriptor.minClientVersion(), RuneLiteProperties.getProjectXPluginApiVersion());
                 continue;
             }
 
@@ -848,11 +920,18 @@ public class ProjectXPluginManager {
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
 
+            /*
+             * A build already known not to load is left alone entirely -- not
+             * fetched, not retried. Downloading it again would cost the site a
+             * request every refresh and still produce nothing.
+             */
             Set<String> needsDownload = userManifestMap.keySet().stream()
+                    .filter(name -> !isKnownUnloadable(name))
                     .filter(projectxPluginManifest -> !getPluginJarFile(projectxPluginManifest).exists())
                     .collect(Collectors.toSet());
 
             Set<String> needsRedownload = userManifestMap.keySet().stream()
+                    .filter(name -> !isKnownUnloadable(name))
                     .filter(pluginName -> {
                         File pluginFile = getPluginJarFile(pluginName);
                         if (!pluginFile.exists()) {
@@ -905,6 +984,7 @@ public class ProjectXPluginManager {
                     .collect(Collectors.toSet());
 
             Set<ProjectXPluginManifest> toAdd = userManifestMap.values().stream()
+                    .filter(m -> !isKnownUnloadable(m.getInternalName()))
                     .filter(m -> needsReload.contains(m.getInternalName())
                             || !loadedByInternalName.contains(m.getInternalName()))
                     .collect(Collectors.toSet());

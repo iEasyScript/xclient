@@ -51,6 +51,7 @@ public class RuneLiteProperties
 	private static final String OSRS_TWITTER_LINK = "runelite.osrstwitter.link";
 	private static final String PROJECTX_VERSION = "projectx.version";
 	private static final String PROJECTX_COMMIT = "projectx.commit";
+	private static final String PROJECTX_PLUGINAPI_VERSION = "projectx.pluginapi.version";
 
 
 	@Getter(AccessLevel.PACKAGE)
@@ -158,5 +159,20 @@ public class RuneLiteProperties
 	public static String getProjectXCommit()
 	{
 		return properties.getProperty(PROJECTX_COMMIT);
+	}
+
+	/**
+	 * The plugin API level this client provides.
+	 *
+	 * <p>Deliberately not {@link #getProjectXVersion()}. That one is what the
+	 * release is called and is chosen for people; this one is what plugins are
+	 * compiled against and is chosen for compatibility. They were the same
+	 * number while the two happened to move together, and separating them is
+	 * what lets the release version be renumbered -- as it was, back to 1.0.0
+	 * -- without declaring every existing plugin incompatible.
+	 */
+	public static String getProjectXPluginApiVersion()
+	{
+		return properties.getProperty(PROJECTX_PLUGINAPI_VERSION);
 	}
 }

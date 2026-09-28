@@ -38,6 +38,8 @@ fun loadRootProperty(name: String): String? {
 
 val projectxVersionProvider = providers.gradleProperty("projectx.version")
     .orElse(loadRootProperty("projectx.version") ?: "0.0.0")
+val projectxPluginApiVersionProvider = providers.gradleProperty("projectx.pluginapi.version")
+    .orElse(loadRootProperty("projectx.pluginapi.version") ?: "0.0.0")
 val injectedClientVersionProvider = providers.gradleProperty("runelite.injected-client.version")
     .orElse(loadRootProperty("runelite.injected-client.version") ?: project.version.toString())
 
@@ -468,10 +470,12 @@ tasks.processResources {
 
     val projectxVersion = projectxVersionProvider.get()
     val projectxCommit = providers.gradleProperty("projectx.commit.sha").getOrElse(commit.toString().trim())
+    val projectxPluginApiVersion = projectxPluginApiVersionProvider.get()
 
     // Ensure task reruns when injected values change
     inputs.property("projectxVersion", projectxVersion)
     inputs.property("projectxCommit", projectxCommit)
+    inputs.property("projectxPluginApiVersion", projectxPluginApiVersion)
 
     filesMatching("net/runelite/client/runelite.properties") {
         filter { it.replace("\${project.version}", project.version.toString()) }
@@ -479,6 +483,7 @@ tasks.processResources {
         filter { it.replace("\${git.dirty}", dirty.toString().isNotBlank().toString()) }
         filter { it.replace("\${projectx.version}", projectxVersion) }
         filter { it.replace("\${projectx.commit.sha}", projectxCommit) }
+        filter { it.replace("\${projectx.pluginapi.version}", projectxPluginApiVersion) }
     }
 }
 
