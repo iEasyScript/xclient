@@ -29,6 +29,7 @@ import lombok.Value;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigDescriptor;
 import net.runelite.client.externalplugins.ExternalPluginManager;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXSite;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.util.LinkBrowser;
 
@@ -64,23 +65,22 @@ public class ProjectXPluginConfigurationDescriptor
 	}
 
 	/**
-	 * Creates a menu item for linking to a support page for the plugin
+	 * Creates a menu item linking to the page that describes this plugin.
 	 *
-	 * @return A {@link JMenuItem} which opens the plugin's wiki page URL in the browser when clicked
+	 * @return A {@link JMenuItem} which opens the plugin's page in the browser when clicked
 	 */
 	@Nullable
 	JMenuItem createSupportMenuItem(Plugin plugin)
 	{
 		String iname = getInternalPluginHubName();
-		if (iname != null)
+		if (iname == null)
 		{
-			JMenuItem menuItem = new JMenuItem("Wiki");
-			menuItem.addActionListener(e -> LinkBrowser.browse("https://ieasyscript.github.io/xclient-hub/" + iname));
-			return menuItem;
+			iname = plugin != null ? plugin.getClass().getSimpleName() : "";
 		}
 
-		JMenuItem menuItem = new JMenuItem("Wiki");
-		menuItem.addActionListener(e -> LinkBrowser.browse("https://ieasyscript.github.io/xclient-hub/" + (plugin != null ? plugin.getClass().getSimpleName() : "")));
+		String url = ProjectXSite.scriptPage(iname).toString();
+		JMenuItem menuItem = new JMenuItem("About this script");
+		menuItem.addActionListener(e -> LinkBrowser.browse(url));
 		return menuItem;
 	}
 

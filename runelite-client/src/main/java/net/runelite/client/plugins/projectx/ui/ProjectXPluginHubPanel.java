@@ -39,6 +39,7 @@ import net.runelite.client.plugins.config.SearchablePlugin;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXPluginClient;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXPluginManager;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXPluginManifest;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXSite;
 import net.runelite.client.plugins.projectx.ui.search.ProjectXPluginSearch;
 import net.runelite.client.plugins.projectx.util.misc.Rs2UiHelper;
 import net.runelite.client.ui.*;
@@ -308,7 +309,7 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
             SwingUtil.removeButtonDecorations(help);
             help.setBorder(null);
             help.setToolTipText("Open help");
-            help.addActionListener(ev -> LinkBrowser.browse("https://ieasyscript.github.io/xclient-hub/" + manifest.getInternalName()));
+            help.addActionListener(ev -> LinkBrowser.browse(ProjectXSite.scriptPage(manifest.getInternalName()).toString()));
 
             JButton configure = new JButton(CONFIGURE_ICON);
             SwingUtil.removeButtonDecorations(configure);

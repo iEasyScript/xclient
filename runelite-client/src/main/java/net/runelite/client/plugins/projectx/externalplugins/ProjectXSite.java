@@ -104,6 +104,28 @@ public final class ProjectXSite
         return builder.build();
     }
 
+    /**
+     * The page describing a script, found by the one name the client knows.
+     *
+     * Documentation used to live on GitHub Pages beside the plugin sources. Those
+     * sources are not published any more and neither is that site, so a script's
+     * page is its store listing.
+     *
+     * Listings are addressed by slug, which the client has no way to work out, so
+     * this goes through /script/<internalName> and the site redirects. That also
+     * means a client already in somebody's hands keeps working when a listing is
+     * renamed.
+     */
+    public static HttpUrl scriptPage(String internalName)
+    {
+        HttpUrl.Builder builder = baseUrl().newBuilder().encodedPath("/store");
+        if (internalName != null && !internalName.isEmpty())
+        {
+            builder.encodedPath("/script").addPathSegment(internalName);
+        }
+        return builder.build();
+    }
+
     /** True when the URL points at the site itself, so it may receive the user's API token. */
     public static boolean isSite(HttpUrl url)
     {
