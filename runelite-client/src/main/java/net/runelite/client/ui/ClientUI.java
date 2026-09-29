@@ -825,6 +825,25 @@ public class ClientUI
 		return false;
 	}
 
+	/**
+	 * Closes the client as though the window had been closed, without asking.
+	 *
+	 * For a shutdown nobody at this machine asked for -- an instance stopped from
+	 * the website. Goes through the same path as closing the window so config and
+	 * window bounds are still saved, rather than exiting from under the plugins.
+	 */
+	public void requestShutdown()
+	{
+		if (frame == null)
+		{
+			// Asked to stop before the window exists. There is nothing to save.
+			System.exit(0);
+			return;
+		}
+
+		SwingUtilities.invokeLater(this::shutdownClient);
+	}
+
 	private void shutdownClient()
 	{
 		saveClientBoundsConfig();

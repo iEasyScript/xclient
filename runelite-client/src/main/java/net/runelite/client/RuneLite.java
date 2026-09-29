@@ -82,6 +82,7 @@ import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXEntitlements;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXInstances;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXPluginManager;
 import net.runelite.client.proxy.ProxyChecker;
 import net.runelite.client.proxy.ProxyConfiguration;
@@ -197,6 +198,9 @@ public class RuneLite
 
     @Inject
     private ProjectXEntitlements projectxEntitlements;
+
+    @Inject
+    private ProjectXInstances projectxInstances;
 
 	@Inject
 	private ScheduledExecutorService scheduledExecutorService;
@@ -494,6 +498,15 @@ public class RuneLite
 		externalPluginManager.loadExternalPlugins();
 
         projectxPluginManager.loadSideLoadPlugins();
+
+        // This account may only run so many clients at once.
+        if (!projectxInstances.claim())
+        {
+            SplashScreen.stop();
+            ProjectX.showMessage(projectxInstances.getRefusal());
+            System.exit(0);
+        }
+        Runtime.getRuntime().addShutdownHook(new Thread(projectxInstances::release, "projectx-instance-release"));
 
         // Before any plugin starts: marketplace scripts may only run with live access
         projectxEntitlements.start(projectxPluginManager.getManifestMap().values());
