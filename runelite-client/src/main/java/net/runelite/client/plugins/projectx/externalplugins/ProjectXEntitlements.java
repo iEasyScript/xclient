@@ -305,7 +305,10 @@ public class ProjectXEntitlements
         String token = ProjectXAccount.token(configManager);
         String fix = Strings.isNullOrEmpty(token)
                 ? " Sign in to Project X in the launcher, or add your API token in the Project X settings."
-                : " Buy access at " + storeUrls.getOrDefault(internalName, ProjectXSite.baseUrl().toString());
+                // "Get", not "Buy": most of the store is free now, and
+                // telling somebody to buy a free script sends them looking
+                // for a price that is not there.
+                : " Get access at " + storeUrls.getOrDefault(internalName, ProjectXSite.baseUrl().toString());
 
         log.info("{} {}{}", name, problem, fix);
         notifier.notify(name + " " + problem + fix);

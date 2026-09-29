@@ -1277,10 +1277,10 @@ public class ProjectXPluginManager {
             try (Response response = clientWithoutProxy.newCall(request).execute()) {
                 if (response.code() == 401 || response.code() == 403) {
                     log.warn("Plugin {} is a marketplace script and needs active access to download", internalName);
-                    ProjectX.showMessage(manifest.getDisplayName() + " is a marketplace script.\n\n"
+                    ProjectX.showMessage(manifest.getDisplayName() + " needs a subscription.\n\n"
                             + (Strings.isNullOrEmpty(token)
                                 ? "Add your Project X API token in the Project X settings, then install it again."
-                                : "Buy access at " + manifest.getStoreUrl() + " and then install it again."));
+                                : "Get access at " + manifest.getStoreUrl() + " and then install it again."));
                     return false;
                 }
                 if (!response.isSuccessful()) {
