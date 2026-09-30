@@ -30,6 +30,7 @@ import lombok.Setter;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.plugins.projectx.util.text.Rs2TextSanitizer;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -65,6 +66,9 @@ public class WidgetChoiceStep
 	protected final Map<Integer, String> varbitValueToAnswer;
 
 	protected boolean shouldNumber = false;
+
+	/** The "[2] " that {@link #highlightText} writes in front of an option it has marked. */
+	private static final Pattern HIGHLIGHT_NUMBER = Pattern.compile("^\\[\\d+]\\s*");
 
 	@Setter
 	@Getter
@@ -209,25 +213,65 @@ public class WidgetChoiceStep
 		checkWidgets(nestedChildren);
 	}
 
+	/**
+	 * Whether a dialogue option's on-screen text is the one this choice is looking for.
+	 *
+	 * <p>The single place that answers that question, so the option highlighted for the player and
+	 * the option a script presses cannot disagree. Comparison goes through
+	 * {@link Rs2TextSanitizer#sanitizeForParsing} rather than {@code String.equals}: the widget
+	 * text arrives carrying colour tags, HTML entities and typographic apostrophes that the quest
+	 * was not written with. It also tolerates the {@code [n] } this class prefixes onto an option
+	 * it has highlighted, so an option stays matchable after being marked once.
+	 *
+	 * <p>False for the index- and varbit-based choices, which name an option by position rather
+	 * than by wording and cannot be resolved from its text.
+	 */
+	public boolean matches(String widgetText)
+	{
+		if (widgetText == null)
+		{
+			return false;
+		}
+		String text = stripHighlightNumber(widgetText);
+		if (pattern != null)
+		{
+			// Patterns are authored against the game's own wording, markup and all.
+			return pattern.matcher(text).find();
+		}
+		return choice != null && sameText(text, choice);
+	}
+
+	private static boolean sameText(String widgetText, String expected)
+	{
+		return widgetText != null && expected != null
+			&& Rs2TextSanitizer.sanitizeForParsing(widgetText)
+			.equals(Rs2TextSanitizer.sanitizeForParsing(expected));
+	}
+
+	private static String stripHighlightNumber(String text)
+	{
+		return text == null ? null : HIGHLIGHT_NUMBER.matcher(text).replaceFirst("");
+	}
+
 	protected void checkWidgets(Widget[] choices)
 	{
 		if (choices != null && choices.length > 0)
 		{
-			if (choiceById != -1 && choices[choiceById] != null)
+			// Bounds-checked: choiceById indexes the option list the quest was written against,
+			// and a dialogue offering fewer options than that read past the end of the array.
+			if (choiceById != -1 && choiceById < choices.length && choices[choiceById] != null)
 			{
-				if ((choice != null && choice.equals(choices[choiceById].getText())) ||
-					(pattern != null && pattern.matcher(choices[choiceById].getText()).find()) ||
-					(choice == null && pattern == null))
+				if (matches(choices[choiceById].getText()) || (choice == null && pattern == null))
 				{
 					highlightText(choices[choiceById], choiceById);
 				}
 			}
 			else if (varbitId != -1 && varbitValue != -1 && varbitValueToAnswer != null)
 			{
-				String choice = varbitValueToAnswer.get(varbitValue);
+				String answer = varbitValueToAnswer.get(varbitValue);
 				for (int i = 0; i < choices.length; i++)
 				{
-					if (choices[i].getText().equals(choice))
+					if (sameText(stripHighlightNumber(choices[i].getText()), answer))
 					{
 						highlightText(choices[i], i);
 						return;
@@ -238,8 +282,7 @@ public class WidgetChoiceStep
 			{
 				for (int i = 0; i < choices.length; i++)
 				{
-					if (choices[i].getText().equals(choice) ||
-						(pattern != null && pattern.matcher(choices[i].getText()).find()))
+					if (matches(choices[i].getText()))
 					{
 						highlightText(choices[i], i);
 						return;
@@ -256,7 +299,7 @@ public class WidgetChoiceStep
 			return;
 		}
 
-		if (shouldNumber)
+		if (shouldNumber && !HIGHLIGHT_NUMBER.matcher(text.getText()).find())
 		{
 			text.setText("[" + option + "] " + text.getText());
 		}

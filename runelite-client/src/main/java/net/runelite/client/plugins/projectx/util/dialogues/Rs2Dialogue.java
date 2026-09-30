@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntilTrue;
@@ -243,6 +244,21 @@ public class Rs2Dialogue {
         }
 
         return out;
+    }
+
+    /**
+     * The text of each dialogue option currently on screen, read on the client thread.
+     *
+     * <p>For logging and diagnostics: the option widgets themselves must not be read off the
+     * client thread, and a caller that only wants to say what it saw should not have to hop
+     * threads to do it.
+     *
+     * @return the option texts, or an empty list when no option dialogue is open
+     */
+    public static List<String> getDialogueOptionTexts() {
+        return ProjectX.getClientThread().runOnClientThreadOptional(() ->
+                getDialogueOptions().stream().map(Widget::getText).collect(Collectors.toList())
+        ).orElse(Collections.emptyList());
     }
 
     /**
@@ -740,6 +756,33 @@ public class Rs2Dialogue {
             }
         }
         return false;
+    }
+
+    /**
+     * Presses the first dialogue option whose text satisfies the supplied test.
+     *
+     * <p>Lets the caller decide what the right option is without this class having to know. The
+     * quest helper matches against the choices its quest declared, which is data it holds and
+     * this class does not — so it no longer has to infer the answer from how the option is drawn.
+     *
+     * @return true if an option matched and its key was pressed
+     */
+    public static boolean clickOptionMatching(Predicate<String> matcher) {
+        if (matcher == null) return false;
+
+        // Text is read on the client thread and the key pressed off it. Reading option text
+        // off-thread races the frame that rebuilds the menu, and keyboard dispatch has no
+        // business running inside a client-thread callback.
+        Widget option = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            for (Widget candidate : getDialogueOptions()) {
+                if (matcher.test(candidate.getText())) {
+                    return candidate;
+                }
+            }
+            return (Widget) null;
+        }).orElse(null);
+
+        return pressDialogueOptionWidget(option);
     }
 
     /**

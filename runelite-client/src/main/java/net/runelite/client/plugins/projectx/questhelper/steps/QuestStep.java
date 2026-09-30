@@ -161,6 +161,8 @@ public abstract class QuestStep implements Module
 	@Setter
 	private boolean showInSidebar = true;
 
+	/** The most recent line of NPC dialogue, used to disambiguate similarly worded options. */
+	@Getter
 	protected String lastDialogSeen = "";
 
 	@Setter

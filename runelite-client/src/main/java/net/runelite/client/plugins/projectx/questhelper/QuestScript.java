@@ -17,6 +17,7 @@ import net.runelite.client.plugins.projectx.questhelper.questhelpers.QuestHelper
 import net.runelite.client.plugins.projectx.questhelper.requirements.Requirement;
 import net.runelite.client.plugins.projectx.questhelper.requirements.item.ItemRequirement;
 import net.runelite.client.plugins.projectx.questhelper.steps.*;
+import net.runelite.client.plugins.projectx.questhelper.steps.choice.DialogChoiceStep;
 import net.runelite.client.plugins.projectx.questhelper.steps.widget.WidgetHighlight;
 import net.runelite.client.plugins.projectx.shortestpath.ShortestPathPlugin;
 import net.runelite.client.plugins.projectx.util.bank.Rs2Bank;
@@ -60,7 +61,7 @@ import org.slf4j.event.Level;
 import net.runelite.api.coords.WorldArea;
 
 public class QuestScript extends Script {
-    public static double version = 0.3;
+    public static double version = 0.4;
 
     private static final long MISSING_REQUIREMENT_NOTIFY_INTERVAL_MS = 10_000L;
     private static final Map<Integer, Long> lastMissingRequirementNotice = new HashMap<>();
@@ -88,6 +89,15 @@ public class QuestScript extends Script {
     private final Set<Integer> everHeldItemRequirementIds = new HashSet<>();
 
     QuestStep dialogueStartedStep = null;
+
+    /**
+     * How many consecutive ticks an option menu may go unrecognised before it is dismissed.
+     * Small, but not zero: the quest helper's "[n]" marker lands a client tick after the menu
+     * loads, so the first look at a menu can legitimately come up empty.
+     */
+    private static final int UNRESOLVED_OPTION_TICKS = 4;
+
+    private int unresolvedOptionTicks = 0;
 
     /**
      * Epoch millis at which the post-dialogue cooldown expires. While
@@ -120,24 +130,13 @@ public class QuestScript extends Script {
                 if (Rs2Dialogue.isInDialogue() && dialogueStartedStep == null)
                     dialogueStartedStep = questStep;
 
-                if (questStep != null && Rs2Widget.isWidgetVisible(ComponentID.DIALOG_OPTION_OPTIONS)) {
-                    var dialogOptions = Rs2Widget.getWidget(ComponentID.DIALOG_OPTION_OPTIONS);
-                    var dialogChoices = dialogOptions.getDynamicChildren();
-
-                    for (var choice : questStep.getChoices().getChoices()) {
-                        if (choice.getExpectedPreviousLine() != null)
-                            continue; // TODO
-
-                        if (choice.getExcludedStrings() != null && choice.getExcludedStrings().stream().anyMatch(Rs2Widget::hasWidget))
-                            continue;
-
-                        for (var dialogChoice : dialogChoices) {
-                            if (dialogChoice.getText().endsWith(choice.getChoice())) {
-                                Rs2Keyboard.keyPress(dialogChoice.getOnKeyListener()[7].toString().charAt(0));
-                                return;
-                            }
-                        }
-                    }
+                if (!Rs2Dialogue.hasSelectAnOption()) {
+                    // Reset here rather than only on a successful pick, so a menu that goes away
+                    // on its own does not leave the count part-way towards dismissing the next one.
+                    unresolvedOptionTicks = 0;
+                } else if (!Rs2Bank.isOpen() && selectDialogueOption(questStep)) {
+                    unresolvedOptionTicks = 0;
+                    return;
                 }
 
                 if (questStep != null && !questStep.getWidgetsToHighlight().isEmpty()) {
@@ -186,22 +185,33 @@ public class QuestScript extends Script {
 
                 if (getQuestHelperPlugin().getSelectedQuest() != null && !ProjectX.getClientThread().runOnClientThreadOptional(() ->
                         getQuestHelperPlugin().getSelectedQuest().isCompleted()).orElse(null)) {
-                    if (Rs2Widget.isWidgetVisible(ComponentID.DIALOG_OPTION_OPTIONS) && getQuestHelperPlugin().getSelectedQuest().getQuest().getId() != Quest.COOKS_ASSISTANT.getId() && !Rs2Bank.isOpen()) {
-                        boolean hasOption = Rs2Dialogue.handleQuestOptionDialogueSelection();
-                        //if there is no quest option in the dialogue, just click player location to remove
-                        // the dialogue to avoid getting stuck in an infinite loop of dialogues
-                        if (!hasOption) {
-                            if (Rs2Dialogue.acceptQuestStartDialogue()) {
-                                return;
-                            }
-                            if (getQuestHelperPlugin().getSelectedQuest() != null &&
-                                    getQuestHelperPlugin().getSelectedQuest().getQuest().getId() == Quest.IMP_CATCHER.getId()
-                                    && ProjectX.getClient().getTopLevelWorldView().getPlane() == 1) {
-                                Rs2Dialogue.keyPressForDialogueOption(1); // presses option 1
-                                sleep(1200,1800);
-                            }
-                            Rs2Walker.walkFastCanvas(Rs2Player.getWorldLocation());
+                    // An option menu is up that selectDialogueOption() could not account for.
+                    // The Cook's Assistant exemption that used to sit on this branch is gone with
+                    // it: that quest was carved out because this path would wreck its opening
+                    // conversation, which is no longer something it does to anybody.
+                    if (Rs2Dialogue.hasSelectAnOption() && !Rs2Bank.isOpen()) {
+                        if (getQuestHelperPlugin().getSelectedQuest().getQuest().getId() == Quest.IMP_CATCHER.getId()
+                                && ProjectX.getClient().getTopLevelWorldView().getPlane() == 1) {
+                            Rs2Dialogue.keyPressForDialogueOption(1); // presses option 1
+                            sleep(1200, 1800);
+                            return;
                         }
+
+                        // Dismissing the menu by clicking the player's own tile used to happen
+                        // here the moment nothing matched, and that is precisely what made a
+                        // quest stand at an NPC clicking the floor forever: the click cancels the
+                        // conversation, the step walks back and reopens it, and the same option
+                        // goes unmatched again. It is still the escape from a genuinely unknown
+                        // menu, but only after the menu has stayed unrecognised for a few ticks,
+                        // because a freshly opened one legitimately is -- the quest helper writes
+                        // its "[n]" marker a client tick after the options load.
+                        if (++unresolvedOptionTicks < UNRESOLVED_OPTION_TICKS) {
+                            return;
+                        }
+                        unresolvedOptionTicks = 0;
+                        ProjectX.log("Quest helper: no dialogue option matched this step, dismissing the menu ("
+                                + String.join(" | ", Rs2Dialogue.getDialogueOptionTexts()) + ")", Level.WARN);
+                        Rs2Walker.walkFastCanvas(Rs2Player.getWorldLocation());
                         return;
                     }
 
@@ -285,6 +295,51 @@ public class QuestScript extends Script {
         }, 0, Rs2Random.between(400, 1000), TimeUnit.MILLISECONDS);
         return true;
     }
+
+	/**
+	 * Picks the dialogue option the active step calls for.
+	 *
+	 * <p>Three sources, in order of how much they actually know. The step's own declared choices
+	 * come first, because those are the quest's data. The "[n]" prefix the quest helper writes
+	 * into an option it has highlighted comes second, as the only handle on the index- and
+	 * varbit-based choices that name an option by position rather than by wording. The generic
+	 * "would you like to start this quest?" prompt comes last.
+	 *
+	 * <p>Only that middle source used to exist here, which is what left quests stuck talking to
+	 * an NPC forever: the prefix is written by the highlighter, so selecting an option depended
+	 * on a cosmetic setting the player is free to switch off ({@code showTextHighlight}) and on a
+	 * client tick that may not have run yet. With no prefix nothing matched, and the caller's
+	 * response to nothing matching was to cancel the conversation and walk back.
+	 *
+	 * @return true if an option was selected
+	 */
+	private boolean selectDialogueOption(QuestStep questStep) {
+		if (questStep != null) {
+			String lastDialogue = questStep.getLastDialogSeen();
+
+			for (DialogChoiceStep choice : questStep.getChoices().getChoices()) {
+				// Honoured rather than skipped: several quests offer near-identical options and
+				// tell them apart by the line that preceded them. The Restless Ghost asks
+				// "Do you know WHY you're a ghost?" and "...why you're a ghost?" at two
+				// different points of the same conversation.
+				String expectedPrevious = choice.getExpectedPreviousLine();
+				if (expectedPrevious != null && (lastDialogue == null || !lastDialogue.contains(expectedPrevious))) {
+					continue;
+				}
+
+				if (choice.getExcludedStrings() != null
+						&& choice.getExcludedStrings().stream().anyMatch(Rs2Widget::hasWidget)) {
+					continue;
+				}
+
+				if (Rs2Dialogue.clickOptionMatching(choice::matches)) {
+					return true;
+				}
+			}
+		}
+
+		return Rs2Dialogue.handleQuestOptionDialogueSelection() || Rs2Dialogue.acceptQuestStartDialogue();
+	}
 
 	private boolean handleRequirements(DetailedQuestStep questStep) {
 		var requirements = questStep.getRequirements();
