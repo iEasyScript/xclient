@@ -74,6 +74,25 @@ public class ProjectXEntitlements
     private final ScheduledExecutorService executor;
     private final Notifier notifier;
 
+    /**
+     * What the last question to the site produced.
+     *
+     * Needed because two very different things used to look identical from here: a
+     * customer who has not subscribed, and a customer whose check did not happen.
+     * Both left the expiry cache empty, so both were told to go and buy a script --
+     * which, for somebody who had already bought it, is the client calling them a
+     * liar because it could not reach us.
+     */
+    private enum Check
+    {
+        /** The site answered, and the cache is now what it says. */
+        ANSWERED,
+        /** The site rejected our token. Nothing is proven, so nothing may run. */
+        REJECTED,
+        /** We could not get an answer. What is cached is all we know. */
+        UNREACHABLE,
+    }
+
     private final Map<String, Instant> expiries = new ConcurrentHashMap<>();
     private final Map<String, String> storeUrls = new ConcurrentHashMap<>();
     private final Set<String> paid = ConcurrentHashMap.newKeySet();
@@ -159,15 +178,23 @@ public class ProjectXEntitlements
         pluginManager.setPluginEnabled(plugin, false);
         executor.submit(() ->
         {
-            refresh();
+            Check check = refresh();
             if (isEntitled(internalName))
             {
                 SwingUtilities.invokeLater(() -> startNow(plugin));
+                return;
             }
-            else
+
+            if (check == Check.UNREACHABLE)
             {
-                tellUser(plugin, internalName, "needs active access to run.");
+                // Do not send somebody to a shop to buy what they may already own.
+                tellUser(plugin, internalName,
+                        "could not start: we could not reach Project X to check your access."
+                                + " It will start on its own once we can.");
+                return;
             }
+
+            tellUser(plugin, internalName, "needs active access to run.");
         });
         return false;
     }
@@ -177,9 +204,13 @@ public class ProjectXEntitlements
     {
         try
         {
-            if (System.currentTimeMillis() - lastRefreshMillis >= TimeUnit.SECONDS.toMillis(REFRESH_INTERVAL_SECONDS))
+            if (System.currentTimeMillis() - lastRefreshMillis >= TimeUnit.SECONDS.toMillis(REFRESH_INTERVAL_SECONDS)
+                    && refresh() == Check.UNREACHABLE)
             {
-                refresh();
+                // Stopping somebody's script because we could not reach ourselves is
+                // the one outcome worse than briefly letting a lapsed one run. What
+                // is cached still expires on time, so this cannot run forever.
+                return;
             }
 
             List<Plugin> expired = new ArrayList<>();
@@ -220,11 +251,11 @@ public class ProjectXEntitlements
      * Asks the site which paid plugins this user may run. A failure keeps the
      * cached expiries, which still lapse on their own.
      */
-    public void refresh()
+    public Check refresh()
     {
         if (paid.isEmpty())
         {
-            return;
+            return Check.ANSWERED;
         }
 
         String token = ProjectXAccount.token(configManager);
@@ -232,7 +263,7 @@ public class ProjectXEntitlements
         {
             expiries.clear();
             lastRefreshMillis = System.currentTimeMillis();
-            return;
+            return Check.REJECTED;
         }
 
         JsonObject body = new JsonObject();
@@ -254,12 +285,16 @@ public class ProjectXEntitlements
                 // The token was revoked or mistyped: nothing is proven, so nothing runs.
                 log.warn("Project X API token was rejected; paid scripts are unavailable");
                 expiries.clear();
-                return;
+                return Check.REJECTED;
             }
             if (!response.isSuccessful() || response.body() == null)
             {
-                log.warn("Entitlement check failed: HTTP {}", response.code());
-                return;
+                // Anything else is our fault, not the user's. Keep what is cached:
+                // an access period that is still running should survive us having a
+                // bad minute, and one that has genuinely ended still lapses on time.
+                log.warn("Entitlement check failed: HTTP {}; keeping {} cached entitlements",
+                        response.code(), expiries.size());
+                return Check.UNREACHABLE;
             }
 
             JsonObject json = gson.fromJson(response.body().string(), JsonObject.class);
@@ -277,10 +312,14 @@ public class ProjectXEntitlements
                     expiries.remove(internalName);
                 }
             }
+
+            return Check.ANSWERED;
         }
         catch (IOException | JsonParseException | DateTimeParseException | IllegalStateException | NullPointerException e)
         {
-            log.warn("Entitlement check failed: {}", e.getMessage());
+            log.warn("Entitlement check failed: {}; keeping {} cached entitlements",
+                    e.getMessage(), expiries.size());
+            return Check.UNREACHABLE;
         }
     }
 

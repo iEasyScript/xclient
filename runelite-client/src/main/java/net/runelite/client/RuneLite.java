@@ -306,7 +306,7 @@ public class RuneLite
 		if (options.has(proxyInfo)) {
 			String ip = ProxyChecker.getDetectedIp(okHttpClient);
 			if (ip.isEmpty()) {
-				ProjectX.showMessage("Failed to detect external IP address, check your proxy settings. \n\n Make sure to use the format scheme://user:pass@host:port");
+				ProjectX.showMessageAndWait("Failed to detect external IP address, check your proxy settings. \n\n Make sure to use the format scheme://user:pass@host:port");
 				System.exit(1);
 			}
 
@@ -503,7 +503,12 @@ public class RuneLite
         if (!projectxInstances.claim())
         {
             SplashScreen.stop();
-            ProjectX.showMessage(projectxInstances.getRefusal());
+            String refusal = projectxInstances.getRefusal();
+            // Every refusal sets a reason, but this is the last thing the user sees
+            // before the client disappears, so it must never be a blank box.
+            ProjectX.showMessageAndWait(refusal == null || refusal.trim().isEmpty()
+                    ? "Project X could not start: your instances could not be checked."
+                    : refusal);
             System.exit(0);
         }
         Runtime.getRuntime().addShutdownHook(new Thread(projectxInstances::release, "projectx-instance-release"));

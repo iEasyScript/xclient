@@ -444,44 +444,75 @@ public class ProjectX {
         return success;
     }
 
+    /**
+     * Tells the user something, without stopping whatever asked to tell them.
+     *
+     * This used to put the dialog up with invokeAndWait, which waits for the
+     * runnable to finish -- and the runnable was a modal dialog, which does not
+     * finish until somebody clicks it. So any thread that called this was held
+     * until then: a script thread stopped mid-task, and the client thread stopped
+     * the game. The dialog can open behind the client window, so there was often
+     * nothing on screen to explain why everything had frozen.
+     *
+     * Nothing here needs an answer, so nothing here waits for one.
+     */
     public static void showMessage(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            // A dialog with nothing in it tells the user only that something is
+            // wrong with us. Whoever called with nothing to say is the bug.
+            log.warn("Ignoring a request to show an empty message", new Throwable("called from"));
+            return;
+        }
+
+        SwingUtilities.invokeLater(() ->
+                JOptionPane.showMessageDialog(null, message, "Project X", JOptionPane.INFORMATION_MESSAGE));
+    }
+
+    /**
+     * The same, for the handful of places that exit immediately afterwards.
+     *
+     * There the wait is the point: without it the process is gone before the
+     * dialog has drawn, and the user is left with a client that vanished and no
+     * idea why. Only safe because the caller is on its way out anyway.
+     */
+    public static void showMessageAndWait(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            log.warn("Ignoring a request to show an empty message", new Throwable("called from"));
+            return;
+        }
+
         try {
-            Runnable messageRunnable = () ->
-            {
-                JOptionPane.showConfirmDialog(null, message, "Message",
-                        JOptionPane.DEFAULT_OPTION);
-            };
+            Runnable dialog = () ->
+                    JOptionPane.showMessageDialog(null, message, "Project X", JOptionPane.ERROR_MESSAGE);
+
             if (SwingUtilities.isEventDispatchThread()) {
-                messageRunnable.run();
+                dialog.run();
             } else {
-                SwingUtilities.invokeAndWait(messageRunnable);
+                SwingUtilities.invokeAndWait(dialog);
             }
         } catch (Exception ex) {
             log.error("Error displaying message {}:", message, ex);
         }
     }
 
+    /** The same, but it closes itself after disposeTime milliseconds. */
     public static void showMessage(String message, int disposeTime) {
-        try {
-            Runnable messageRunnable = () ->
-            {
-                JOptionPane pane = new JOptionPane(message, JOptionPane.INFORMATION_MESSAGE);
-                JDialog dialog = pane.createDialog("Message");
-                dialog.setModal(false);
-                dialog.setVisible(true);
-                Timer timer = new Timer(disposeTime, e -> dialog.dispose());
-                timer.setRepeats(false);
-                timer.start();
-
-            };
-            if (SwingUtilities.isEventDispatchThread()) {
-                messageRunnable.run();
-            } else {
-                SwingUtilities.invokeAndWait(messageRunnable);
-            }
-        } catch (Exception ex) {
-            log.error("Error displaying message {}:", message, ex);
+        if (message == null || message.trim().isEmpty()) {
+            log.warn("Ignoring a request to show an empty message", new Throwable("called from"));
+            return;
         }
+
+        SwingUtilities.invokeLater(() ->
+        {
+            JOptionPane pane = new JOptionPane(message, JOptionPane.INFORMATION_MESSAGE);
+            JDialog dialog = pane.createDialog("Project X");
+            dialog.setModal(false);
+            dialog.setVisible(true);
+
+            Timer timer = new Timer(disposeTime, e -> dialog.dispose());
+            timer.setRepeats(false);
+            timer.start();
+        });
     }
 
     public static List<Rs2ItemModel> updateItemContainer(int id, ItemContainerChanged e) {

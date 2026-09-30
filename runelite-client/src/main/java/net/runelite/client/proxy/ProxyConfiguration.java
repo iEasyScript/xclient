@@ -28,7 +28,7 @@ public class ProxyConfiguration {
         URI uri = URI.create(options.valueOf(proxyInfo));
 
         if (options.has("proxy-type")) {
-            ProjectX.showMessage("Proxy type is no longer supported, please use the format -proxy=socks://user:pass@host:port or http://user:pass@host:port");
+            ProjectX.showMessageAndWait("Proxy type is no longer supported, please use the format -proxy=socks://user:pass@host:port or http://user:pass@host:port");
             System.exit(1);
         }
 
@@ -57,13 +57,13 @@ public class ProxyConfiguration {
     private static void validateProxyScheme(String scheme) {
         boolean isHttpProxy = scheme.equals("http") || scheme.equals("https");
         if (isHttpProxy) {
-            ProjectX.showMessage("HTTP(S) proxies are not supported, please use a SOCKS5 proxy. \n\n This is to make sure that osrs traffic is also routed through the proxy.");
+            ProjectX.showMessageAndWait("HTTP(S) proxies are not supported, please use a SOCKS5 proxy. \n\n This is to make sure that osrs traffic is also routed through the proxy.");
             System.exit(1);
         }
 
         boolean isSocksProxy = scheme.equals("socks") || scheme.equals("socks5");
         if (!isSocksProxy) {
-            ProjectX.showMessage("Proxy scheme must be socks(5).");
+            ProjectX.showMessageAndWait("Proxy scheme must be socks(5).");
             System.exit(1);
         }
     }
@@ -75,7 +75,7 @@ public class ProxyConfiguration {
      */
     private static int validatePort(int port) {
         if (port <= 0) {
-            ProjectX.showMessage("Invalid proxy port");
+            ProjectX.showMessageAndWait("Invalid proxy port");
             System.exit(1);
         }
         return port;

@@ -213,7 +213,7 @@ public class RuneLiteDebug {
         if (options.has(proxyInfo)) {
             String ip = ProxyChecker.getDetectedIp(okHttpClient);
             if (ip.isEmpty()) {
-                ProjectX.showMessage("Failed to detect external IP address, check your proxy settings. \n\n Make sure to use the format scheme://user:pass@host:port");
+                ProjectX.showMessageAndWait("Failed to detect external IP address, check your proxy settings. \n\n Make sure to use the format scheme://user:pass@host:port");
                 System.exit(1);
             }
 
