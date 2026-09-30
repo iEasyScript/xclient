@@ -618,7 +618,12 @@ public class Rs2GrandExchange {
      * @param price the price per item to set for the offer
      */
     private static void setPrice(int price) {
-        if (price != getOfferPrice()) {
+        // Unconditionally, because there is no longer a way to ask what the offer
+        // price currently is. This used to skip the work when it already matched, by
+        // reading varbit 4398 -- which the 2026-09-30 Grand Exchange rewrite deleted,
+        // so the read returns zero and the comparison could only ever say "differs".
+        // Setting it every time is what was happening anyway; now it says so.
+        {
             Widget pricePerItemButtonX = GrandExchangeWidget.getPricePerItemButton_X();
             if (pricePerItemButtonX == null) return;
             ProjectX.getMouse().click(pricePerItemButtonX.getBounds());
@@ -1684,10 +1689,6 @@ public class Rs2GrandExchange {
 
     static int getOfferQuantity() {
         return ProjectX.getVarbitValue(VarbitID.GE_NEWOFFER_QUANTITY);
-    }
-
-    static int getOfferPrice() {
-        return ProjectX.getVarbitValue(4398);
     }
 
     public static void setChatboxValue(int value) {
