@@ -113,7 +113,12 @@ public class Ping
 		}
 		catch (IOException ex)
 		{
-			log.warn("error pinging", ex);
+			// The world hopper measures latency by opening a socket to each world in
+			// turn, and a world refusing one is ordinary: they go down, they fill up,
+			// and a firewall between here and there will refuse for its own reasons.
+			// At warn it printed a stack trace into the game console for something
+			// the hopper simply retries. The column just shows no figure.
+			log.debug("error pinging", ex);
 			return -1;
 		}
 	}
