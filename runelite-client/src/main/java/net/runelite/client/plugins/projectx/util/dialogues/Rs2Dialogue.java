@@ -27,7 +27,12 @@ public class Rs2Dialogue {
      * @return true if any dialogue-related widget is visible and the scroll bar is not visible, false otherwise.
      */
     public static boolean isInDialogue() {
-        return !Rs2Widget.isWidgetVisible(162, 559) && (hasContinue() || hasSelectAnOption());
+        // Named, not 162,559. That number was the chat scrollbar until RuneLite
+        // 1.13.1 inserted a component ahead of it and shifted everything after up
+        // by one -- so this silently became a check on a chat line instead, and
+        // dialogue detection is what every script in the catalogue is built on.
+        return !Rs2Widget.isWidgetVisible(net.runelite.api.gameval.InterfaceID.Chatbox.CHATSCROLLBAR)
+                && (hasContinue() || hasSelectAnOption());
     }
 
     /**
