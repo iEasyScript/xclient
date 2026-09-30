@@ -235,7 +235,10 @@ public class Rs2Npc {
                 }
 
                 if (ProjectX.getClient().getLocalPlayer() == null) {
-                    log.warn("Local player is null, returning empty NPC stream");
+                    // Normal while logging in or hopping, and this handles it
+                    // correctly. At warn it appeared in the game log on every
+                    // login, which reads like a fault and is not one.
+                    log.debug("Local player is null, returning empty NPC stream");
                     return EMPTY_ARRAY;
                 }
 

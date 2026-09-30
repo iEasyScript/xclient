@@ -1121,7 +1121,16 @@ public class LootTrackerPlugin extends Plugin
 			return;
 		}
 
-		final int regionID = client.getLocalPlayer().getWorldLocation().getRegionID();
+		// Chat arrives before the local player does, around login and world hops, and
+		// this is the first thing here to dereference it. Every subscriber after this
+		// one on the bus was being skipped by the resulting exception.
+		final Player localPlayer = client.getLocalPlayer();
+		if (localPlayer == null)
+		{
+			return;
+		}
+
+		final int regionID = localPlayer.getWorldLocation().getRegionID();
 		if (HESPORI_REGION == regionID && message.equals(HESPORI_LOOTED_MESSAGE))
 		{
 			onInvChange(collectInvAndGroundItems(LootRecordType.EVENT, HESPORI_EVENT));

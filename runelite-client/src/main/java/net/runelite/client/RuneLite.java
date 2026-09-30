@@ -218,7 +218,26 @@ public class RuneLite
 		parser.accepts("jav_config", "jav_config url")
 			.withRequiredArg()
 			.defaultsTo(RuneLiteProperties.getJavConfig());
-		parser.accepts("disable-telemetry", "Disable telemetry");
+		/*
+		 * Telemetry is off unless asked for, which is the opposite of upstream.
+		 *
+		 * Two of the three things it did were reporting to somebody else: a session
+		 * opened against api.runelite.net on every start, pinged every ten minutes,
+		 * and a telemetry submission to the same place. We are a fork -- that is
+		 * RuneLite being told about our users, which is theirs to know and not ours
+		 * to send.
+		 *
+		 * The third was our own, and pointed at a /api/session that does not exist,
+		 * so it fetched the website's 404 page and tried to read it as a UUID. That
+		 * is the "Invalid UUID string" every user sees in their game log every ten
+		 * minutes. Real session tracking is the instances API, which is authenticated
+		 * and actually used.
+		 *
+		 * --disable-telemetry is still accepted so nothing passing it breaks; it now
+		 * says what is already true.
+		 */
+		parser.accepts("enable-telemetry", "Send session and error telemetry");
+		parser.accepts("disable-telemetry", "Disable telemetry (the default)");
         parser.accepts("disable-walker-update", "Disable updates for the static walker");
 		parser.accepts("profile", "Configuration profile to use").withRequiredArg();
 		parser.accepts("noupdate", "Skips the launcher update");
@@ -362,7 +381,7 @@ public class RuneLite
 				runtimeConfigLoader,
 				developerMode,
 				options.has("safe-mode"),
-				options.has("disable-telemetry"),
+				!options.has("enable-telemetry") || options.has("disable-telemetry"),
 				options.has("disable-walker-update"),
 				options.valueOf(sessionfile),
 				(String) options.valueOf("profile"),
