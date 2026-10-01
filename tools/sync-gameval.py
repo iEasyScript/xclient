@@ -30,7 +30,18 @@ FILES = [
     "gameval/VarClientID.java",
     "gameval/ItemID.java",
     "gameval/ObjectID.java",
+    # The overflow half of ObjectID. There are more object ids than fit in one class's
+    # constant pool, so RuneLite splits them and ObjectID extends this. Leaving it out
+    # meant half the object ids in the fork were never updated by a bump, and nothing
+    # said so -- RIVER_FISHING_SPOT lives in here, and the Moons of Peril script was
+    # fishing at an id with no menu options on it.
+    "gameval/ObjectID1.java",
     "gameval/NpcID.java",
+    "gameval/AnimationID.java",
+    "gameval/DBTableID.java",
+    "gameval/InventoryID.java",
+    "gameval/SpotanimID.java",
+    "gameval/SpriteID.java",
     "ItemID.java",
     "NullItemID.java",
 ]

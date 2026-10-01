@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static net.runelite.api.gameval.ObjectID1.*;
+import static net.runelite.api.gameval.ObjectID.*;
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 
 @Slf4j
