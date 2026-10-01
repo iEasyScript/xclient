@@ -2796,8 +2796,27 @@ public class Rs2Bank {
         if(!Rs2Inventory.contains(ItemID.LOOTING_BAG_OPEN)) return false;
         if(!Rs2Bank.isOpen()) return false;
 
+        /*
+         * "View" is not an option the looting bag has. Its real ones are Close, Check, Deposit,
+         * Settings and Destroy, and item actions are matched exactly once colour tags are
+         * stripped -- so the interact below never resolved and this method always returned
+         * false. Every caller that relied on it to empty a looting bag at the bank was quietly
+         * doing nothing.
+         *
+         * "Deposit" is the option that does what this method is named for, and it needs no
+         * interface at all. "Check" opens the contents interface, which is what the widget
+         * choreography below was written against, so it stays as the fallback.
+         */
+        if (Rs2Inventory.interact(ItemID.LOOTING_BAG_OPEN, "Deposit")) {
+            // Confirmed by the bag emptying rather than by a widget: Deposit shows nothing.
+            if (sleepUntil(() -> !Rs2Inventory.contains(ItemID.LOOTING_BAG_OPEN)
+                    || Rs2Widget.getWidget(983046) == null, Rs2Random.between(1200, 2400))) {
+                return true;
+            }
+        }
+
         //The looting bag's deposit-loot widget's ID is 983046
-        if (Rs2Inventory.interact(ItemID.LOOTING_BAG_OPEN, "View")) {
+        if (Rs2Inventory.interact(ItemID.LOOTING_BAG_OPEN, "Check")) {
             sleepUntil(()-> Rs2Widget.getWidget(983046) != null, Rs2Random.between(2000,5000));
             if(Rs2Widget.getWidget(983046) != null){
                 if(Rs2Widget.clickWidget(983046)){

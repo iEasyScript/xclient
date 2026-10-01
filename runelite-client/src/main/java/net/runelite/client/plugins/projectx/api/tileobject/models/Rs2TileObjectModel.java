@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.*;
 
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
+import java.util.Arrays;
 
 @Slf4j
 public class Rs2TileObjectModel implements TileObject, IEntity {
@@ -274,16 +275,33 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
                     actions = objComp.getActions();
                 }
 
+                boolean found = false;
                 for (int i = 0; i < actions.length; i++) {
                     if (actions[i] == null) continue;
                     if (action.equalsIgnoreCase(Rs2UiHelper.stripColTags(actions[i]))) {
                         index = i;
+                        found = true;
                         break;
                     }
                 }
 
-                if (index == actions.length)
-                    index = 0;
+                /*
+                 * An action that does not exist is a failure, not a reason to click something
+                 * else. index starts at 0 and was only ever assigned on a match, so the
+                 * "index == actions.length" guard below could never be true and the "index ==
+                 * -1" warning further down could never fire: a misspelt or outdated action
+                 * silently invoked menu option one instead. That is how a script ends up
+                 * opening a teleport menu when it asked for a specific destination, and why
+                 * these mistakes survive for so long without anything in the log.
+                 *
+                 * An empty action is the deliberate default-click path from click(), and still
+                 * means option one.
+                 */
+                if (!found && !action.isEmpty()) {
+                    log.warn("Object {} has no \"{}\" option; it offers {}",
+                            getId(), action, Arrays.toString(actions));
+                    return false;
+                }
 
                 objName = objComp.getName();
 
@@ -295,9 +313,6 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
                 }
             }
 
-            if (index == -1) {
-                log.warn("Failed to interact with object {} - action '{}' not found", getId(), action);
-            }
 
 
             if (ProjectX.getClient().isWidgetSelected()) {
