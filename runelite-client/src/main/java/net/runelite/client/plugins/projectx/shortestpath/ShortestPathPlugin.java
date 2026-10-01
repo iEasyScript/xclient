@@ -672,7 +672,11 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
             return;
         }
         lastCollisionConflictLogAtMs = now;
-        WebWalkLog.spInfo("collision_conflict | liveOpensStatic={} liveBlocksStatic={} sealedOpens={} base={},{} — live scene disagrees with the shipped map",
+        // Debug, not info. This is a measurement, not a problem: a door somebody shut, a temporary
+        // object, a scene the shipped map predates. At INFO it was the only walker line most users
+        // ever saw, and "live scene disagrees with the shipped map" reads like the cause of whatever
+        // else had gone wrong -- it has been reported as the error twice. Nothing acts on it.
+        WebWalkLog.spDebug("collision_conflict | liveOpensStatic={} liveBlocksStatic={} sealedOpens={} base={},{} — live scene differs from the shipped map (informational)",
                 tally.liveOpensStatic, tally.liveBlocksStatic, tally.liveOpensSealed,
                 snapshot.getBaseX(), snapshot.getBaseY());
     }
