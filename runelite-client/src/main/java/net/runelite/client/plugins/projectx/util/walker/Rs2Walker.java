@@ -8,7 +8,9 @@ import net.runelite.api.Point;
 import net.runelite.api.annotations.Component;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
+import net.runelite.api.ObjectComposition;
 import net.runelite.api.coords.WorldPoint;
+import java.util.Comparator;
 import net.runelite.api.gameval.*;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.NpcID;
@@ -42,6 +44,7 @@ import net.runelite.client.plugins.projectx.util.menu.NewMenuEntry;
 import net.runelite.client.plugins.projectx.util.misc.Rs2UiHelper;
 import net.runelite.client.plugins.projectx.util.npc.Rs2Npc;
 import net.runelite.client.plugins.projectx.util.npc.Rs2NpcModel;
+import net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import net.runelite.client.plugins.projectx.util.player.Rs2Pvp;
 import net.runelite.client.plugins.projectx.util.leaguetransport.Rs2LeaguesTransport;
@@ -1188,6 +1191,104 @@ public class Rs2Walker {
      */
     public static boolean walkTo(WorldPoint target, int distance) {
         return walkWithState(target, distance) == WalkerState.ARRIVED;
+    }
+
+    /** How far from the player to look for a door worth opening. */
+    private static final int BLOCKING_DOOR_SEARCH_RADIUS = 6;
+    /** Longest to wait for a clicked door to actually open before reporting failure. */
+    private static final int BLOCKING_DOOR_OPEN_TIMEOUT_MS = 4000;
+
+    /**
+     * Opens the nearest shut door standing between the player and {@code target}.
+     *
+     * <p>The walk loop opens doors on a route it is following. This is for the case it has nothing to
+     * say about: the walk has finished, the player is standing as close as the collision map allows,
+     * and what they came for is behind a door somebody shut. There is no route left for a door to be
+     * found on, so nothing reopens it, and a script that waits for its target to become reachable
+     * waits forever — which, for anything on a timer, means it waits until it dies.
+     *
+     * <p>Only doors closer to the target than the player already is count. A door behind the player is
+     * not in the way, and opening it walks them backwards.
+     *
+     * <p>Call this off the client thread, after a walk has left the target unreachable.
+     *
+     * @param target what the caller is trying to reach
+     * @return true if a door was found, clicked, and seen to open
+     */
+    public static boolean openBlockingDoorTowards(WorldPoint target) {
+        if (target == null) {
+            return false;
+        }
+        WorldPoint player = Rs2Player.getWorldLocation();
+        if (player == null) {
+            return false;
+        }
+        final int playerDistance = player.distanceTo(target);
+
+        Rs2TileObjectModel door = ProjectX.getRs2TileObjectCache().query()
+                .within(BLOCKING_DOOR_SEARCH_RADIUS)
+                .where(o -> o.getWorldLocation() != null
+                        && o.getWorldLocation().distanceTo(target) < playerDistance)
+                .where(Rs2Walker::isShutDoor)
+                .toList()
+                .stream()
+                .min(Comparator.comparingInt(o -> o.getWorldLocation().distanceTo(target)))
+                .orElse(null);
+
+        if (door == null) {
+            return false;
+        }
+
+        ObjectComposition comp = door.getObjectComposition();
+        String action = comp == null ? null : Rs2DoorClassifier.pickWalkDoorAction(comp);
+        if (action == null) {
+            return false;
+        }
+
+        WorldPoint doorTile = door.getWorldLocation();
+        WebWalkLog.spInfo("blocking_door | opening {} at {} with \"{}\" to reach {}",
+                door.getName(), doorTile, action, target);
+
+        if (!door.click(action)) {
+            return false;
+        }
+
+        // The door object is replaced by its opposite state rather than moved, so "opened" is read
+        // back off the tile instead of from the stale model this method is holding.
+        boolean opened = sleepUntil(() -> !isShutDoorAt(doorTile), BLOCKING_DOOR_OPEN_TIMEOUT_MS);
+        if (!opened) {
+            WebWalkLog.spInfo("blocking_door | {} at {} did not open", door.getName(), doorTile);
+        }
+        return opened;
+    }
+
+    /** A door-like object that is currently shut, i.e. one that still offers a way through. */
+    private static boolean isShutDoor(Rs2TileObjectModel object) {
+        if (object == null || object.getWorldLocation() == null) {
+            return false;
+        }
+        ObjectComposition comp = object.getObjectComposition();
+        if (comp == null) {
+            return false;
+        }
+        // Every read off the composition in one hop. getObjectComposition() fetches it on the client
+        // thread but hands it back, and the name and actions on it are no safer to read from here than
+        // the composition was to fetch.
+        return ProjectX.getClientThread().runOnClientThreadOptional(() ->
+                !Rs2DoorClassifier.isNullOrPlaceholderObjectName(comp.getName())
+                        && !Rs2DoorClassifier.doorCompositionSpecifiesOnlyCloseOrShut(comp)
+                        && Rs2DoorClassifier.isDoorLikeGameObjectName(comp.getName())
+                        && Rs2DoorClassifier.pickWalkDoorAction(comp) != null
+        ).orElse(false);
+    }
+
+    private static boolean isShutDoorAt(WorldPoint tile) {
+        return ProjectX.getRs2TileObjectCache().query()
+                .within(tile, 0)
+                .where(Rs2Walker::isShutDoor)
+                .toList()
+                .stream()
+                .anyMatch(o -> tile.equals(o.getWorldLocation()));
     }
 
     /**
