@@ -5119,6 +5119,7 @@ public class Rs2Walker {
         int radius = Math.max(3, directClickMaxDistance + 2);
         int start = Math.max(0, closest - 2);
         int endExclusive = Math.min(route.size() - 1, start + maxEdges);
+        NearbySceneObjects scene = new NearbySceneObjects(playerLoc, radius);
         for (int i = start; i < endExclusive; i++) {
             WorldPoint from = route.get(i);
             WorldPoint to = route.get(i + 1);
@@ -5134,7 +5135,7 @@ public class Rs2Walker {
             if (isCatalogBackedTransportSegment(route, i) && !isDoorLikeCatalogTransportSegment(route, i)) {
                 continue;
             }
-            if (hasDoorLikeSceneObjectOnSegment(from, to, playerLoc, radius)) {
+            if (hasDoorLikeSceneObjectOnSegment(from, to, playerLoc, radius, scene)) {
                 return true;
             }
         }
@@ -5165,6 +5166,7 @@ public class Rs2Walker {
 
         int from = Math.max(0, Math.min(rawStart, rawTarget) - 2);
         int toExclusive = Math.min(rawPath.size() - 1, Math.max(rawStart, rawTarget) + 1);
+        NearbySceneObjects scene = new NearbySceneObjects(playerLoc, HANDLER_RANGE);
         for (int ri = from; ri < toExclusive && ri < rawPath.size() - 1; ri++) {
             WorldPoint a = rawPath.get(ri);
             WorldPoint b = rawPath.get(ri + 1);
@@ -5180,12 +5182,13 @@ public class Rs2Walker {
             if (isCatalogBackedTransportSegment(rawPath, ri) && !isDoorLikeCatalogTransportSegment(rawPath, ri)) {
                 continue;
             }
-            if (!hasDoorLikeSceneObjectOnSegment(a, b, playerLoc, HANDLER_RANGE)) {
+            if (!hasDoorLikeSceneObjectOnSegment(a, b, playerLoc, HANDLER_RANGE, scene)) {
                 continue;
             }
             if (handleDoorsWithTimeout(rawPath, ri, timeoutMs, attempted, true)) {
                 return true;
             }
+            scene.invalidate();
         }
         return false;
     }
@@ -5223,6 +5226,7 @@ public class Rs2Walker {
 
         int start = Math.max(0, rawStart - Math.max(0, backtrackEdges));
         int endExclusive = Math.min(rawPath.size() - 1, rawStart + Math.max(1, lookaheadEdges));
+        NearbySceneObjects scene = new NearbySceneObjects(playerLoc, HANDLER_RANGE);
         for (int ri = start; ri < endExclusive && ri < rawPath.size() - 1; ri++) {
             WorldPoint a = rawPath.get(ri);
             WorldPoint b = rawPath.get(ri + 1);
@@ -5238,12 +5242,13 @@ public class Rs2Walker {
             if (isCatalogBackedTransportSegment(rawPath, ri) && !isDoorLikeCatalogTransportSegment(rawPath, ri)) {
                 continue;
             }
-            if (!hasDoorLikeSceneObjectOnSegment(a, b, playerLoc, HANDLER_RANGE)) {
+            if (!hasDoorLikeSceneObjectOnSegment(a, b, playerLoc, HANDLER_RANGE, scene)) {
                 continue;
             }
             if (handleDoorsWithTimeout(rawPath, ri, timeoutMs, attempted, true)) {
                 return true;
             }
+            scene.invalidate();
         }
         return false;
     }
@@ -5262,6 +5267,7 @@ public class Rs2Walker {
 
         int start = Math.max(0, rawEdgeStart - Math.max(0, backtrackEdges));
         int endExclusive = Math.min(rawPath.size() - 1, rawEdgeStart + Math.max(1, lookaheadEdges));
+        NearbySceneObjects scene = new NearbySceneObjects(playerLoc, radiusTiles);
         for (int ri = start; ri < endExclusive && ri < rawPath.size() - 1; ri++) {
             WorldPoint from = rawPath.get(ri);
             WorldPoint to = rawPath.get(ri + 1);
@@ -5277,12 +5283,13 @@ public class Rs2Walker {
             if (isCatalogBackedTransportSegment(rawPath, ri) && !isDoorLikeCatalogTransportSegment(rawPath, ri)) {
                 continue;
             }
-            if (!hasUnresolvedDoorLikeSceneObjectOnSegment(from, to, playerLoc, radiusTiles)) {
+            if (!hasUnresolvedDoorLikeSceneObjectOnSegment(from, to, playerLoc, radiusTiles, scene)) {
                 continue;
             }
             if (handleDoorsWithTimeout(rawPath, ri, timeoutMs, attempted, true)) {
                 return true;
             }
+            scene.invalidate();
         }
         return false;
     }
@@ -7347,6 +7354,13 @@ public class Rs2Walker {
 
     private static boolean hasDoorLikeSceneObjectOnSegment(WorldPoint fromWp, WorldPoint toWp,
                                                            WorldPoint playerLoc, int radiusTiles) {
+        return hasDoorLikeSceneObjectOnSegment(fromWp, toWp, playerLoc, radiusTiles,
+                new NearbySceneObjects(playerLoc, radiusTiles));
+    }
+
+    private static boolean hasDoorLikeSceneObjectOnSegment(WorldPoint fromWp, WorldPoint toWp,
+                                                           WorldPoint playerLoc, int radiusTiles,
+                                                           NearbySceneObjects scene) {
         if (fromWp == null || toWp == null || playerLoc == null || radiusTiles <= 0) {
             return false;
         }
@@ -7357,17 +7371,59 @@ public class Rs2Walker {
             return false;
         }
 
-        for (WallObject wall : Rs2GameObject.getWallObjects(o -> true, playerLoc, radiusTiles)) {
+        for (WallObject wall : scene.walls()) {
             if (isPendingRouteDoorObject(wall, fromWp, toWp, playerLoc, radiusTiles)) {
                 return true;
             }
         }
-        for (GameObject object : Rs2GameObject.getGameObjects(o -> true, playerLoc, radiusTiles)) {
+        for (GameObject object : scene.objects()) {
             if (isPendingRouteDoorObject(object, fromWp, toWp, playerLoc, radiusTiles)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * The wall and game objects around one tile, fetched once for a scan over many route edges.
+     *
+     * <p>The door scans test route edges one at a time, and every caller loops over up to a dozen of
+     * them from the same player tile. Each edge used to fetch the neighbourhood afresh -- two full
+     * scene scans through the client thread -- which was part of the 1.3-1.7s one continuation
+     * click could spend here while the player stood at the flag. A loop builds one of these, so
+     * the scene is fetched on the first edge that needs it and reused after. Loops that attempt a
+     * door between edges {@link #invalidate} it, so the next edge sees the door as it is now.
+     */
+    private static final class NearbySceneObjects {
+        private final WorldPoint origin;
+        private final int radius;
+        private List<WallObject> walls;
+        private List<GameObject> objects;
+
+        NearbySceneObjects(WorldPoint origin, int radius) {
+            this.origin = origin;
+            this.radius = radius;
+        }
+
+        // Fetched separately, as before: a matching wall still skips the game-object scan.
+        List<WallObject> walls() {
+            if (walls == null) {
+                walls = Rs2GameObject.getWallObjects(o -> true, origin, radius);
+            }
+            return walls;
+        }
+
+        List<GameObject> objects() {
+            if (objects == null) {
+                objects = Rs2GameObject.getGameObjects(o -> true, origin, radius);
+            }
+            return objects;
+        }
+
+        void invalidate() {
+            walls = null;
+            objects = null;
+        }
     }
 
     private static boolean hasUnresolvedDoorLikeObjectNearRawPath(List<WorldPoint> rawPath,
@@ -7382,6 +7438,7 @@ public class Rs2Walker {
 
         int start = Math.max(0, rawEdgeStart - Math.max(0, backtrackEdges));
         int endExclusive = Math.min(rawPath.size() - 1, rawEdgeStart + Math.max(1, lookaheadEdges));
+        NearbySceneObjects scene = new NearbySceneObjects(playerLoc, radiusTiles);
         for (int ri = start; ri < endExclusive && ri < rawPath.size() - 1; ri++) {
             WorldPoint from = rawPath.get(ri);
             WorldPoint to = rawPath.get(ri + 1);
@@ -7397,7 +7454,7 @@ public class Rs2Walker {
             if (isCatalogBackedTransportSegment(rawPath, ri) && !isDoorLikeCatalogTransportSegment(rawPath, ri)) {
                 continue;
             }
-            if (hasUnresolvedDoorLikeSceneObjectOnSegment(from, to, playerLoc, radiusTiles)) {
+            if (hasUnresolvedDoorLikeSceneObjectOnSegment(from, to, playerLoc, radiusTiles, scene)) {
                 return true;
             }
         }
@@ -7405,7 +7462,8 @@ public class Rs2Walker {
     }
 
     private static boolean hasUnresolvedDoorLikeSceneObjectOnSegment(WorldPoint fromWp, WorldPoint toWp,
-                                                                     WorldPoint playerLoc, int radiusTiles) {
+                                                                     WorldPoint playerLoc, int radiusTiles,
+                                                                     NearbySceneObjects scene) {
         if (fromWp == null || toWp == null || playerLoc == null || radiusTiles <= 0) {
             return false;
         }
@@ -7413,12 +7471,12 @@ public class Rs2Walker {
             return false;
         }
 
-        for (WallObject wall : Rs2GameObject.getWallObjects(o -> true, playerLoc, radiusTiles)) {
+        for (WallObject wall : scene.walls()) {
             if (isUnresolvedRouteDoorObject(wall, fromWp, toWp, playerLoc, radiusTiles)) {
                 return true;
             }
         }
-        for (GameObject object : Rs2GameObject.getGameObjects(o -> true, playerLoc, radiusTiles)) {
+        for (GameObject object : scene.objects()) {
             if (isUnresolvedRouteDoorObject(object, fromWp, toWp, playerLoc, radiusTiles)) {
                 return true;
             }
@@ -9596,6 +9654,7 @@ public class Rs2Walker {
                                                     long timeoutMs, Map<String, WorldPoint> attempted,
                                                     Map<WorldPoint, Integer> reachableCache) {
         WorldPoint playerLoc = reachableCache != null ? Rs2Player.getWorldLocation() : null;
+        NearbySceneObjects scene = new NearbySceneObjects(playerLoc, HANDLER_RANGE);
         long startedAt = System.currentTimeMillis();
         for (int ri = rawFrom; ri < rawTo && ri < rawPath.size() - 1; ri++) {
             long elapsed = System.currentTimeMillis() - startedAt;
@@ -9605,13 +9664,14 @@ public class Rs2Walker {
             if (reachableCache != null && reachableCache.containsKey(rawPath.get(ri))
                     && reachableCache.containsKey(rawPath.get(ri + 1))
                     && !hasDoorLikeSceneObjectOnSegment(rawPath.get(ri), rawPath.get(ri + 1),
-                            playerLoc, HANDLER_RANGE)) {
+                            playerLoc, HANDLER_RANGE, scene)) {
                 continue;
             }
             long remainingTimeoutMs = Math.max(1L, timeoutMs - elapsed);
             if (handleDoorsWithTimeout(rawPath, ri, remainingTimeoutMs, attempted)) {
                 return true;
             }
+            scene.invalidate();
             if (isDoorInteractionSettling()) {
                 return false;
             }
