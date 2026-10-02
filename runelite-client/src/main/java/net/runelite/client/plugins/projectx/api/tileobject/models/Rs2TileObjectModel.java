@@ -263,6 +263,11 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
             }
 
 
+            // With an item or spell selected, the click is "use the selected thing on this object":
+            // the menu entry is the widget's, not one of the object's own options, so there is no
+            // option to look up. Read once, here, because the option check below must not fail it.
+            boolean widgetSelected = ProjectX.getClient().isWidgetSelected();
+
             int index = 0;
             String objName = "";
             if (action != null) {
@@ -295,9 +300,11 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
                  * these mistakes survive for so long without anything in the log.
                  *
                  * An empty action is the deliberate default-click path from click(), and still
-                 * means option one.
+                 * means option one. Using an item or spell on the object is not a lookup at all
+                 * (see widgetSelected above); failing it here broke every "use X on object" call,
+                 * such as redeeming tickets on the Wilderness Agility dispenser.
                  */
-                if (!found && !action.isEmpty()) {
+                if (!found && !action.isEmpty() && !widgetSelected) {
                     log.warn("Object {} has no \"{}\" option; it offers {}",
                             getId(), action, Arrays.toString(actions));
                     return false;
@@ -315,7 +322,7 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
 
 
 
-            if (ProjectX.getClient().isWidgetSelected()) {
+            if (widgetSelected) {
                 menuAction = MenuAction.WIDGET_TARGET_ON_GAME_OBJECT;
             } else if (index == 0) {
                 menuAction = MenuAction.GAME_OBJECT_FIRST_OPTION;
