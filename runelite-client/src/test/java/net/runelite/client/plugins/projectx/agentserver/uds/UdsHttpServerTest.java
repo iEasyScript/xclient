@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.rules.Timeout;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -40,6 +41,18 @@ public class UdsHttpServerTest {
 
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
+
+    /**
+     * {@link #roundTrip} blocks on a socket read, and a blocking SocketChannel has no read
+     * timeout. A response that never comes therefore froze the whole unit-test run -- it did
+     * once, in malformedRequestYields400, during a full run on Windows, and never in isolation.
+     * This turns the next one into a failure that names the stuck thread instead of a hang.
+     */
+    @Rule
+    public Timeout timeout = Timeout.builder()
+            .withTimeout(10, TimeUnit.SECONDS)
+            .withLookingForStuckThread(true)
+            .build();
 
     private UdsHttpServer server;
     private ExecutorService executor;
