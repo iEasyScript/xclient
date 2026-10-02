@@ -241,9 +241,17 @@ public class ProjectXPluginManager {
                 continue;
             }
             if (getPluginJarFile(internalName).exists()) {
-                // Present but not loaded: a load attempt, not another download.
-                loadSideLoadPlugin(internalName);
-                continue;
+                String published = manifest.getSha256();
+                String onDisk = calculateHash(internalName);
+                if (Strings.isNullOrEmpty(published) || published.equals(onDisk)) {
+                    // Present, current and not loaded: a load attempt, not another download.
+                    loadSideLoadPlugin(internalName);
+                    continue;
+                }
+                // Present but not the build the store publishes -- typically one that failed to
+                // load, which is why it is not loaded. Loading it again would fail again; fetch
+                // the published build instead.
+                log.info("Replacing {} on disk with the published build", internalName);
             }
 
             log.info("Installing {}, which this account has access to", internalName);
@@ -576,9 +584,18 @@ public class ProjectXPluginManager {
     private Set<String> loadedExternalNames() {
         return pluginManager.getPlugins().stream()
                 .filter(p -> p.getClass().isAnnotationPresent(PluginDescriptor.class))
-                .filter(p -> p.getClass().getAnnotation(PluginDescriptor.class).isExternal())
+                .filter(p -> isFromPluginJar(p) || p.getClass().getAnnotation(PluginDescriptor.class).isExternal())
                 .map(p -> p.getClass().getSimpleName())
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * A plugin whose class came out of a downloaded jar is external by definition, whatever its
+     * descriptor says. Trusting only the isExternal flag meant a store script that forgot it was
+     * loaded, run, and then reported as "registered no plugin" -- so it was never updated again.
+     */
+    private static boolean isFromPluginJar(Plugin plugin) {
+        return plugin.getClass().getClassLoader() instanceof PluginJarClassLoader;
     }
 
     /**
@@ -649,7 +666,11 @@ public class ProjectXPluginManager {
             loadPlugins(plugins, null);
 
             if (!loadedExternalNames().contains(internalName)) {
-                String fingerprint = jarFingerprint(internalName);
+                // The jar that was just tried, which can be an old one left on disk. Recording the
+                // published hash here instead marked the store's newer build as already failed
+                // before it was ever downloaded, so a broken release could never be fixed by the
+                // next one.
+                String fingerprint = calculateHash(internalName);
                 if (fingerprint != null) {
                     unloadableJars.put(internalName, fingerprint);
                 }
