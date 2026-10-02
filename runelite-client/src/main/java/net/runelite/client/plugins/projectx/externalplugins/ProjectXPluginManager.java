@@ -132,6 +132,9 @@ public class ProjectXPluginManager {
      */
     private final Map<String, String> unloadableJars = new ConcurrentHashMap<>();
 
+    /** "name:version" pairs already logged as waiting for their script to stop; logged once each. */
+    private final Set<String> deferredUpdateLogged = ConcurrentHashMap.newKeySet();
+
     @Inject
     @Named("safeMode")
     private boolean safeMode;
@@ -213,6 +216,10 @@ public class ProjectXPluginManager {
         try {
             account.refreshIfStale();
             entitlements.refresh();
+            // The catalogue used to be fetched once, at start-up, so a client left running never
+            // learned that anything had been published after it started: updates only ever arrived
+            // with a restart. One small request to the site per pass.
+            loadManifest();
             installEntitled();
             updateOutdated();
             refresh();
@@ -291,8 +298,18 @@ public class ProjectXPluginManager {
                 continue;
             }
 
-            String installed = getInstalledPluginVersion(internalName).orElse(null);
-            if (installed == null || latest.equals(installed)) {
+            if (!isOutdated(manifest)) {
+                continue;
+            }
+
+            String installed = getInstalledPluginVersion(internalName).orElse("an older build");
+            Plugin running = findLoadedPlugin(internalName);
+            if (running != null && pluginManager.isPluginActive(running)) {
+                // Updating unloads the plugin, which would stop a script mid-run -- in the
+                // Wilderness, say. It is updated once stopped, or before it loads at the next start.
+                if (deferredUpdateLogged.add(internalName + ":" + latest)) {
+                    log.info("{} {} is available; updating once {} is stopped", internalName, latest, installed);
+                }
                 continue;
             }
 
@@ -313,6 +330,51 @@ public class ProjectXPluginManager {
             unloadPlugin(internalName);
             loadSideLoadPlugin(internalName);
             eventBus.post(new ExternalPluginsChanged());
+        }
+    }
+
+    /**
+     * Whether the jar on disk is not the build the store publishes.
+     *
+     * <p>By hash when the catalogue has one, which is what changes when anything changes -- including
+     * a same-version rebuild, which a version comparison never sees. The installed-version record is
+     * only the fallback: it is missing for jars an older client downloaded, and a missing record used
+     * to mean "never update".
+     */
+    private boolean isOutdated(ProjectXPluginManifest manifest) {
+        String internalName = manifest.getInternalName();
+        String published = manifest.getSha256();
+        String onDisk = calculateHash(internalName);
+        if (!Strings.isNullOrEmpty(published) && !Strings.isNullOrEmpty(onDisk)) {
+            return !published.equals(onDisk);
+        }
+        String latest = manifest.getVersion();
+        String installed = getInstalledPluginVersion(internalName).orElse(null);
+        return !Strings.isNullOrEmpty(latest) && installed != null && !latest.equals(installed);
+    }
+
+    @Nullable
+    private Plugin findLoadedPlugin(String internalName) {
+        return pluginManager.getPlugins().stream()
+                .filter(p -> p.getClass().getSimpleName().equalsIgnoreCase(internalName))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * At start-up, before anything runs, brings an outdated jar up to date so the current build is
+     * the one that loads. This is where updates postponed for a running script land, and the only
+     * moment an always-on plugin can be updated without interrupting it. A failed or refused
+     * download -- an expired subscription, say -- leaves the jar it has.
+     */
+    private void updateBeforeLoading(String internalName) {
+        ProjectXPluginManifest manifest = manifestMap.get(internalName);
+        if (manifest == null || manifest.isDisable() || !isOutdated(manifest)) {
+            return;
+        }
+        log.info("Updating {} to {} before loading it", internalName, manifest.getVersion());
+        if (!downloadPlugin(internalName, null)) {
+            log.warn("Could not fetch {} {}; loading the jar already installed", internalName, manifest.getVersion());
         }
     }
 
@@ -708,6 +770,7 @@ public class ProjectXPluginManager {
                 continue;
             }
             try {
+                updateBeforeLoading(internalName);
                 loadSideLoadPlugin(internalName);
             } catch (Exception exception) {
                 System.out.println("Error loading side-loaded plugin: " + internalName);
