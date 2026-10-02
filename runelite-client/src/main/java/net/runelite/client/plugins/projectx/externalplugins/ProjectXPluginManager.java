@@ -109,6 +109,8 @@ public class ProjectXPluginManager {
     private final ProjectXAccount account;
 
     private final Map<String, URLClassLoader> loaders = new ConcurrentHashMap<>();
+    /** Jars that could not be deleted, so the same file is only complained about once. */
+    private final Set<String> undeletableJars = ConcurrentHashMap.newKeySet();
 
     /**
      * Jars that downloaded cleanly but yielded no usable plugin, against the
@@ -1122,9 +1124,22 @@ public class ProjectXPluginManager {
                     .flatMap(Arrays::stream)
                     .filter(file -> !keepFiles.contains(file) && file.lastModified() < keepAfter.toEpochMilli())
                     .forEach(file -> {
-                        log.info("Cleaning up old plugin file (>3 days): {}", file.getName());
-                        if (!file.delete()) {
-                            log.warn("Failed to delete old plugin file: {}", file.getAbsolutePath());
+                        if (file.delete()) {
+                            log.info("Cleaned up old plugin file (>3 days): {}", file.getName());
+                            undeletableJars.remove(file.getName());
+                            return;
+                        }
+
+                        /*
+                         * Still locked. Jars are deleted on exit instead, and the complaint is made
+                         * once rather than on every refresh: this ran every few minutes and put the
+                         * same warning in front of the player forever, which is how a stale file
+                         * nobody can do anything about became the most visible thing in the log.
+                         */
+                        file.deleteOnExit();
+                        if (undeletableJars.add(file.getName())) {
+                            log.info("Old plugin file {} is in use; it will be removed when the client closes",
+                                    file.getName());
                         }
                     });
 
@@ -1165,6 +1180,18 @@ public class ProjectXPluginManager {
                     SwingUtilities.invokeAndWait(() -> stopPlugin(plugin));
                 } catch (InterruptedException | InvocationTargetException e) {
                     log.warn("Failed to stop plugin {}", simple, e);
+                }
+
+                /*
+                 * A plugin that is going away for good is unloaded, not just stopped.
+                 *
+                 * Stopping leaves it registered with its classloader open, which on Windows keeps
+                 * a lock on the jar -- so the cleanup below could never delete it and warned about
+                 * the same file on every refresh, forever. A plugin that is merely being reloaded
+                 * is left alone here; the reload path unloads it itself.
+                 */
+                if (!needsReload.contains(simple)) {
+                    unloadPlugin(simple);
                 }
             }
 
@@ -1401,12 +1428,17 @@ public class ProjectXPluginManager {
                 .filter(x -> x.getClass().getSimpleName().equalsIgnoreCase(internalName))
                 .findFirst();
 
+        URLClassLoader cl = loaders.remove(internalName);
+
         if (pluginToRemove.isEmpty()) {
+            // Not registered, but its classloader may still be open and holding the jar. Closing
+            // it here is the difference between the file being deletable and not; leaving it was
+            // a leak that only showed up as a jar nothing could remove.
             log.warn("Plugin to remove not found in plugin manager: {}", internalName);
+            closeQuietly(cl);
             return true;
         }
 
-        URLClassLoader cl = loaders.remove(internalName);
         if (cl == null) {
             return false;
         }
@@ -1427,12 +1459,19 @@ public class ProjectXPluginManager {
 
         pluginManager.remove(plugin);
 
+        closeQuietly(cl);
+
+        return true;
+    }
+
+    private static void closeQuietly(URLClassLoader cl) {
+        if (cl == null) {
+            return;
+        }
         try {
             cl.close();
         } catch (Exception ignored) {
         }
-
-        return true;
     }
 
     public void remove(ProjectXPluginManifest manifest) {
