@@ -1349,6 +1349,16 @@ public class QuestScript extends Script {
                             .orElse(null));
         }
 
+        // Quest helper also uses NpcStep for an NPC the player only watches or follows -- the guard in
+        // Children of the Sun has no actions at all. Choosing one fell back to "Talk-to", which failed
+        // on every loop, and walking up to him whenever he was out of sight fails the stealth section.
+        // Nothing here can play such a step, so say so and stop rather than retry it forever.
+        if (npc != null && step.getIconItemID() == -1 && !(step instanceof NpcEmoteStep) && hasNoNpcActions(npc)) {
+            stopQuesterWithReason("'" + npc.getName() + "' has nothing to click, so this step has to be played by hand: "
+                    + String.join(" ", step.getText()) + " Turn the quester back on once it is done.");
+            return false;
+        }
+
         // canReach() pathfinds through closed doors (the walker opens them en route), so canReach==true
         // doesn't mean a direct click will succeed. Require line-of-sight too, or we walk instead.
         if (npc != null && npc.getLocalLocation() != null && Rs2Camera.isTileOnScreen(npc.getLocalLocation())
@@ -1560,6 +1570,26 @@ public class QuestScript extends Script {
         }
 
         return "";
+    }
+
+    /** Whether the NPC offers no action at all, in its base form or the one quest progress turns it into. */
+    private boolean hasNoNpcActions(Rs2NpcModel npc) {
+        return ProjectX.getClientThread().runOnClientThreadOptional(() ->
+                !hasAnyNpcAction(ProjectX.getClient().getNpcDefinition(npc.getId()))
+                        && !hasAnyNpcAction(npc.getNpc().getTransformedComposition()))
+                .orElse(false);
+    }
+
+    private static boolean hasAnyNpcAction(NPCComposition composition) {
+        if (composition == null || composition.getActions() == null) {
+            return false;
+        }
+        for (String action : composition.getActions()) {
+            if (action != null && !action.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String chooseCorrectNPCOption(QuestStep step, Rs2NpcModel npc) {
