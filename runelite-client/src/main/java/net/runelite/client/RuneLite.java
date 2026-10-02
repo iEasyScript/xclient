@@ -56,6 +56,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.inject.Singleton;
@@ -147,6 +148,13 @@ public class RuneLite
 	public static final File FONTS_DIR = new File(RuneLite.RUNELITE_DIR, "fonts");
 
 	private static final int MAX_OKHTTP_CACHE_SIZE = 20 * 1024 * 1024; // 20mb
+
+	// The startup arguments are logged to client.log, which users share for support, and
+	// some of them carry credentials: -proxy=socks://user:pass@host, -Dprojectx.accountToken=...
+	private static final Pattern URL_CREDENTIALS = Pattern.compile("(://)[^/@\\s]+@");
+	private static final Pattern SECRET_ASSIGNMENT = Pattern.compile("(?i)^(-*[\\w.-]*(?:token|password|passwd|secret|webhook)[\\w.-]*=).+$");
+	private static final Pattern ACCOUNT_TOKEN = Pattern.compile("px_[A-Za-z0-9_-]+");
+
 	public static String USER_AGENT = "RuneLite/" + RuneLiteProperties.getVersion();
 
 	@Getter
@@ -367,12 +375,12 @@ public class RuneLite
 
 			log.info("RuneLite {} (launcher version {}) starting up, args: {}",
 				RuneLiteProperties.getVersion(), MoreObjects.firstNonNull(RuneLiteProperties.getLauncherVersion(), "unknown"),
-				args.length == 0 ? "none" : String.join(" ", args));
+				args.length == 0 ? "none" : redactArgs(Arrays.asList(args)));
 
 			final RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
 			// This includes arguments from _JAVA_OPTIONS, which are parsed after command line flags and applied to
 			// the global VM args
-			log.info("Java VM arguments: {}", String.join(" ", runtime.getInputArguments()));
+			log.info("Java VM arguments: {}", redactArgs(runtime.getInputArguments()));
 
 			final long start = System.currentTimeMillis();
 			injector = Guice.createInjector(new RuneLiteModule(
@@ -933,6 +941,20 @@ public class RuneLite
         okHttpClientBuilder.sslSocketFactory(sc.getSocketFactory(), trustManager);
     }
     // endregion
+
+	@VisibleForTesting
+	static String redactArgs(List<String> args)
+	{
+		List<String> redacted = new ArrayList<>(args.size());
+		for (String arg : args)
+		{
+			arg = URL_CREDENTIALS.matcher(arg).replaceAll("$1***@");
+			arg = SECRET_ASSIGNMENT.matcher(arg).replaceAll("$1***");
+			arg = ACCOUNT_TOKEN.matcher(arg).replaceAll("px_***");
+			redacted.add(arg);
+		}
+		return String.join(" ", redacted);
+	}
 
     /**
      * Extracts the major Java version from the full version string.

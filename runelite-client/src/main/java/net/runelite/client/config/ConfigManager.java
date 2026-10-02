@@ -47,6 +47,7 @@ import net.runelite.client.events.*;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.inventorysetups.ConfigInventorySetupDataManager;
 import net.runelite.client.plugins.projectx.inventorysetups.InventorySetup;
+import net.runelite.client.plugins.projectx.util.security.Encryption;
 import net.runelite.client.plugins.projectx.util.security.LoginManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.RunnableExceptionLogger;
@@ -611,6 +612,32 @@ public class ConfigManager
 		}
 	}
 
+	// Saved passwords and PINs used to be encrypted with a key written into the source.
+	// Re-encrypt them with one that is not; see Encryption.
+	private static void reencryptLegacySecrets(ProfileManager.Lock lock)
+	{
+		for (ConfigProfile profile : lock.getProfiles())
+		{
+			try
+			{
+				if (Encryption.isLegacy(profile.getPassword()))
+				{
+					profile.setPassword(Encryption.encrypt(profile.getPassword()));
+					lock.dirty();
+				}
+				if (Encryption.isLegacy(profile.getBankPin()))
+				{
+					profile.setBankPin(Encryption.encrypt(profile.getBankPin()));
+					lock.dirty();
+				}
+			}
+			catch (Exception e)
+			{
+				log.warn("Could not re-encrypt the saved login of profile {}", profile.getId(), e);
+			}
+		}
+	}
+
 	public void load()
 	{
 		AccountSession session = sessionManager.getAccountSession();
@@ -639,6 +666,7 @@ public class ConfigManager
 		{
 			removeDuplicateProfiles(lock);
 			fixRsProfileName(lock);
+			reencryptLegacySecrets(lock);
 
 			ConfigProfile profile = null, rsProfile = null;
 
