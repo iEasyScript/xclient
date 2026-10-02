@@ -416,7 +416,7 @@ public class Rs2Antiban {
      *
      * <h3>Overlay Components:</h3>
      * <ul>
-     *   <li>A title component labeled "🦆 Humanizer 🦆" with orange coloring.</li>
+     *   <li>A title component labeled "Antiban" with orange coloring.</li>
      *   <li>Details about the current activity, including method name, category, and intensity.</li>
      *   <li>If <code>Rs2AntibanSettings.devDebug</code> is enabled, several debug lines will show key anti-ban settings,
      *       such as action cooldown, random intervals, and behavioral variability.</li>
@@ -468,7 +468,7 @@ public class Rs2Antiban {
      *     try {
      *         panelComponent.setPreferredSize(new Dimension(275, 900));
      *         panelComponent.getChildren().add(TitleComponent.builder()
-     *                 .text("\uD83E\uDD86 Motherlode Mine \uD83E\uDD86")
+     *                 .text("Motherlode Mine")
      *                 .color(Color.ORANGE)
      *                 .build());
      *
@@ -507,7 +507,7 @@ public class Rs2Antiban {
         progressBarComponent.setRightLabel(String.valueOf(playStyle.getSecondaryTickInterval()));
         progressBarComponent.setCenterLabel(String.valueOf(TIMEOUT));
 
-        panelComponent.getChildren().add(TitleComponent.builder().text("\uD83E\uDD86 Humanizer \uD83E\uDD86")
+        panelComponent.getChildren().add(TitleComponent.builder().text("Antiban")
                 .color(Color.ORANGE).build());
         panelComponent.getChildren().add(LineComponent.builder().build());
         panelComponent.getChildren().add(SplitComponent.builder()
