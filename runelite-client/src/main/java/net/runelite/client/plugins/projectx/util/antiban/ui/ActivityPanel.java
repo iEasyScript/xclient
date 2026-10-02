@@ -4,7 +4,9 @@ import net.runelite.client.plugins.projectx.util.antiban.Rs2AntibanSettings;
 
 import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
 
 /**
  * How the bot's rhythm varies over a session.
@@ -13,6 +15,10 @@ import javax.swing.JPanel;
  * impossible to see that they are really three ideas: the play style that drives
  * everything, the human traits layered on top, and the two anti-fingerprinting
  * options.
+ *
+ * <p>Fatigue now has a strength. It used to be a fixed, invisible 0.005ms per tick on the mouse; the two
+ * sliders under it set how fast it builds and where it stops. They also set the session fatigue applied to
+ * scripts' waits, which runs whether or not the toggle is on, so they stay usable with it off.
  */
 public class ActivityPanel extends JPanel
 {
@@ -29,8 +35,13 @@ public class ActivityPanel extends JPanel
             + "speed and accuracy.");
 
     private final JCheckBox simulateFatigue = AntibanUi.toggle("Simulate fatigue",
-        "Simulates fatigue by slowing down the mouse movements the longer the player is "
-            + "logged in. (This is barely noticeable to the naked eye)");
+        "Slows the mouse the longer you play. Idle stretches recover some of it.");
+
+    private final JLabel perHourValue = new JLabel();
+    private final JSlider fatiguePerHour = AntibanUi.slider(0, 20, Rs2AntibanSettings.fatigueSlowdownPerHour);
+
+    private final JLabel maxValue = new JLabel();
+    private final JSlider fatigueMax = AntibanUi.slider(0, 60, Rs2AntibanSettings.fatigueMaxSlowdown);
 
     private final JCheckBox simulateAttentionSpan = AntibanUi.toggle("Simulate attention span",
         "Simulates attention span by switching between different play styles. "
@@ -59,12 +70,21 @@ public class ActivityPanel extends JPanel
 
         JPanel human = AntibanUi.card("Human traits");
         human.add(simulateFatigue);
+        human.add(AntibanUi.readout(new JLabel("Slower per hour"), perHourValue));
+        human.add(fatiguePerHour);
+        human.add(AntibanUi.readout(new JLabel("Slowest it gets"), maxValue));
+        human.add(fatigueMax);
+        human.add(AntibanUi.hint("The strength also applies to scripts' waits, which slow with "
+            + "time played whether or not the mouse does."));
         human.add(simulateAttentionSpan);
         human.add(useBehavioralVariability);
 
         JPanel timing = AntibanUi.card("Timing");
         timing.add(useNonLinearIntervals);
         timing.add(useRandomIntervals);
+        fatiguePerHour.setToolTipText("How much slower each hour of play makes you");
+        fatigueMax.setToolTipText("Fatigue never slows you down more than this");
+
         timing.add(AntibanUi.hint(
             "Fully random timing is not human timing. Prefer non-linear intervals, which "
                 + "drift your existing rhythm instead of replacing it."));
@@ -78,46 +98,21 @@ public class ActivityPanel extends JPanel
 
     private void setupActionListeners()
     {
-        usePlayStyle.addActionListener(e ->
-        {
-            Rs2AntibanSettings.usePlayStyle = usePlayStyle.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        useRandomIntervals.addActionListener(e ->
-        {
-            Rs2AntibanSettings.randomIntervals = useRandomIntervals.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        simulateFatigue.addActionListener(e ->
-        {
-            Rs2AntibanSettings.simulateFatigue = simulateFatigue.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        simulateAttentionSpan.addActionListener(e ->
-        {
-            Rs2AntibanSettings.simulateAttentionSpan = simulateAttentionSpan.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        useBehavioralVariability.addActionListener(e ->
-        {
-            Rs2AntibanSettings.behavioralVariability = useBehavioralVariability.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        useNonLinearIntervals.addActionListener(e ->
-        {
-            Rs2AntibanSettings.nonLinearIntervals = useNonLinearIntervals.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        dynamicActivityIntensity.addActionListener(e ->
-        {
-            Rs2AntibanSettings.dynamicIntensity = dynamicActivityIntensity.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        dynamicActivity.addActionListener(e ->
-        {
-            Rs2AntibanSettings.dynamicActivity = dynamicActivity.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
+        AntibanUi.onUserToggle(usePlayStyle, on -> Rs2AntibanSettings.usePlayStyle = on);
+        AntibanUi.onUserToggle(useRandomIntervals, on -> Rs2AntibanSettings.randomIntervals = on);
+        AntibanUi.onUserToggle(simulateFatigue, on -> Rs2AntibanSettings.simulateFatigue = on);
+        AntibanUi.onUserToggle(simulateAttentionSpan, on -> Rs2AntibanSettings.simulateAttentionSpan = on);
+        AntibanUi.onUserToggle(useBehavioralVariability, on -> Rs2AntibanSettings.behavioralVariability = on);
+        AntibanUi.onUserToggle(useNonLinearIntervals, on -> Rs2AntibanSettings.nonLinearIntervals = on);
+        AntibanUi.onUserToggle(dynamicActivityIntensity, on -> Rs2AntibanSettings.dynamicIntensity = on);
+        AntibanUi.onUserToggle(dynamicActivity, on -> Rs2AntibanSettings.dynamicActivity = on);
+
+        AntibanUi.onUserSlide(fatiguePerHour,
+            value -> perHourValue.setText(value + "%"),
+            value -> Rs2AntibanSettings.userChange(() -> Rs2AntibanSettings.fatigueSlowdownPerHour = value));
+        AntibanUi.onUserSlide(fatigueMax,
+            value -> maxValue.setText("+" + value + "%"),
+            value -> Rs2AntibanSettings.userChange(() -> Rs2AntibanSettings.fatigueMaxSlowdown = value));
     }
 
     public void updateValues()
@@ -130,5 +125,10 @@ public class ActivityPanel extends JPanel
         useNonLinearIntervals.setSelected(Rs2AntibanSettings.nonLinearIntervals);
         dynamicActivityIntensity.setSelected(Rs2AntibanSettings.dynamicIntensity);
         dynamicActivity.setSelected(Rs2AntibanSettings.dynamicActivity);
+
+        AntibanUi.setQuietly(fatiguePerHour, Rs2AntibanSettings.fatigueSlowdownPerHour);
+        perHourValue.setText(fatiguePerHour.getValue() + "%");
+        AntibanUi.setQuietly(fatigueMax, Rs2AntibanSettings.fatigueMaxSlowdown);
+        maxValue.setText("+" + fatigueMax.getValue() + "%");
     }
 }

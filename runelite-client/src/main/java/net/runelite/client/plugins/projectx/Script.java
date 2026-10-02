@@ -6,6 +6,7 @@ import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.projectx.shortestpath.ShortestPathPlugin;
 import net.runelite.client.plugins.projectx.util.Global;
 import net.runelite.client.plugins.projectx.agentserver.handler.ScriptHeartbeatRegistry;
+import net.runelite.client.plugins.projectx.util.antiban.AntibanPlugin;
 import net.runelite.client.plugins.projectx.util.antiban.SessionFatigue;
 import net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
@@ -56,6 +57,7 @@ public abstract class Script extends Global implements IScript {
         ScriptHeartbeatRegistry.remove(this.getClass().getName());
         if (mainScheduledFuture != null && !mainScheduledFuture.isDone()) {
             mainScheduledFuture.cancel(true);
+            AntibanPlugin.scriptStopped();
             ShortestPathPlugin.exit();
             if (ProjectX.getClientThread().scheduledFuture != null)
                 ProjectX.getClientThread().scheduledFuture.cancel(true);

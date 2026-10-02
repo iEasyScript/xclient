@@ -32,6 +32,13 @@ import net.runelite.client.plugins.projectx.util.antiban.enums.Activity;
  * by enabling or disabling certain features like profile switching or dynamic intensity.
  * </p>
  *
+ * <p>
+ * When the user has turned on "Override every script", the templates still write their values, and the user's
+ * settings are put back over them -- immediately for the templates that set an activity, otherwise within a
+ * game tick. They used to return without doing anything, which also skipped setting the activity and left
+ * scripts with no play style to take a cooldown from.
+ * </p>
+ *
  * <h3>Example:</h3>
  * <p>Inside your plugin script class, execute the initialization outside the main loop.</p>
  * <pre>
@@ -59,6 +66,8 @@ import net.runelite.client.plugins.projectx.util.antiban.enums.Activity;
  *   <li><code>applyWoodcuttingSetup()</code>: Configures antiban settings for woodcutting tasks.</li>
  *   <li><code>applyFarmingSetup()</code>: Configures antiban settings for farming tasks.</li>
  *   <li><code>applyGeneralBasicSetup()</code>: Applies a basic antiban configuration without advanced features.</li>
+ *   <li><code>applyLightSetup()</code>, <code>applyBalancedSetup()</code>, <code>applyCautiousSetup()</code>: General
+ *       presets offered in the antiban panel; they leave the activity alone.</li>
  * </ul>
  */
 
@@ -69,9 +78,6 @@ public class AntibanSetupTemplates {
      * and mouse movement variability to reduce detection risk.
      */
     public void applyCombatSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
         Rs2AntibanSettings.randomIntervals = false;
@@ -102,9 +108,6 @@ public class AntibanSetupTemplates {
      * This setup adjusts settings to simulate human-like behaviors during runecrafting tasks.
      */
     public void applyRunecraftingSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Runecrafting setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -136,9 +139,6 @@ public class AntibanSetupTemplates {
      * This setup focuses on mimicking human-like behaviors during construction tasks.
      */
     public void applyConstructionSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Construction setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -171,9 +171,6 @@ public class AntibanSetupTemplates {
      */
 
     public void applyAgilitySetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Agility setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -205,9 +202,6 @@ public class AntibanSetupTemplates {
      * This setup configures settings to mimic human-like behaviors during herblore tasks.
      */
     public void applyHerbloreSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Herblore setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -239,9 +233,6 @@ public class AntibanSetupTemplates {
      * This setup simulates human-like behaviors during thieving tasks to reduce detection risk.
      */
     public void applyThievingSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Thieving setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -273,9 +264,6 @@ public class AntibanSetupTemplates {
      * This setup focuses on human-like behavior simulation during crafting tasks.
      */
     public void applyCraftingSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Crafting setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -307,9 +295,6 @@ public class AntibanSetupTemplates {
      * This setup adjusts settings to mimic human behavior during fletching tasks.
      */
     public void applyFletchingSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Fletching setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -337,9 +322,6 @@ public class AntibanSetupTemplates {
     }
 
     public void applySlayerSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Slayer setup
     }
 
@@ -348,9 +330,6 @@ public class AntibanSetupTemplates {
      * This setup simulates human-like behaviors during hunting tasks.
      */
     public void applyHunterSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Hunter setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -382,9 +361,6 @@ public class AntibanSetupTemplates {
      * This setup includes adjustments to mimic human behaviors during mining tasks.
      */
     public void applyMiningSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Mining setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -416,9 +392,6 @@ public class AntibanSetupTemplates {
      * This setup configures settings to simulate human-like behaviors during smithing tasks.
      */
     public void applySmithingSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Smithing setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -450,9 +423,6 @@ public class AntibanSetupTemplates {
      * This setup focuses on mimicking human-like behaviors during fishing tasks.
      */
     public void applyFishingSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Fishing setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -484,9 +454,6 @@ public class AntibanSetupTemplates {
      * This setup simulates human-like behaviors during cooking tasks to reduce detection risk.
      */
     public void applyCookingSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Cooking setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -518,9 +485,6 @@ public class AntibanSetupTemplates {
      * This setup is designed to simulate human behavior during firemaking tasks.
      */
     public void applyFiremakingSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Firemaking setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -552,9 +516,6 @@ public class AntibanSetupTemplates {
      * This setup mimics human-like behaviors during woodcutting tasks to reduce detection risk.
      */
     public void applyWoodcuttingSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Woodcutting setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -586,9 +547,6 @@ public class AntibanSetupTemplates {
      * This setup configures settings to simulate human-like behaviors during farming tasks.
      */
     public void applyFarmingSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for Farming setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -621,9 +579,6 @@ public class AntibanSetupTemplates {
      * This setup does not include advanced features such as action cooldown, attention span or micro breaks.
      */
     public void applyGeneralBasicSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for General Basic setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = false;
@@ -654,9 +609,6 @@ public class AntibanSetupTemplates {
      * This setup does not include advanced features such as action cooldown, attention span or micro breaks.
      */
     public void applyUniversalAntibanSetup() {
-        if (Rs2AntibanSettings.overwriteScriptSettings){
-            return;
-        }
         // Implementation for General Basic setup
         Rs2AntibanSettings.antibanEnabled = true;
         Rs2AntibanSettings.usePlayStyle = true;
@@ -682,5 +634,70 @@ public class AntibanSetupTemplates {
         Rs2AntibanSettings.microBreakChance = 0.05;
     }
 
+    /**
+     * Light antiban: a varied rhythm and natural mouse, nothing that costs much time.
+     *
+     * <p>This and the two below are the general presets in the panel. Unlike the activity templates they do
+     * not set an activity, and they leave alone the system-level choices -- universal antiban, the override,
+     * dev debug, dynamic activity and intensity -- which a preset has no business changing.
+     */
+    public void applyLightSetup() {
+        Rs2AntibanSettings.antibanEnabled = true;
+        Rs2AntibanSettings.usePlayStyle = true;
+        Rs2AntibanSettings.randomIntervals = false;
+        Rs2AntibanSettings.simulateFatigue = false;
+        Rs2AntibanSettings.simulateAttentionSpan = false;
+        Rs2AntibanSettings.behavioralVariability = true;
+        Rs2AntibanSettings.nonLinearIntervals = true;
+        Rs2AntibanSettings.profileSwitching = false;
+        Rs2AntibanSettings.timeOfDayAdjust = false;
+        Rs2AntibanSettings.simulateMistakes = false;
+        Rs2AntibanSettings.naturalMouse = true;
+        Rs2AntibanSettings.moveMouseOffScreen = false;
+        Rs2AntibanSettings.moveMouseRandomly = false;
+        Rs2AntibanSettings.takeMicroBreaks = false;
+        Rs2AntibanSettings.actionCooldownChance = 0.15;
+        Rs2AntibanSettings.microBreakChance = 0.05;
+    }
+
+    /**
+     * Balanced antiban: fatigue, attention span, mouse mistakes and the occasional micro break.
+     */
+    public void applyBalancedSetup() {
+        Rs2AntibanSettings.antibanEnabled = true;
+        Rs2AntibanSettings.usePlayStyle = true;
+        Rs2AntibanSettings.randomIntervals = false;
+        Rs2AntibanSettings.simulateFatigue = true;
+        Rs2AntibanSettings.simulateAttentionSpan = true;
+        Rs2AntibanSettings.behavioralVariability = true;
+        Rs2AntibanSettings.nonLinearIntervals = true;
+        Rs2AntibanSettings.profileSwitching = true;
+        Rs2AntibanSettings.timeOfDayAdjust = false;
+        Rs2AntibanSettings.simulateMistakes = true;
+        Rs2AntibanSettings.naturalMouse = true;
+        Rs2AntibanSettings.moveMouseOffScreen = true;
+        Rs2AntibanSettings.moveMouseOffScreenChance = 0.15;
+        Rs2AntibanSettings.moveMouseRandomly = true;
+        Rs2AntibanSettings.moveMouseRandomlyChance = 0.1;
+        Rs2AntibanSettings.takeMicroBreaks = true;
+        Rs2AntibanSettings.microBreakDurationLow = 3;
+        Rs2AntibanSettings.microBreakDurationHigh = 10;
+        Rs2AntibanSettings.actionCooldownChance = 0.4;
+        Rs2AntibanSettings.microBreakChance = 0.05;
+    }
+
+    /**
+     * Cautious antiban: everything in Balanced, slower by night, with more and longer pauses.
+     */
+    public void applyCautiousSetup() {
+        applyBalancedSetup();
+        Rs2AntibanSettings.timeOfDayAdjust = true;
+        Rs2AntibanSettings.moveMouseOffScreenChance = 0.3;
+        Rs2AntibanSettings.moveMouseRandomlyChance = 0.15;
+        Rs2AntibanSettings.microBreakDurationLow = 3;
+        Rs2AntibanSettings.microBreakDurationHigh = 15;
+        Rs2AntibanSettings.actionCooldownChance = 0.8;
+        Rs2AntibanSettings.microBreakChance = 0.1;
+    }
 }
 

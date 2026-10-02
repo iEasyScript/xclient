@@ -1,15 +1,19 @@
 package net.runelite.client.plugins.projectx.util.antiban.ui;
 
+import net.runelite.client.plugins.projectx.util.antiban.Rs2AntibanSettings;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import java.awt.BorderLayout;
@@ -17,6 +21,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 /**
  * The shared look of the antiban panel.
@@ -49,6 +56,15 @@ final class AntibanUi
 
     /** Shown wherever a live value is not available yet. Never the word "null". */
     static final String NO_VALUE = "—";
+
+    /**
+     * Marks a control whose value the refresh is setting, so its listener can tell that apart from the user.
+     *
+     * <p>Sliders and combo boxes notify their listeners when their value is set in code, not only when the
+     * user moves them, and the panel sets every value every 600ms. Without this, a script changing a setting
+     * looked to the panel like the user changing it, and the script's value was saved as the user's.
+     */
+    private static final String QUIET = "antiban.quiet";
 
     private AntibanUi()
     {
@@ -119,6 +135,123 @@ final class AntibanUi
         label.setForeground(active ? ON : TEXT_DIM);
     }
 
+    /**
+     * Saves a checkbox's new state as the user's choice when the user clicks it. Checkboxes do not notify
+     * action listeners when set in code, so the refresh needs no guard here.
+     */
+    static void onUserToggle(JCheckBox box, Consumer<Boolean> commit)
+    {
+        box.addActionListener(e ->
+        {
+            boolean selected = box.isSelected();
+            Rs2AntibanSettings.userChange(() -> commit.accept(selected));
+        });
+    }
+
+    /**
+     * Wires a slider: {@code display} on every movement, so its readout follows the drag, and {@code commit}
+     * once when the user lets go -- never for a value the refresh set.
+     */
+    static void onUserSlide(JSlider slider, IntConsumer display, IntConsumer commit)
+    {
+        slider.addChangeListener(e ->
+        {
+            display.accept(slider.getValue());
+            if (isQuiet(slider) || slider.getValueIsAdjusting())
+            {
+                return;
+            }
+            commit.accept(slider.getValue());
+        });
+    }
+
+    /** Moves a slider to a value from the settings, unless the user is dragging it right now. */
+    static void setQuietly(JSlider slider, int value)
+    {
+        if (slider.getValueIsAdjusting())
+        {
+            return;
+        }
+        slider.putClientProperty(QUIET, Boolean.TRUE);
+        try
+        {
+            slider.setValue(value);
+        }
+        finally
+        {
+            slider.putClientProperty(QUIET, null);
+        }
+    }
+
+    /** Selects an item from the settings without it counting as the user's choice. */
+    static <T> void setQuietly(JComboBox<T> combo, T item)
+    {
+        if (combo.isPopupVisible() || Objects.equals(combo.getSelectedItem(), item))
+        {
+            return;
+        }
+        combo.putClientProperty(QUIET, Boolean.TRUE);
+        try
+        {
+            combo.setSelectedItem(item);
+        }
+        finally
+        {
+            combo.putClientProperty(QUIET, null);
+        }
+    }
+
+    static boolean isQuiet(JComponent component)
+    {
+        return component.getClientProperty(QUIET) != null;
+    }
+
+    /** A full-width button in the panel's flat style. */
+    static JButton button(String text, String tooltip)
+    {
+        JButton button = new JButton(text);
+        button.setToolTipText(tooltip);
+        button.setFont(small());
+        button.setForeground(TEXT);
+        button.setBackground(DIVIDER);
+        button.setFocusPainted(false);
+        button.setAlignmentX(Component.LEFT_ALIGNMENT);
+        button.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
+        constrainHeight(button);
+        return button;
+    }
+
+    /** A drop-down that fills the card's width. */
+    @SafeVarargs
+    static <T> JComboBox<T> combo(String tooltip, T... items)
+    {
+        JComboBox<T> combo = new JComboBox<>(items);
+        combo.setToolTipText(tooltip);
+        combo.setFont(small());
+        combo.setForeground(TEXT);
+        combo.setBackground(DIVIDER);
+        combo.setFocusable(false);
+        combo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        constrainHeight(combo);
+        return combo;
+    }
+
+    /** A thin bar for something counting down, with its value written on it. */
+    static JProgressBar progress(String tooltip)
+    {
+        JProgressBar bar = new JProgressBar();
+        bar.setToolTipText(tooltip);
+        bar.setFont(small());
+        bar.setForeground(ACCENT);
+        bar.setBackground(DIVIDER);
+        bar.setStringPainted(true);
+        bar.setBorder(BorderFactory.createEmptyBorder());
+        bar.setAlignmentX(Component.LEFT_ALIGNMENT);
+        bar.setPreferredSize(new Dimension(0, 16));
+        constrainHeight(bar);
+        return bar;
+    }
+
     /** A caption with its current value on the right, above the slider it describes. */
     static JPanel readout(JLabel caption, JLabel value)
     {
@@ -167,6 +300,13 @@ final class AntibanUi
         label.setAlignmentX(Component.LEFT_ALIGNMENT);
         label.setBorder(BorderFactory.createEmptyBorder(2, 0, 6, 0));
         return label;
+    }
+
+    /** A slowdown multiplier as the panel shows it: "+12%", or "None" below half a percent. */
+    static String percentSlower(double multiplier)
+    {
+        long percent = Math.round((multiplier - 1.0) * 100);
+        return percent <= 0 ? "None" : "+" + percent + "%";
     }
 
     static Component gap(int height)

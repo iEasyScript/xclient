@@ -8,6 +8,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.StatChanged;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.PluginChanged;
 import net.runelite.client.events.ProfileChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -88,11 +89,18 @@ public class AntibanPlugin extends Plugin {
     private static final int MINING_TIMEOUT = 3;
     private static final int IDLE_TIMEOUT = 1;
     public static int ticksSinceLogin;
+    /** When the player last logged in from the login screen; hopping worlds does not restart it. Null when logged out. */
+    private static volatile Instant sessionStart;
+    /** When a script's main loop was last stopped, from {@link #scriptStopped()}; 0 if never. */
+    private static volatile long lastScriptStopNanos;
+    /** A plugin stop this soon after a script stop is taken to be the plugin that ran it. */
+    private static final long SCRIPT_STOP_WINDOW_NANOS = 2_000_000_000L;
     private static Instant lastCookingAction = Instant.MIN;
     private static Instant lastMiningAction = Instant.MIN;
     private static int idleTicks = 0;
     private final Map<Skill, Integer> skillExp = new EnumMap<>(Skill.class);
     private boolean ready;
+    private boolean fromLoginScreen;
     private Skill lastSkillChanged;
     private NavigationButton navButton;
     public static final int MICRO_BREAK_DURATION_LOW_DEFAULT = 3;
@@ -131,6 +139,15 @@ public class AntibanPlugin extends Plugin {
                 || Duration.between(lastMiningAction, Instant.now()).getSeconds() < MINING_TIMEOUT;
     }
 
+    public static Instant getSessionStart() {
+        return sessionStart;
+    }
+
+    /** Called by {@code Script.shutdown()} when a running main loop is cancelled. */
+    public static void scriptStopped() {
+        lastScriptStopNanos = System.nanoTime();
+    }
+
     public static boolean isIdle() {
         return idleTicks > IDLE_TIMEOUT;
     }
@@ -163,7 +180,7 @@ public class AntibanPlugin extends Plugin {
 
     @Override
     protected void startUp() throws AWTException {
-        Rs2Antiban.setActivityIntensity(ActivityIntensity.EXTREME);
+        Rs2Antiban.updateActivityIntensity(ActivityIntensity.EXTREME);
         final MasterPanel panel = injector.getInstance(MasterPanel.class);
         final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "antiban.png");
         navButton = NavigationButton.builder()
@@ -208,9 +225,36 @@ public class AntibanPlugin extends Plugin {
 
     @Subscribe
     public void onProfileChanged(ProfileChanged event) {
-        Rs2Antiban.resetAntibanSettings();
+        // Loading starts from the defaults, so nothing from the previous profile survives -- including its
+        // override, which resetAntibanSettings() would have refused to touch.
         Rs2AntibanSettings.loadFromProfile();
         validateAndSetBreakDurations();
+    }
+
+    /**
+     * Gives the user their settings back when a script stops.
+     *
+     * <p>Scripts set their own values on start and, at best, reset everything to the defaults on stop, so after
+     * running any script the user's own settings were gone until the client restarted.
+     *
+     * <p>Only acts when the plugin that stopped had just stopped a script loop -- otherwise toggling any
+     * unrelated plugin mid-run would wipe the running script's values -- and only when a script's values are
+     * live. If two scripts run at once and one stops, the other loses its values too, which is the lesser
+     * problem.
+     */
+    @Subscribe
+    public void onPluginChanged(PluginChanged event) {
+        if (event.isLoaded() || event.getPlugin() == this) {
+            return;
+        }
+        long sinceScriptStop = System.nanoTime() - lastScriptStopNanos;
+        if (lastScriptStopNanos == 0L || sinceScriptStop > SCRIPT_STOP_WINDOW_NANOS) {
+            return;
+        }
+        if (Rs2AntibanSettings.isScriptControlled()) {
+            Rs2AntibanSettings.restoreUserSettings();
+            validateAndSetBreakDurations();
+        }
     }
 
     @Subscribe
@@ -223,6 +267,8 @@ public class AntibanPlugin extends Plugin {
                     Rs2Antiban.TIMEOUT = 0;
                     Rs2AntibanSettings.actionCooldownActive = false;
                 }
+                fromLoginScreen = true;
+                sessionStart = null;
             case LOGGING_IN:
             case HOPPING:
                 ready = true;
@@ -231,6 +277,11 @@ public class AntibanPlugin extends Plugin {
                 if (ready) {
                     ticksSinceLogin = 0;
                     ready = false;
+                }
+                if (fromLoginScreen || sessionStart == null) {
+                    sessionStart = Instant.now();
+                    Rs2Antiban.resetSessionStats();
+                    fromLoginScreen = false;
                 }
                 break;
         }
@@ -244,6 +295,8 @@ public class AntibanPlugin extends Plugin {
     @Subscribe
     public void onGameTick(GameTick event) {
         ticksSinceLogin++;
+
+        Rs2AntibanSettings.enforceUserSettingsIfOverriding();
 
         if (!Rs2AntibanSettings.antibanEnabled) {
             return;
@@ -376,7 +429,7 @@ public class AntibanPlugin extends Plugin {
         }
 
         if (activityIntensity != null && Rs2AntibanSettings.dynamicIntensity) {
-            Rs2Antiban.setActivityIntensity(activityIntensity);
+            Rs2Antiban.updateActivityIntensity(activityIntensity);
             if (Rs2AntibanSettings.devDebug) {
                 ProjectX.log("Activity changed, new activity intensity: " + activityIntensity);
             }

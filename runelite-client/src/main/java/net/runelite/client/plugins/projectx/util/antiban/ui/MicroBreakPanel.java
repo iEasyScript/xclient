@@ -15,6 +15,9 @@ import javax.swing.JSlider;
  * <p>"Micro break active" is a readout, not a setting -- the old panel made it a
  * disabled checkbox, which greys out identically to a setting you are not
  * allowed to change. Here it is a lamp that lights while a break is running.
+ *
+ * <p>Dragging the shortest break past the longest used to throw both back to their defaults of 3 and 15
+ * minutes. Now one pushes the other along, the way a range control should.
  */
 public class MicroBreakPanel extends JPanel
 {
@@ -69,41 +72,31 @@ public class MicroBreakPanel extends JPanel
 
     private void setupActionListeners()
     {
-        takeMicroBreaks.addActionListener(e ->
-        {
-            Rs2AntibanSettings.takeMicroBreaks = takeMicroBreaks.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        microBreakDurationLow.addChangeListener(e ->
-        {
-            Rs2AntibanSettings.microBreakDurationLow = microBreakDurationLow.getValue();
-            lowValue.setText(microBreakDurationLow.getValue() + " min");
-            if (!microBreakDurationLow.getValueIsAdjusting())
+        AntibanUi.onUserToggle(takeMicroBreaks, on -> Rs2AntibanSettings.takeMicroBreaks = on);
+
+        AntibanUi.onUserSlide(microBreakDurationLow,
+            value -> lowValue.setText(value + " min"),
+            value -> Rs2AntibanSettings.userChange(() ->
             {
-                // Keeps the low bound from overtaking the high one.
-                AntibanPlugin.validateAndSetBreakDurations();
-                Rs2AntibanSettings.saveToProfile();
-            }
-        });
-        microBreakDurationHigh.addChangeListener(e ->
-        {
-            Rs2AntibanSettings.microBreakDurationHigh = microBreakDurationHigh.getValue();
-            highValue.setText(microBreakDurationHigh.getValue() + " min");
-            if (!microBreakDurationHigh.getValueIsAdjusting())
+                Rs2AntibanSettings.microBreakDurationLow = value;
+                if (Rs2AntibanSettings.microBreakDurationHigh < value)
+                {
+                    Rs2AntibanSettings.microBreakDurationHigh = value;
+                }
+            }));
+        AntibanUi.onUserSlide(microBreakDurationHigh,
+            value -> highValue.setText(value + " min"),
+            value -> Rs2AntibanSettings.userChange(() ->
             {
-                AntibanPlugin.validateAndSetBreakDurations();
-                Rs2AntibanSettings.saveToProfile();
-            }
-        });
-        microBreakChance.addChangeListener(e ->
-        {
-            Rs2AntibanSettings.microBreakChance = microBreakChance.getValue() / 100.0;
-            chanceValue.setText(microBreakChance.getValue() + "%");
-            if (!microBreakChance.getValueIsAdjusting())
-            {
-                Rs2AntibanSettings.saveToProfile();
-            }
-        });
+                Rs2AntibanSettings.microBreakDurationHigh = value;
+                if (Rs2AntibanSettings.microBreakDurationLow > value)
+                {
+                    Rs2AntibanSettings.microBreakDurationLow = value;
+                }
+            }));
+        AntibanUi.onUserSlide(microBreakChance,
+            value -> chanceValue.setText(value + "%"),
+            value -> Rs2AntibanSettings.userChange(() -> Rs2AntibanSettings.microBreakChance = value / 100.0));
     }
 
     public void updateValues()
@@ -116,13 +109,13 @@ public class MicroBreakPanel extends JPanel
 
         takeMicroBreaks.setSelected(Rs2AntibanSettings.takeMicroBreaks);
 
-        microBreakChance.setValue((int) (Rs2AntibanSettings.microBreakChance * 100));
+        AntibanUi.setQuietly(microBreakChance, (int) Math.round(Rs2AntibanSettings.microBreakChance * 100));
         chanceValue.setText(microBreakChance.getValue() + "%");
 
-        microBreakDurationLow.setValue(Rs2AntibanSettings.microBreakDurationLow);
+        AntibanUi.setQuietly(microBreakDurationLow, Rs2AntibanSettings.microBreakDurationLow);
         lowValue.setText(microBreakDurationLow.getValue() + " min");
 
-        microBreakDurationHigh.setValue(Rs2AntibanSettings.microBreakDurationHigh);
+        AntibanUi.setQuietly(microBreakDurationHigh, Rs2AntibanSettings.microBreakDurationHigh);
         highValue.setText(microBreakDurationHigh.getValue() + " min");
     }
 }

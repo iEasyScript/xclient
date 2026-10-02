@@ -37,6 +37,29 @@ public class SessionFatigueTest {
 	}
 
 	@Test
+	public void computeMultiplierFollowsTheGivenStrength() {
+		assertEquals(1.10, SessionFatigue.computeMultiplier(60, 0.10, 1.50), 1e-6);
+		assertEquals(1.20, SessionFatigue.computeMultiplier(600, 0.10, 1.20), 1e-6);
+		assertEquals(1.0, SessionFatigue.computeMultiplier(600, 0.0, 1.50), 1e-9);
+		assertEquals(1.0, SessionFatigue.computeMultiplier(600, 0.10, 1.0), 1e-9);
+	}
+
+	@Test
+	public void forSettingsFollowsThePanelStrength() {
+		int perHour = Rs2AntibanSettings.fatigueSlowdownPerHour;
+		int max = Rs2AntibanSettings.fatigueMaxSlowdown;
+		try {
+			Rs2AntibanSettings.fatigueSlowdownPerHour = 10;
+			Rs2AntibanSettings.fatigueMaxSlowdown = 20;
+			assertEquals(1.10, SessionFatigue.forSettings(60), 1e-6);
+			assertEquals(1.20, SessionFatigue.forSettings(600), 1e-6);
+		} finally {
+			Rs2AntibanSettings.fatigueSlowdownPerHour = perHour;
+			Rs2AntibanSettings.fatigueMaxSlowdown = max;
+		}
+	}
+
+	@Test
 	public void computeMultiplierIgnoresNegativeElapsed() {
 		assertEquals(1.0, SessionFatigue.computeMultiplier(-5), 1e-9);
 	}

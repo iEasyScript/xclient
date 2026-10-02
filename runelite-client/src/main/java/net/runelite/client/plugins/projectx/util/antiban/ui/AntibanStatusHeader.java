@@ -29,6 +29,7 @@ class AntibanStatusHeader extends JPanel
 {
     private final JLabel state = new JLabel();
 
+    private final JLabel owner = value();
     private final JLabel playStyle = value();
     private final JLabel nextSwitch = value();
     private final JLabel category = value();
@@ -68,7 +69,7 @@ class AntibanStatusHeader extends JPanel
     }
 
     /**
-     * Six live values in two columns. A grid rather than a stack of sentences:
+     * Seven live values in two columns. A grid rather than a stack of sentences:
      * the labels are fixed and the values change, so lining the values up makes
      * a changed one obvious at a glance.
      */
@@ -78,6 +79,8 @@ class AntibanStatusHeader extends JPanel
         grid.setBackground(AntibanUi.CARD);
         grid.setAlignmentX(Component.LEFT_ALIGNMENT);
 
+        grid.add(caption("Settings"));
+        grid.add(owner);
         grid.add(caption("Play style"));
         grid.add(playStyle);
         grid.add(caption("Switches in"));
@@ -122,6 +125,23 @@ class AntibanStatusHeader extends JPanel
         state.setText(enabled ? "● ACTIVE" : "○ OFF");
         state.setForeground(enabled ? AntibanUi.ON : AntibanUi.OFF);
 
+        // Whose settings are live is true logged out too, so it is set before the early return.
+        if (Rs2AntibanSettings.isOverriding())
+        {
+            owner.setText("Yours, forced");
+            owner.setForeground(AntibanUi.TEXT);
+        }
+        else if (Rs2AntibanSettings.isScriptControlled())
+        {
+            owner.setText("Script's");
+            owner.setForeground(AntibanUi.ACCENT);
+        }
+        else
+        {
+            owner.setText("Yours");
+            owner.setForeground(AntibanUi.TEXT);
+        }
+
         // Off the login screen every one of these is genuinely unknown rather
         // than zero, and the old panel said "null" six times over.
         if (!ProjectX.isLoggedIn())
@@ -134,7 +154,9 @@ class AntibanStatusHeader extends JPanel
             ? Rs2Antiban.getPlayStyle().getName()
             : AntibanUi.NO_VALUE);
 
-        nextSwitch.setText(Rs2Antiban.getPlayStyle() != null
+        // A countdown only means something when it will end in a switch.
+        boolean switching = Rs2AntibanSettings.simulateAttentionSpan && Rs2AntibanSettings.profileSwitching;
+        nextSwitch.setText(Rs2Antiban.getPlayStyle() != null && switching
             ? String.valueOf(Rs2Antiban.getPlayStyle().getTimeLeftUntilNextSwitch())
             : AntibanUi.NO_VALUE);
 

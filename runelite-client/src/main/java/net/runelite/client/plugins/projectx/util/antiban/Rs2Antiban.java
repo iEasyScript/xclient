@@ -137,15 +137,28 @@ public class Rs2Antiban {
     @Setter
     private static PlayStyle playStyle;
 
+    /** Length in ticks of the cooldown currently or last running, for drawing its progress. */
+    @Getter
+    private static volatile int lastCooldownLength;
+    @Getter
+    private static volatile int cooldownsThisSession;
+    @Getter
+    private static volatile int microBreaksThisSession;
+
 
     public static void setActivity(@NotNull Activity activity) {
+        // The play style chosen below depends on the settings, so a script's template must not win over the
+        // user's override here even for the one tick before the plugin would enforce it.
+        Rs2AntibanSettings.enforceUserSettingsIfOverriding();
+
         Rs2Antiban.activity = activity;
         Rs2Antiban.category = activity.getCategory();
         Rs2Antiban.activityIntensity = activity.getActivityIntensity();
 
         if (Rs2AntibanSettings.simulateAttentionSpan) {
-            Rs2Antiban.playStyle = PlayStyle.EXTREME_AGGRESSIVE;
-            //Rs2Antiban.playStyle = activityIntensity.getPlayStyle();
+            // Each activity starts at the play style its intensity calls for, and attention span drifts it
+            // from there. This used to be pinned to EXTREME_AGGRESSIVE whatever the activity.
+            Rs2Antiban.playStyle = activityIntensity.getPlayStyle();
         } else {
             if (Rs2Antiban.playStyle == null)
                 Rs2Antiban.playStyle = activityIntensity.getPlayStyle();
@@ -161,9 +174,27 @@ public class Rs2Antiban {
 
     }
 
+    /**
+     * Sets the activity intensity by hand, which also turns dynamic intensity off -- a fixed choice and an
+     * automatic one cannot both hold. Scripts use this to pin an intensity.
+     */
     public static void setActivityIntensity(ActivityIntensity activityIntensity) {
         Rs2AntibanSettings.dynamicIntensity = false;
         Rs2Antiban.activityIntensity = activityIntensity;
+    }
+
+    /**
+     * Changes the activity intensity without touching the dynamic intensity setting. For the antiban system's
+     * own updates: dynamic intensity used to call {@link #setActivityIntensity}, which switched dynamic
+     * intensity off the first time it ever did anything.
+     */
+    public static void updateActivityIntensity(ActivityIntensity activityIntensity) {
+        Rs2Antiban.activityIntensity = activityIntensity;
+    }
+
+    public static void resetSessionStats() {
+        cooldownsThisSession = 0;
+        microBreaksThisSession = 0;
     }
 
 
@@ -261,6 +292,7 @@ public class Rs2Antiban {
      */
 
     public static void actionCooldown() {
+        Rs2AntibanSettings.enforceUserSettingsIfOverriding();
         if (!Rs2AntibanSettings.usePlayStyle) {
             logDebug("PlayStyle not enabled, cannot perform action cooldown");
             return;
@@ -287,13 +319,23 @@ public class Rs2Antiban {
     }
 
     private static void performActionCooldown() {
+        if (playStyle == null) {
+            // No activity has been set, so there is no play style to take an interval from.
+            logDebug("No activity set, cannot perform action cooldown");
+            return;
+        }
+
         if (Rs2AntibanSettings.nonLinearIntervals)
             playStyle.evolvePlayStyle();
 
-        if (Rs2AntibanSettings.behavioralVariability)
-            TIMEOUT = playStyle.getRandomTickInterval();
-        else
-            TIMEOUT = playStyle.getPrimaryTickInterval();
+        int ticks = Rs2AntibanSettings.behavioralVariability
+                ? playStyle.getRandomTickInterval()
+                : playStyle.getPrimaryTickInterval();
+        if (Rs2AntibanSettings.timeOfDayAdjust)
+            ticks = TimeOfDay.applyTo(ticks);
+        TIMEOUT = ticks;
+        lastCooldownLength = ticks;
+        cooldownsThisSession++;
 
         // The pause (universal antiban only) and the always-set active flag both happen only after
         // TIMEOUT is computed: if computing the interval ever throws, scripts must not be left
@@ -345,12 +387,14 @@ public class Rs2Antiban {
      */
 
     public static boolean takeMicroBreakByChance() {
+        Rs2AntibanSettings.enforceUserSettingsIfOverriding();
         if (!Rs2AntibanSettings.takeMicroBreaks && Rs2AntibanSettings.microBreakChance > 0.0) {
             logDebug("MICRO BREAKS ARE DISABLED, cannot take micro break");
             return false;
         }
         if (Rs2Random.diceFractional(Rs2AntibanSettings.microBreakChance)) {
             Rs2AntibanSettings.microBreakActive = true;
+            microBreaksThisSession++;
             logDebug("Micro break triggered by antiban system");
             if (Rs2AntibanSettings.moveMouseOffScreen)
                 moveMouseOffScreen();
@@ -555,7 +599,7 @@ public class Rs2Antiban {
     }
 
     public static void resetAntibanSettings(boolean forceReset) {
-        if (!forceReset && Rs2AntibanSettings.overwriteScriptSettings) return;
+        if (!forceReset && Rs2AntibanSettings.isOverriding()) return;
         Rs2AntibanSettings.reset();
         Rs2Antiban.playStyle = null;
         Rs2Antiban.activity = null;

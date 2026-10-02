@@ -61,16 +61,28 @@ The `Rs2Antiban` class provides a comprehensive anti-ban system that simulates h
 
 ### `resetAntibanSettings`
 - **Signature**: `public static void resetAntibanSettings(boolean forceReset)`
-- **Description**: Resets all antiban settings, optionally forcing the reset even if overwrite settings are disabled.
+- **Description**: Resets all antiban settings to their defaults. Without `forceReset`, does nothing while the user has "Override every script" on. Either way it leaves the override itself alone.
 
 ### `setActivity`
 - **Signature**: `public static void setActivity(@NotNull Activity activity)`
-- **Description**: Sets the current activity and adjusts antiban settings based on the activity type.
+- **Description**: Sets the current activity and adjusts antiban settings based on the activity type. With attention span on, the play style starts at the one the activity's intensity calls for.
 
 ### `setActivityIntensity`
 - **Signature**: `public static void setActivityIntensity(ActivityIntensity activityIntensity)`
-- **Description**: Sets the intensity level of the current activity.
+- **Description**: Sets the intensity level of the current activity, and turns dynamic intensity off. Use this to pin an intensity from a script.
+
+### `updateActivityIntensity`
+- **Signature**: `public static void updateActivityIntensity(ActivityIntensity activityIntensity)`
+- **Description**: Changes the intensity without touching dynamic intensity. Used by the antiban system's own updates.
 
 ### `takeMicroBreakByChance`
 - **Signature**: `public static boolean takeMicroBreakByChance()`
 - **Description**: Attempts to trigger a micro-break based on a random chance, as configured in settings. Simulates human-like pauses.
+
+## Your settings and a script's settings
+
+Scripts write `Rs2AntibanSettings` fields directly. The user's own settings are kept separately, and change only through the panel (`Rs2AntibanSettings.userChange`). That separation means:
+
+- The panel shows whether a script's values are live, and a script's values are never saved as the user's.
+- The user's settings come back when a script plugin stops (`Rs2AntibanSettings.restoreUserSettings`).
+- With "Override every script" on, the user's settings are put back every game tick and before every `actionCooldown`, `takeMicroBreakByChance` and `setActivity`. Scripts still set the activity.

@@ -17,6 +17,11 @@ import javax.swing.JSlider;
  * under it. The previous version put the number inside the caption text and
  * painted a tick scale under every slider, so the numbers moved as they changed
  * and the scale was unreadable at sidebar width.
+ *
+ * <p>The intensity slider used to call the same setter scripts use, which turns dynamic intensity off. Its
+ * listener also fired whenever the refresh moved it, so the first time the intensity changed by itself --
+ * the one thing dynamic intensity is for -- the panel switched dynamic intensity off. It now only reacts to
+ * the user, and a hand-picked intensity is saved with the other settings.
  */
 public class MousePanel extends JPanel
 {
@@ -75,7 +80,8 @@ public class MousePanel extends JPanel
         JPanel speed = AntibanUi.card("Speed");
         speed.add(AntibanUi.readout(new JLabel("Activity intensity"), intensityValue));
         speed.add(mouseSpeedSlider);
-        speed.add(AntibanUi.hint("Higher intensity means faster, less careful movement."));
+        speed.add(AntibanUi.hint("Higher intensity means faster, less careful movement. Picking one "
+            + "by hand turns off Dynamic intensity on the Activity tab."));
 
         mouseSpeedSlider.setToolTipText("Controls the overall mouse speed/intensity");
         mouseSpeedSlider.setSnapToTicks(true);
@@ -90,52 +96,29 @@ public class MousePanel extends JPanel
 
     private void setupActionListeners()
     {
-        useNaturalMouse.addActionListener(e ->
-        {
-            Rs2AntibanSettings.naturalMouse = useNaturalMouse.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        simulateMistakes.addActionListener(e ->
-        {
-            Rs2AntibanSettings.simulateMistakes = simulateMistakes.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        moveMouseOffScreen.addActionListener(e ->
-        {
-            Rs2AntibanSettings.moveMouseOffScreen = moveMouseOffScreen.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        moveMouseOffScreenChance.addChangeListener(e ->
-        {
-            Rs2AntibanSettings.moveMouseOffScreenChance = moveMouseOffScreenChance.getValue() / 100.0;
-            offScreenValue.setText(moveMouseOffScreenChance.getValue() + "%");
-            // Saving on every intermediate value of a drag would write the
-            // profile hundreds of times for one adjustment.
-            if (!moveMouseOffScreenChance.getValueIsAdjusting())
+        AntibanUi.onUserToggle(useNaturalMouse, on -> Rs2AntibanSettings.naturalMouse = on);
+        AntibanUi.onUserToggle(simulateMistakes, on -> Rs2AntibanSettings.simulateMistakes = on);
+        AntibanUi.onUserToggle(moveMouseOffScreen, on -> Rs2AntibanSettings.moveMouseOffScreen = on);
+        AntibanUi.onUserToggle(moveMouseRandomly, on -> Rs2AntibanSettings.moveMouseRandomly = on);
+
+        AntibanUi.onUserSlide(moveMouseOffScreenChance,
+            value -> offScreenValue.setText(value + "%"),
+            value -> Rs2AntibanSettings.userChange(() -> Rs2AntibanSettings.moveMouseOffScreenChance = value / 100.0));
+        AntibanUi.onUserSlide(moveMouseRandomlyChance,
+            value -> randomlyValue.setText(value + "%"),
+            value -> Rs2AntibanSettings.userChange(() -> Rs2AntibanSettings.moveMouseRandomlyChance = value / 100.0));
+        AntibanUi.onUserSlide(mouseSpeedSlider,
+            value -> intensityValue.setText(intensityAt(value).getName()),
+            value ->
             {
-                Rs2AntibanSettings.saveToProfile();
-            }
-        });
-        moveMouseRandomly.addActionListener(e ->
-        {
-            Rs2AntibanSettings.moveMouseRandomly = moveMouseRandomly.isSelected();
-            Rs2AntibanSettings.saveToProfile();
-        });
-        moveMouseRandomlyChance.addChangeListener(e ->
-        {
-            Rs2AntibanSettings.moveMouseRandomlyChance = moveMouseRandomlyChance.getValue() / 100.0;
-            randomlyValue.setText(moveMouseRandomlyChance.getValue() + "%");
-            if (!moveMouseRandomlyChance.getValueIsAdjusting())
-            {
-                Rs2AntibanSettings.saveToProfile();
-            }
-        });
-        mouseSpeedSlider.addChangeListener(e ->
-        {
-            ActivityIntensity intensity = intensityAt(mouseSpeedSlider.getValue());
-            Rs2Antiban.setActivityIntensity(intensity);
-            intensityValue.setText(intensity.getName());
-        });
+                ActivityIntensity intensity = intensityAt(value);
+                Rs2AntibanSettings.userChange(() ->
+                {
+                    Rs2AntibanSettings.preferredIntensity = intensity;
+                    Rs2AntibanSettings.dynamicIntensity = false;
+                    Rs2Antiban.updateActivityIntensity(intensity);
+                });
+            });
     }
 
     public void updateValues()
@@ -144,16 +127,19 @@ public class MousePanel extends JPanel
         simulateMistakes.setSelected(Rs2AntibanSettings.simulateMistakes);
 
         moveMouseOffScreen.setSelected(Rs2AntibanSettings.moveMouseOffScreen);
-        moveMouseOffScreenChance.setValue((int) (Rs2AntibanSettings.moveMouseOffScreenChance * 100));
+        AntibanUi.setQuietly(moveMouseOffScreenChance, (int) Math.round(Rs2AntibanSettings.moveMouseOffScreenChance * 100));
         offScreenValue.setText(moveMouseOffScreenChance.getValue() + "%");
 
         moveMouseRandomly.setSelected(Rs2AntibanSettings.moveMouseRandomly);
-        moveMouseRandomlyChance.setValue((int) (Rs2AntibanSettings.moveMouseRandomlyChance * 100));
+        AntibanUi.setQuietly(moveMouseRandomlyChance, (int) Math.round(Rs2AntibanSettings.moveMouseRandomlyChance * 100));
         randomlyValue.setText(moveMouseRandomlyChance.getValue() + "%");
 
         ActivityIntensity current = Rs2Antiban.getActivityIntensity();
-        mouseSpeedSlider.setValue(indexOf(current));
-        intensityValue.setText(current == null ? AntibanUi.NO_VALUE : current.getName());
+        AntibanUi.setQuietly(mouseSpeedSlider, indexOf(current));
+        if (!mouseSpeedSlider.getValueIsAdjusting())
+        {
+            intensityValue.setText(current == null ? AntibanUi.NO_VALUE : current.getName());
+        }
     }
 
     private static ActivityIntensity intensityAt(int index)

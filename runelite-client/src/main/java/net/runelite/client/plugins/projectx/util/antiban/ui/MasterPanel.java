@@ -1,6 +1,6 @@
 package net.runelite.client.plugins.projectx.util.antiban.ui;
 
-import net.runelite.client.plugins.projectx.util.antiban.Rs2Antiban;
+import net.runelite.client.plugins.projectx.util.antiban.AntibanPlugin;
 import net.runelite.client.plugins.projectx.util.antiban.Rs2AntibanSettings;
 import net.runelite.client.ui.PluginPanel;
 
@@ -12,6 +12,7 @@ import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 
 /**
@@ -70,6 +71,12 @@ public class MasterPanel extends PluginPanel
             name -> ((CardLayout) sections.getLayout()).show(sections, name),
             GENERAL, ACTIVITY, PROFILE, MOUSE, BREAKS, COOLDOWN);
 
+        // Both must share one alignment. The header's children are left-aligned, which makes the header
+        // itself report 0.0, while the tabs report the default 0.5; BoxLayout lines mixed alignments up on
+        // a common axis, which pushed the header 84px right and left a dead strip down its left side.
+        header.setAlignmentX(Component.LEFT_ALIGNMENT);
+        tabs.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         JPanel top = new JPanel();
         top.setLayout(new BoxLayout(top, BoxLayout.Y_AXIS));
         top.setBackground(AntibanUi.BACKGROUND);
@@ -114,11 +121,13 @@ public class MasterPanel extends PluginPanel
         reset.setBackground(AntibanUi.CARD);
         reset.setFocusPainted(false);
         reset.setBorder(BorderFactory.createEmptyBorder(7, 8, 7, 8));
-        reset.setToolTipText("Puts every setting on every tab back to its default.");
+        reset.setToolTipText("Puts every setting on every tab back to its default, the override included.");
         reset.addActionListener(e ->
         {
-            Rs2Antiban.resetAntibanSettings(true);
-            Rs2AntibanSettings.saveToProfile();
+            // Settings only: the running activity and play style are a script's working state, and
+            // clearing them mid-run left scripts with no play style to take a cooldown from.
+            Rs2AntibanSettings.userChange(Rs2AntibanSettings::resetEverything);
+            AntibanPlugin.validateAndSetBreakDurations();
             loadSettings();
         });
 
