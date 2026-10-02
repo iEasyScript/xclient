@@ -67,10 +67,13 @@ public class GameChatAppender extends AppenderBase<ILoggingEvent> {
         if (!ProjectX.isLoggedIn()) return;
 
         final String formatted = layout.doLayout(event);
-        // use invoke so we don't stall the calling thread
-        ProjectX.getClientThread().invoke(() ->
-                ProjectX.getClient().addChatMessage(ChatMessageType.ENGINE, "", formatted, "", false)
-        );
+        // Fire and forget. The braces matter: addChatMessage returns a value, so an expression
+        // lambda here resolves to invoke(Supplier), which waits up to 10s for the client thread
+        // while logback holds this appender's lock. The client thread logging anything in that
+        // window then blocks on the same lock -- a deadlock that froze the client at login.
+        ProjectX.getClientThread().invoke(() -> {
+            ProjectX.getClient().addChatMessage(ChatMessageType.ENGINE, "", formatted, "", false);
+        });
     }
 
     /**
