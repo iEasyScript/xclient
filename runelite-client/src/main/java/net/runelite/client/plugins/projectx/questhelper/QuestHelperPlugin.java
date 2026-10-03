@@ -234,6 +234,18 @@ public class QuestHelperPlugin extends Plugin
 	@Override
 	protected void shutDown()
 	{
+		// startUp() schedules the quest loop; nothing stopped it, so every off-and-on left one
+		// more running. A quest in progress gets the full stop, walker included; otherwise only
+		// the loop goes, so turning the plugin off does not cancel another script's walk.
+		if (config.startStopQuestHelper())
+		{
+			questScript.shutdown();
+		}
+		else
+		{
+			questScript.stopLoop();
+		}
+
 		runeliteObjectManager.shutDown();
 
 		eventBus.unregister(playerStateManager);

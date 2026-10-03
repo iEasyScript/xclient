@@ -114,6 +114,12 @@ public class QuestScript extends Script {
         this.config = config;
         this.mQuestPlugin = mQuestPlugin;
 
+        // One loop, ever. The plugin starts this from startUp(), and turning Quest Helper off and
+        // on again calls startUp() on the same instance -- which used to schedule a second loop
+        // beside the first, then a third. Each copy played the same step at once: three threads
+        // banking for the same chisel in the same second, five space presses a second through
+        // dialogue, walks cancelling each other. That is most quests broken, not one.
+        stopLoop();
 
         mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
             try {
@@ -1302,6 +1308,20 @@ public class QuestScript extends Script {
 	public void shutdown() {
 		super.shutdown();
 		reset();
+	}
+
+	/**
+	 * Stops the loop and nothing else.
+	 *
+	 * <p>{@link #shutdown()} also resets the walker, antiban and pause state that every script
+	 * shares, which is right when the quester itself is stopping mid-quest but wrong when the
+	 * plugin is merely being turned off while some other script is running: the loop is scheduled
+	 * whether or not questing is switched on, so a full shutdown here would stop that script's walk.
+	 */
+	public void stopLoop() {
+		if (mainScheduledFuture != null && !mainScheduledFuture.isDone()) {
+			mainScheduledFuture.cancel(true);
+		}
 	}
 
     public static void reset() {
