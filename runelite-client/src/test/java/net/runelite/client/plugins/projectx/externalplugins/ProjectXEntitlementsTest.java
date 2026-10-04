@@ -178,6 +178,116 @@ public class ProjectXEntitlementsTest
         verify(pluginManager, never()).setPluginEnabled(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
+    // ------------------------------------------------------------------ free trials
+
+    /** A fake monotonic clock, in nanoseconds, that the tests move by hand. */
+    private final long[] nanos = {1_000_000_000L};
+
+    private void useFakeClock()
+    {
+        entitlements.nanoClock = () -> nanos[0];
+    }
+
+    private void advance(long seconds)
+    {
+        nanos[0] += seconds * 1_000_000_000L;
+    }
+
+    /** A trial answer as the site sends it: its own clock in checkedAt, and the trial flag. */
+    private static MockResponse trial(Instant checkedAt, Instant endsAt)
+    {
+        return new MockResponse().setBody("{\"checkedAt\":\"" + checkedAt + "\",\"results\":[{\"internalName\":\"PaidPlugin\","
+                + "\"active\":true,\"expiresAt\":\"" + endsAt + "\",\"trial\":true}]}");
+    }
+
+    @Test
+    public void trialIsEntitledUntilItsHourIsUp()
+    {
+        useFakeClock();
+        Instant now = Instant.now();
+        site.enqueue(trial(now, now.plus(60, ChronoUnit.MINUTES)));
+        entitlements.refresh();
+        assertTrue(entitlements.isEntitled("PaidPlugin"));
+
+        // Still confirmed by the site each minute, as the client does on a trial.
+        for (int minute = 1; minute < 60; minute++)
+        {
+            advance(60);
+            site.enqueue(trial(now.plus(minute, ChronoUnit.MINUTES), now.plus(60, ChronoUnit.MINUTES)));
+            entitlements.refresh();
+        }
+        assertTrue(entitlements.isEntitled("PaidPlugin"));
+
+        advance(61);
+        assertFalse(entitlements.isEntitled("PaidPlugin"));
+    }
+
+    @Test
+    public void trialStopsWhenTheSiteCannotBeReached()
+    {
+        useFakeClock();
+        Instant now = Instant.now();
+        site.enqueue(trial(now, now.plus(60, ChronoUnit.MINUTES)));
+        entitlements.refresh();
+
+        // Blocked from the site: the cached hour is not enough on its own.
+        site.enqueue(new MockResponse().setResponseCode(500));
+        advance(60);
+        entitlements.refresh();
+        assertTrue("one missed check is tolerated", entitlements.isEntitled("PaidPlugin"));
+
+        site.enqueue(new MockResponse().setResponseCode(500));
+        advance(60);
+        entitlements.refresh();
+        advance(31);
+        assertFalse("no answer for over 2.5 minutes ends the trial", entitlements.isEntitled("PaidPlugin"));
+    }
+
+    @Test
+    public void paidAccessStillRidesOutAnOutage()
+    {
+        useFakeClock();
+        site.enqueue(result(true, Instant.now().plus(7, ChronoUnit.DAYS)));
+        entitlements.refresh();
+
+        site.enqueue(new MockResponse().setResponseCode(500));
+        advance(600);
+        entitlements.refresh();
+
+        assertTrue(entitlements.isEntitled("PaidPlugin"));
+    }
+
+    @Test
+    public void settingThePcClockBackDoesNotStretchATrial()
+    {
+        useFakeClock();
+        // The PC clock is a day behind the site: by the wall clock the trial looks like
+        // it has a day and a minute left. The site says one minute, and that is what counts.
+        Instant siteNow = Instant.now().plus(1, ChronoUnit.DAYS);
+        site.enqueue(trial(siteNow, siteNow.plus(1, ChronoUnit.MINUTES)));
+        entitlements.refresh();
+        assertTrue(entitlements.isEntitled("PaidPlugin"));
+
+        advance(61);
+        assertFalse(entitlements.isEntitled("PaidPlugin"));
+    }
+
+    @Test
+    public void endedTrialIsNotEntitledOnceTheSiteSaysSo()
+    {
+        useFakeClock();
+        Instant now = Instant.now();
+        site.enqueue(trial(now, now.plus(60, ChronoUnit.MINUTES)));
+        entitlements.refresh();
+
+        site.enqueue(result(false, null));
+        advance(60);
+        entitlements.refresh();
+
+        assertFalse(entitlements.isEntitled("PaidPlugin"));
+        assertFalse(entitlements.mayStart(new PaidPlugin()));
+    }
+
     @Test
     public void paidListSurvivesAManifestThatOmitsIt()
     {

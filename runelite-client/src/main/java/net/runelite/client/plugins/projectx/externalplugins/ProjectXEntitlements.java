@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.swing.SwingUtilities;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.LongSupplier;
 
 /**
  * Decides whether a marketplace (paid) plugin may run.
@@ -48,6 +50,10 @@ import java.util.concurrent.TimeUnit;
  * {@link #mayStart} answer on the EDT without touching the network, keeps a
  * running script alive through a brief outage, and still ends access on time
  * offline because expiry is compared against the local clock.
+ *
+ * <p>A free trial is stricter: it lasts only while the site keeps answering (see
+ * {@link #TRIAL_OFFLINE_GRACE_NANOS}) and is timed on the monotonic clock, so
+ * neither blocking the site nor setting the PC clock back stretches the hour.
  *
  * <p>This raises the cost of piracy; it cannot prevent it. Anyone can patch the
  * check out of a jar they already have.
@@ -62,6 +68,13 @@ public class ProjectXEntitlements
     private static final long CHECK_INTERVAL_SECONDS = 60;
     /** How often the site is actually asked; checks in between use the cached expiry. */
     private static final long REFRESH_INTERVAL_SECONDS = 5 * 60;
+    /**
+     * A free trial lasts only while the site keeps confirming it. Paid access rides
+     * out an outage on its cached expiry; a trial stops once the site has not answered
+     * for this long. Two missed one-minute checks plus some slack, so one dropped
+     * request does not end somebody's hour.
+     */
+    private static final long TRIAL_OFFLINE_GRACE_NANOS = TimeUnit.SECONDS.toNanos(150);
 
     // Remembered across restarts, so a paid jar cannot run just because the hub
     // happened to be unreachable when the client started.
@@ -94,6 +107,18 @@ public class ProjectXEntitlements
     }
 
     private final Map<String, Instant> expiries = new ConcurrentHashMap<>();
+    /**
+     * Plugins held on a free trial, and when each trial ends on {@link System#nanoTime()}.
+     *
+     * Timed on the monotonic clock from the site's own reckoning of how long is left,
+     * not by comparing the end against the wall clock: setting the PC clock back
+     * would otherwise stretch the hour for as long as the site could not be reached.
+     */
+    private final Map<String, Long> trialDeadlines = new ConcurrentHashMap<>();
+    /** When the site last gave a real answer, on {@link System#nanoTime()}. */
+    private volatile long lastAnsweredNanos;
+    /** {@link System#nanoTime()}; replaced in tests so a trial's hour can pass in a millisecond. */
+    LongSupplier nanoClock = System::nanoTime;
     private final Map<String, String> storeUrls = new ConcurrentHashMap<>();
     private final Set<String> paid = ConcurrentHashMap.newKeySet();
     private volatile long lastRefreshMillis;
@@ -158,6 +183,12 @@ public class ProjectXEntitlements
 
     public boolean isEntitled(String internalName)
     {
+        Long trialEnd = trialDeadlines.get(internalName);
+        if (trialEnd != null)
+        {
+            long now = nanoClock.getAsLong();
+            return now - trialEnd < 0 && now - lastAnsweredNanos <= TRIAL_OFFLINE_GRACE_NANOS;
+        }
         Instant expiry = expiries.get(internalName);
         return expiry != null && Instant.now().isBefore(expiry);
     }
@@ -204,24 +235,32 @@ public class ProjectXEntitlements
     {
         try
         {
-            if (System.currentTimeMillis() - lastRefreshMillis >= TimeUnit.SECONDS.toMillis(REFRESH_INTERVAL_SECONDS)
-                    && refresh() == Check.UNREACHABLE)
+            // A trial is confirmed every check, which is what lets it end soon after
+            // the site stops answering; paid access is re-asked every few minutes.
+            boolean onTrial = !trialDeadlines.isEmpty();
+            boolean unreachable = false;
+            if (onTrial || System.currentTimeMillis() - lastRefreshMillis >= TimeUnit.SECONDS.toMillis(REFRESH_INTERVAL_SECONDS))
             {
-                // Stopping somebody's script because we could not reach ourselves is
-                // the one outcome worse than briefly letting a lapsed one run. What
-                // is cached still expires on time, so this cannot run forever.
-                return;
+                unreachable = refresh() == Check.UNREACHABLE;
             }
 
             List<Plugin> expired = new ArrayList<>();
             for (Plugin plugin : pluginManager.getPlugins())
             {
                 String internalName = internalName(plugin);
-                if (internalName != null && isPaid(internalName) && !isEntitled(internalName)
-                        && pluginManager.isPluginActive(plugin))
+                if (internalName == null || !isPaid(internalName) || isEntitled(internalName)
+                        || !pluginManager.isPluginActive(plugin))
                 {
-                    expired.add(plugin);
+                    continue;
                 }
+                // Stopping somebody's paid script because we could not reach ourselves
+                // is the one outcome worse than briefly letting a lapsed one run, so an
+                // outage stops only trials -- which need the site by design.
+                if (unreachable && !trialDeadlines.containsKey(internalName))
+                {
+                    continue;
+                }
+                expired.add(plugin);
             }
 
             for (Plugin plugin : expired)
@@ -238,7 +277,13 @@ public class ProjectXEntitlements
                         log.warn("Unable to stop expired plugin {}", plugin.getClass().getSimpleName(), e);
                     }
                 });
-                tellUser(plugin, internalName(plugin), "has been stopped: your access has ended.");
+                String internalName = internalName(plugin);
+                Long trialEnd = trialDeadlines.get(internalName);
+                tellUser(plugin, internalName, trialEnd == null
+                        ? "has been stopped: your access has ended."
+                        : nanoClock.getAsLong() - trialEnd >= 0
+                                ? "has been stopped: your free trial has ended."
+                                : "has been stopped: a free trial needs a connection to Project X, and we could not reach it.");
             }
         }
         catch (Exception e)
@@ -262,6 +307,7 @@ public class ProjectXEntitlements
         if (Strings.isNullOrEmpty(token))
         {
             expiries.clear();
+            trialDeadlines.clear();
             lastRefreshMillis = System.currentTimeMillis();
             return Check.REJECTED;
         }
@@ -285,6 +331,7 @@ public class ProjectXEntitlements
                 // The token was revoked or mistyped: nothing is proven, so nothing runs.
                 log.warn("Project X API token was rejected; paid scripts are unavailable");
                 expiries.clear();
+                trialDeadlines.clear();
                 return Check.REJECTED;
             }
             if (!response.isSuccessful() || response.body() == null)
@@ -297,22 +344,42 @@ public class ProjectXEntitlements
                 return Check.UNREACHABLE;
             }
 
+            long answeredNanos = nanoClock.getAsLong();
             JsonObject json = gson.fromJson(response.body().string(), JsonObject.class);
+            JsonElement checkedAtElement = json.get("checkedAt");
+            Instant checkedAt = checkedAtElement != null && !checkedAtElement.isJsonNull()
+                    ? Instant.parse(checkedAtElement.getAsString())
+                    : null;
             for (JsonElement element : json.getAsJsonArray("results"))
             {
                 JsonObject result = element.getAsJsonObject();
                 String internalName = result.get("internalName").getAsString();
                 JsonElement expiresAt = result.get("expiresAt");
+                JsonElement trial = result.get("trial");
                 if (result.get("active").getAsBoolean() && expiresAt != null && !expiresAt.isJsonNull())
                 {
-                    expiries.put(internalName, Instant.parse(expiresAt.getAsString()));
+                    Instant expiry = Instant.parse(expiresAt.getAsString());
+                    expiries.put(internalName, expiry);
+                    if (trial != null && !trial.isJsonNull() && trial.getAsBoolean() && checkedAt != null)
+                    {
+                        // How long the site says is left, counted from now on our own
+                        // monotonic clock.
+                        long remaining = Math.max(0L, Duration.between(checkedAt, expiry).toNanos());
+                        trialDeadlines.put(internalName, answeredNanos + remaining);
+                    }
+                    else
+                    {
+                        trialDeadlines.remove(internalName);
+                    }
                 }
                 else
                 {
                     expiries.remove(internalName);
+                    trialDeadlines.remove(internalName);
                 }
             }
 
+            lastAnsweredNanos = answeredNanos;
             return Check.ANSWERED;
         }
         catch (IOException | JsonParseException | DateTimeParseException | IllegalStateException | NullPointerException e)
