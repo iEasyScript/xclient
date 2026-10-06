@@ -463,6 +463,8 @@ public class ProjectX {
             log.warn("Ignoring a request to show an empty message", new Throwable("called from"));
             return;
         }
+        // The likeliest explanation if a script stops right after: it goes in the stop alert.
+        net.runelite.client.plugins.projectx.externalplugins.ProjectXSessionTracker.noteMessage(message);
 
         SwingUtilities.invokeLater(() ->
                 JOptionPane.showMessageDialog(null, message, "Project X", JOptionPane.INFORMATION_MESSAGE));

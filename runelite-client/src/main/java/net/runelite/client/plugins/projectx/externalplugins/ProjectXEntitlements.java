@@ -265,6 +265,7 @@ public class ProjectXEntitlements
 
             for (Plugin plugin : expired)
             {
+                ProjectXSessionTracker.markStop(plugin, ProjectXSessionTracker.End.ACCESS_ENDED);
                 SwingUtilities.invokeLater(() ->
                 {
                     try

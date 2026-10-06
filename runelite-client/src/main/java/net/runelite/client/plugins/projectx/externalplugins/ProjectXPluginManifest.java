@@ -143,6 +143,9 @@ public class ProjectXPluginManifest {
      */
     private List<String> availableVersions = Collections.emptyList();
 
+    /** What changed in this version, from the store, for "What's new". */
+    private String changelog;
+
     /** "BROKEN" when the store has marked the script as not working, otherwise absent. */
     private String health;
 

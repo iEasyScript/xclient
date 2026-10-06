@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Skill;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXSessionTracker;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 
 import java.util.List;
@@ -97,6 +98,7 @@ final class ScriptQueueRunner implements Runnable
             Plugin running = current;
             if (running != null && isActive(running))
             {
+                ProjectXSessionTracker.markStop(running, ProjectXSessionTracker.End.MANUAL);
                 ProjectX.stopPlugin(running);
             }
             current = null;
@@ -172,6 +174,7 @@ final class ScriptQueueRunner implements Runnable
 
         if (isActive(plugin))
         {
+            ProjectXSessionTracker.markStop(plugin, stopRequested ? ProjectXSessionTracker.End.MANUAL : ProjectXSessionTracker.End.QUEUE);
             ProjectX.stopPlugin(plugin);
             // Let it wind down (bank, put the hook away) before the next one starts.
             for (int i = 0; i < 20 && isActive(plugin); i++)

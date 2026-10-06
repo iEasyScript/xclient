@@ -332,10 +332,19 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
                 configure.setVisible(false);
             }
 
+            // Paid scripts: trial or buy right here, without opening the website.
+            JButton store = new JButton("Trial / Buy");
+            store.setFont(FontManager.getRunescapeSmallFont());
+            store.setToolTipText("Start a free trial or buy access, paid in X Tokens");
+            store.addActionListener(ev -> ProjectXStoreDialog.show(this, manifest.getInternalName()));
+            store.setVisible(manifest.isPaid());
+
             GroupLayout.SequentialGroup bottomRow = layout.createSequentialGroup()
                     .addComponent(versionSelector, 100, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
                     .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE);
-            bottomRow.addComponent(help, 0, 24, 24)
+            bottomRow.addComponent(store, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+                    .addGap(4)
+                    .addComponent(help, 0, 24, 24)
                     .addComponent(configure, 0, 24, 24)
                     .addGap(5);
 
@@ -355,6 +364,7 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
             int lineHeight = description.getFontMetrics(description.getFont()).getHeight();
             GroupLayout.ParallelGroup bottomRowVertical = layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                     .addComponent(versionSelector, BOTTOM_LINE_HEIGHT, BOTTOM_LINE_HEIGHT, BOTTOM_LINE_HEIGHT)
+                    .addComponent(store, BOTTOM_LINE_HEIGHT, BOTTOM_LINE_HEIGHT, BOTTOM_LINE_HEIGHT)
                     .addComponent(help, BOTTOM_LINE_HEIGHT, BOTTOM_LINE_HEIGHT, BOTTOM_LINE_HEIGHT)
                     .addComponent(configure, BOTTOM_LINE_HEIGHT, BOTTOM_LINE_HEIGHT, BOTTOM_LINE_HEIGHT);
 

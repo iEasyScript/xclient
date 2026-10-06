@@ -1528,6 +1528,8 @@ public class ProjectXPluginManager {
         }
 
         var plugin = pluginToRemove.get();
+        // Updated or removed, not stopped by itself: never a stop alert.
+        ProjectXSessionTracker.markStop(plugin, ProjectXSessionTracker.End.MANUAL);
         try {
             SwingUtilities.invokeAndWait(() ->
             {
@@ -1662,6 +1664,7 @@ public class ProjectXPluginManager {
      */
     private void stopPlugin(Plugin plugin) {
         String pluginName = plugin.getClass().getSimpleName();
+        ProjectXSessionTracker.markStop(plugin, ProjectXSessionTracker.End.MANUAL);
 
         try {
             if (pluginManager.isPluginActive(plugin)) {

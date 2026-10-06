@@ -820,6 +820,9 @@ public class BreakHandlerV2Script extends Script {
         }
 
         boolean wasEnabled = ProjectX.isPluginEnabled(pluginInstance);
+        // The player set the break handler up to stop it: their choice, not a stop alert.
+        net.runelite.client.plugins.projectx.externalplugins.ProjectXSessionTracker.markStop(
+                pluginInstance, net.runelite.client.plugins.projectx.externalplugins.ProjectXSessionTracker.End.MANUAL);
         boolean stopResult = ProjectX.stopPlugin(pluginInstance);
         boolean nowEnabled = ProjectX.isPluginEnabled(pluginInstance);
 

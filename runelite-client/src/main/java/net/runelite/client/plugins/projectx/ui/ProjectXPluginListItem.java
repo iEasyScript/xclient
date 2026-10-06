@@ -142,6 +142,18 @@ class ProjectXPluginListItem extends JPanel implements SearchablePlugin
 			uninstallItem.addActionListener(ev -> pluginListPanel.getExternalPluginManager().remove(internalName));
 		}
 
+		JMenuItem storeItem = null;
+		if (pluginConfig.getPlugin() != null)
+		{
+			String simple = pluginConfig.getPlugin().getClass().getSimpleName();
+			var manifest = pluginListPanel.getProjectxPluginManager().getManifestMap().get(simple);
+			if (manifest != null && manifest.isPaid())
+			{
+				storeItem = new JMenuItem("Trial or buy");
+				storeItem.addActionListener(ev -> ProjectXStoreDialog.show(this, simple));
+			}
+		}
+
 		JMenuItem reportItem = null;
 		if (pluginConfig.getPlugin() != null)
 		{
@@ -149,7 +161,7 @@ class ProjectXPluginListItem extends JPanel implements SearchablePlugin
 			reportItem.addActionListener(ev -> ProjectXReportDialog.show(this, pluginConfig.getPlugin(), pluginConfig.getConfigDescriptor()));
 		}
 
-		addLabelPopupMenu(nameLabel, configMenuItem, pluginConfig.createSupportMenuItem(pluginConfig.getPlugin()), reportItem, uninstallItem);
+		addLabelPopupMenu(nameLabel, configMenuItem, pluginConfig.createSupportMenuItem(pluginConfig.getPlugin()), storeItem, reportItem, uninstallItem);
 		add(nameLabel, BorderLayout.CENTER);
 
 		onOffToggle = new ProjectXPluginToggleButton();

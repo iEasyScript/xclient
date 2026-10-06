@@ -45,6 +45,7 @@ import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.projectx.ProjectXConfig;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXPluginManager;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXPluginManifest;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXSessionTracker;
 import net.runelite.client.plugins.projectx.ui.search.ProjectXPluginSearch;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
@@ -320,7 +321,14 @@ public class ProjectXPluginListPanel extends ProjectXPluginPanel {
         return true;
     }
 
+    /** For list items that need the store manifest, e.g. to offer Trial or buy. */
+    ProjectXPluginManager getProjectxPluginManager() {
+        return projectxPluginManager;
+    }
+
     void stopPlugin(Plugin plugin) {
+        // The player switched it off: a session that ends this way is never a stop alert.
+        ProjectXSessionTracker.markStop(plugin, ProjectXSessionTracker.End.MANUAL);
         pluginManager.setPluginEnabled(plugin, false);
 
         try {

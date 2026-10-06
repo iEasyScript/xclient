@@ -57,6 +57,8 @@ public abstract class Script extends Global implements IScript {
         ScriptHeartbeatRegistry.remove(this.getClass().getName());
         if (mainScheduledFuture != null && !mainScheduledFuture.isDone()) {
             mainScheduledFuture.cancel(true);
+            // Lets the session tracker tell a script that stopped by itself from one being switched off.
+            net.runelite.client.plugins.projectx.externalplugins.ProjectXSessionTracker.onScriptShutdown(this, this::isRunning);
             AntibanPlugin.scriptStopped();
             ShortestPathPlugin.exit();
             if (ProjectX.getClientThread().scheduledFuture != null)
