@@ -143,11 +143,24 @@ public class ProjectXPluginManifest {
      */
     private List<String> availableVersions = Collections.emptyList();
 
+    /** "BROKEN" when the store has marked the script as not working, otherwise absent. */
+    private String health;
+
+    /** What the store says is wrong, when {@link #health} is BROKEN. */
+    private String healthNote;
+
+    public boolean isBroken() {
+        return "BROKEN".equalsIgnoreCase(health);
+    }
+
     /**
      * Gets a warning message for this plugin, if any
      */
     public String getWarning() {
-        return null; // No warnings for now, could be added in future
+        if (!isBroken()) {
+            return null;
+        }
+        return healthNote == null || healthNote.isBlank() ? "Not working right now: a fix is on the way." : "Not working right now: " + healthNote;
     }
 
     /**

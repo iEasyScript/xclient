@@ -134,6 +134,8 @@ public class ProjectXPlugin extends Plugin
 	@Override
 	protected void startUp() throws AWTException
 	{
+		// First, so a problem report can include everything from start-up on.
+		ProjectXLogBuffer.install();
 		log.info("ProjectX: {} - {}", RuneLiteProperties.getProjectXVersion(), RuneLiteProperties.getProjectXCommit());
 		log.info("JVM: {} {}", System.getProperty("java.vendor"), System.getProperty("java.runtime.version"));
 

@@ -44,6 +44,7 @@ import net.runelite.client.plugins.PluginInstantiationException;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.projectx.ProjectXConfig;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXPluginManager;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXPluginManifest;
 import net.runelite.client.plugins.projectx.ui.search.ProjectXPluginSearch;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
@@ -285,7 +286,27 @@ public class ProjectXPluginListPanel extends ProjectXPluginPanel {
         muxer.pushState(panel);
     }
 
-    void startPlugin(Plugin plugin) {
+    /**
+     * Starts a plugin, after asking first if the store has marked it as not working.
+     *
+     * @return false if the player chose not to start it
+     */
+    boolean startPlugin(Plugin plugin) {
+        ProjectXPluginManifest manifest = projectxPluginManager.getManifestMap().get(plugin.getClass().getSimpleName());
+        if (manifest != null && manifest.isBroken() && SwingUtilities.isEventDispatchThread()) {
+            String note = manifest.getHealthNote();
+            int choice = JOptionPane.showConfirmDialog(this,
+                    "<html><div style='width:320px'><b>" + HtmlEscapers.htmlEscaper().escape(manifest.getDisplayName())
+                            + " is marked as not working right now.</b><br><br>"
+                            + (note == null || note.isBlank() ? "A game update has broken it, and a fix is on the way." : HtmlEscapers.htmlEscaper().escape(note))
+                            + "<br><br>If you own it, the time it's down is added back to your access when it's fixed."
+                            + "<br><br>Start it anyway?</div></html>",
+                    "Script not working", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (choice != JOptionPane.YES_OPTION) {
+                return false;
+            }
+        }
+
         projectxPluginManager.getOutdatedPluginUpdate(plugin)
                 .ifPresent(this::showOutdatedPluginNotification);
 
@@ -296,6 +317,7 @@ public class ProjectXPluginListPanel extends ProjectXPluginPanel {
         } catch (PluginInstantiationException ex) {
             log.warn("Error when starting plugin {}", plugin.getClass().getSimpleName(), ex);
         }
+        return true;
     }
 
     void stopPlugin(Plugin plugin) {
