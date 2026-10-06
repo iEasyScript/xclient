@@ -128,6 +128,12 @@ public class ProjectXPluginManifest {
     private String storeUrl;
 
     /**
+     * What the jar is called on disk -- agility.jar -- set by the site from the store slug.
+     * Missing from older catalogues, in which case the jar is named for its internal name.
+     */
+    private String fileName;
+
+    /**
      * Tags for the plugin (optional)
      */
     private String[] tags;

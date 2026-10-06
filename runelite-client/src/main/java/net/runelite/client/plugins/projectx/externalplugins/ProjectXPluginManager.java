@@ -81,6 +81,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -91,6 +92,11 @@ public class ProjectXPluginManager {
     private static final String INSTALLED_VERSION_KEY_PREFIX = "plugin.";
     private static final String UPDATE_NOTIFICATION_GROUP = "projectxPluginUpdateNotifications";
     private static final String UPDATE_NOTIFICATION_KEY_PREFIX = "plugin.";
+    /** The name each jar was last saved under, so it is still found when the catalogue cannot be fetched. */
+    private static final String JAR_FILE_GROUP = "projectxPluginFiles";
+    private static final String JAR_FILE_KEY_PREFIX = "plugin.";
+    /** What the site may name a jar: one plain lower-case file, never a path. */
+    private static final Pattern SIMPLE_JAR_NAME = Pattern.compile("[a-z0-9][a-z0-9-]{0,63}\\.jar");
 
     /** Long enough for start-up to finish before the first reconciliation. */
     private static final long RECONCILE_DELAY_SECONDS = 30;
@@ -422,9 +428,12 @@ public class ProjectXPluginManager {
                 manifestMap.clear();
                 manifestMap.putAll(next);
                 log.info("Loaded {} plugin manifests.", manifestMap.size());
+                renameJarsToSimpleNames();
                 eventBus.post(new ExternalPluginsChanged());
             } else {
                 log.debug("Plugin manifests unchanged ({} entries), skipping event.", manifestMap.size());
+                // A jar that was loaded last time may have been stopped since.
+                renameJarsToSimpleNames();
             }
         } catch (Exception e) {
             log.error("Failed to fetch plugin manifests", e);
@@ -436,23 +445,127 @@ public class ProjectXPluginManager {
     }
 
     /**
-     * Gets the File object for the plugin JAR file corresponding to the given internal name.
+     * The jar for a plugin.
+     *
+     * <p>Named for what the script is -- agility.jar -- rather than its class, MicroAgilityPlugin.jar,
+     * which is what a player sees when they open the folder. A jar still under an older name is used
+     * where it is until it can be renamed: one that is loaded is locked on Windows, and pointing at a
+     * file that is not there yet would read as "not installed" and stop the script to fetch it again.
      *
      * @param internalName the internal name of the plugin
      * @return the File object representing the plugin JAR
      */
     private File getPluginJarFile(String internalName) {
-        return new File(PLUGIN_DIR, internalName + ".jar");
+        File preferred = new File(PLUGIN_DIR, jarFileName(internalName));
+        if (preferred.exists()) {
+            return preferred;
+        }
+        for (String name : previousJarNames(internalName)) {
+            File previous = new File(PLUGIN_DIR, name);
+            if (previous.exists()) {
+                return previous;
+            }
+        }
+        return preferred;
+    }
+
+    /** The name a plugin's jar should have: the site's, else the one last used, else its internal name. */
+    private String jarFileName(String internalName) {
+        ProjectXPluginManifest manifest = manifestMap.get(internalName);
+        if (manifest != null && isSimpleJarName(manifest.getFileName())) {
+            return manifest.getFileName();
+        }
+        String recorded = configManager.getConfiguration(JAR_FILE_GROUP, JAR_FILE_KEY_PREFIX + internalName);
+        if (isSimpleJarName(recorded)) {
+            return recorded;
+        }
+        return legacyJarName(internalName);
+    }
+
+    /** Names this plugin's jar may still have on disk, other than the one it should have. */
+    private List<String> previousJarNames(String internalName) {
+        String preferred = jarFileName(internalName);
+        List<String> names = new ArrayList<>(2);
+        String recorded = configManager.getConfiguration(JAR_FILE_GROUP, JAR_FILE_KEY_PREFIX + internalName);
+        if (isSimpleJarName(recorded) && !recorded.equals(preferred)) {
+            names.add(recorded);
+        }
+        String legacy = legacyJarName(internalName);
+        if (!legacy.equals(preferred)) {
+            names.add(legacy);
+        }
+        return names;
+    }
+
+    private static String legacyJarName(String internalName) {
+        return internalName + ".jar";
+    }
+
+    private static boolean isSimpleJarName(@Nullable String name) {
+        return name != null && SIMPLE_JAR_NAME.matcher(name).matches();
+    }
+
+    private void rememberJarFileName(String internalName, File jar) {
+        if (isSimpleJarName(jar.getName())) {
+            configManager.setConfiguration(JAR_FILE_GROUP, JAR_FILE_KEY_PREFIX + internalName, jar.getName());
+        } else {
+            configManager.unsetConfiguration(JAR_FILE_GROUP, JAR_FILE_KEY_PREFIX + internalName);
+        }
     }
 
     /**
-     * Gets the plugin manifest for a given plugin instance.
+     * Gives every jar on disk the name the catalogue asks for.
      *
-     * @param internalName
-     * @return
+     * <p>Runs whenever the catalogue changes, and at start-up before anything is loaded, which is
+     * when the jars an older client saved as MicroAgilityPlugin.jar become agility.jar. A jar that is
+     * loaded is left for a later pass; one already under the new name is left to the cleanup.
      */
-    private byte[] getPluginJarByteArray(String internalName) {
-        return new File(PLUGIN_DIR, internalName + ".jar").getPath().getBytes();
+    private void renameJarsToSimpleNames() {
+        Set<String> loaded = loadedExternalNames();
+        for (ProjectXPluginManifest manifest : manifestMap.values()) {
+            String internalName = manifest.getInternalName();
+            if (Strings.isNullOrEmpty(internalName) || loaded.contains(internalName) || loaders.containsKey(internalName)) {
+                continue;
+            }
+            File preferred = new File(PLUGIN_DIR, jarFileName(internalName));
+            if (preferred.exists()) {
+                continue;
+            }
+            for (String name : previousJarNames(internalName)) {
+                File previous = new File(PLUGIN_DIR, name);
+                if (!previous.exists()) {
+                    continue;
+                }
+                if (previous.renameTo(preferred)) {
+                    log.info("Renamed {} to {}", previous.getName(), preferred.getName());
+                    rememberJarFileName(internalName, preferred);
+                } else {
+                    log.debug("Could not rename {} to {}; trying again later", previous.getName(), preferred.getName());
+                }
+                break;
+            }
+        }
+    }
+
+    /**
+     * Which plugin a jar in the folder belongs to, by the names this client gives jars. A jar no
+     * catalogue entry or record accounts for is taken to be named for its internal name, as every
+     * jar used to be.
+     */
+    private String internalNameForJar(File jar) {
+        String name = jar.getName();
+        for (String internalName : manifestMap.keySet()) {
+            if (name.equals(jarFileName(internalName))) {
+                return internalName;
+            }
+        }
+        String prefix = JAR_FILE_GROUP + "." + JAR_FILE_KEY_PREFIX;
+        for (String key : configManager.getConfigurationKeys(prefix)) {
+            if (name.equals(configManager.getConfiguration(JAR_FILE_GROUP, key.substring(JAR_FILE_GROUP.length() + 1)))) {
+                return key.substring(prefix.length());
+            }
+        }
+        return name.substring(0, name.length() - ".jar".length());
     }
 
     /**
@@ -765,7 +878,7 @@ public class ProjectXPluginManager {
             if (!f.getName().endsWith(".jar")) {
                 continue;
             }
-            String internalName = f.getName().replace(".jar", "");
+            String internalName = internalNameForJar(f);
             if (loadedInternalNames.contains(internalName)) {
                 continue;
             }
@@ -1402,6 +1515,7 @@ public class ProjectXPluginManager {
                 byte[] jarData = response.body().bytes();
 
                 Files.write(jarData, pluginFile);
+                rememberJarFileName(internalName, pluginFile);
                 log.info("Plugin {} (version {}) downloaded to {}", internalName, versionToDownload, pluginFile.getAbsolutePath());
 
                 String authoritativeHash = versionToDownload.equals(manifest.getVersion()) ? manifest.getSha256() : null;
@@ -1588,6 +1702,7 @@ public class ProjectXPluginManager {
             log.warn("Failed to delete plugin jar {}", jar.getAbsolutePath());
         }
         clearInstalledPluginVersion(internalName);
+        configManager.unsetConfiguration(JAR_FILE_GROUP, JAR_FILE_KEY_PREFIX + internalName);
 
         log.info("Removed plugin {} from installed list", manifest.getDisplayName());
         eventBus.post(new ExternalPluginsChanged());
