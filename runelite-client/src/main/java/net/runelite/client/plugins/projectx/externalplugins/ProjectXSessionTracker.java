@@ -7,6 +7,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
 import net.runelite.api.events.ActorDeath;
+import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.StatChanged;
 import net.runelite.client.callback.ClientThread;
@@ -244,6 +245,19 @@ public class ProjectXSessionTracker
         }
     }
 
+    /** Retries a run's starting point until the game has sent the stats. */
+    @Subscribe
+    public void onGameTick(GameTick event)
+    {
+        for (Run run : runs.values())
+        {
+            if (run.baseline.isEmpty())
+            {
+                snapshot(run);
+            }
+        }
+    }
+
     @Subscribe
     public void onActorDeath(ActorDeath event)
     {
@@ -284,6 +298,12 @@ public class ProjectXSessionTracker
     private void snapshot(Run run)
     {
         if (client.getGameState() != GameState.LOGGED_IN || !run.baseline.isEmpty())
+        {
+            return;
+        }
+        // Just after login the game has not sent the stats yet and every skill reads zero. A starting point
+        // taken then counts the whole account's experience as gained by the run.
+        if (client.getOverallExperience() <= 0)
         {
             return;
         }
