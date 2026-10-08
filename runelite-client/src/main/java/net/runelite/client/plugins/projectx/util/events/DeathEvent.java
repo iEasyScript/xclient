@@ -48,7 +48,10 @@ public class DeathEvent implements BlockingEvent {
 
                 if (completedDialogueOptions.size() >= 4) {
                     Rs2GameObject.interact(DEATHS_PORTAL, "use");
-                    return Global.sleepUntil(() -> Rs2Player.getWorldLocation().getRegionID() != DEATH_DOMAIN_REGION_ID, 10000);
+                    return Global.sleepUntil(() -> {
+                        WorldPoint location = Rs2Player.getWorldLocation();
+                        return location != null && location.getRegionID() != DEATH_DOMAIN_REGION_ID;
+                    }, 10000);
                 }
 
                 Optional<Widget> incompleteDialogOptional = Rs2Dialogue.getDialogueOptions().stream()
