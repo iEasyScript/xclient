@@ -58,6 +58,8 @@ public class Rs2DoorProbeTest {
                 transport(TransportType.TRANSPORT, "Trapdoor", "Trapdoor", "Climb-down")));
         assertFalse(Rs2DoorProbe.isDoorLikeCatalogTransport(
                 transport(TransportType.TRANSPORT, "Trapdoor", "Trapdoor", "Open")));
+        assertFalse(Rs2DoorProbe.isDoorLikeCatalogTransport(
+                transport(TransportType.TRANSPORT, "trapdoor", null, "Open")));
     }
 
     @Test

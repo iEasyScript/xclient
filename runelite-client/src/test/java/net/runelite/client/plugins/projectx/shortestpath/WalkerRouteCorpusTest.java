@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -333,6 +334,10 @@ public class WalkerRouteCorpusTest {
 
         assertTrue(shed.getQuests().containsKey(Quest.LOST_CITY));
         assertTrue(shed.isMembers());
+        assertEquals(1, shed.getItemIdRequirements().size());
+        Set<Integer> staffs = shed.getItemIdRequirements().iterator().next();
+        assertTrue(staffs.contains(net.runelite.api.gameval.ItemID.DRAMEN_STAFF));
+        assertTrue(staffs.contains(net.runelite.api.gameval.ItemID.LUNAR_MOONCLAN_LIMINAL_STAFF));
         assertFalse(unrestricted(shed));
     }
 }
