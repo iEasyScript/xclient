@@ -450,12 +450,14 @@ public class Rs2Bank {
 			updateTabCounts();
 		}
 		BANK_LIVE_EPOCH.incrementAndGet();
-		if (validLoadedCache.get() && Rs2Widget.isWidgetVisible(12, 1)) {
-			int[] snapshot = rs2BankData.getIdQuantityAndSlot();
-			if (!Arrays.equals(snapshot, lastSavedSnapshot)) {
-				ProjectX.getConfigManager().setRSProfileConfiguration(CONFIG_GROUP, BANK_KEY,
-						gson.toJson(snapshot));
-				lastSavedSnapshot = snapshot;
+		synchronized (lock) {
+			if (validLoadedCache.get() && Rs2Widget.isWidgetVisible(12, 1)) {
+				int[] snapshot = rs2BankData.getIdQuantityAndSlot();
+				if (!Arrays.equals(snapshot, lastSavedSnapshot)) {
+					ProjectX.getConfigManager().setRSProfileConfiguration(CONFIG_GROUP, BANK_KEY,
+							gson.toJson(snapshot));
+					lastSavedSnapshot = snapshot;
+				}
 			}
 		}
 	}
