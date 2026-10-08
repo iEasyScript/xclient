@@ -34,6 +34,9 @@ import static org.mockito.Mockito.when;
 public class Rs2TileObjectCacheTest
 {
 	private static final int WORLD_VIEW_ID = 4243;
+	private static final long OWNED_HERE_HASH = 101L;
+	private static final long OWNED_ELSEWHERE_HASH = 102L;
+	private static final long WALL_HASH = 103L;
 
 	private final AtomicBoolean onClientThread = new AtomicBoolean();
 	private final AtomicInteger tick = new AtomicInteger(5);
@@ -68,6 +71,9 @@ public class Rs2TileObjectCacheTest
 		GameObject ownedElsewhere = mock(GameObject.class);
 		when(ownedElsewhere.getSceneMinLocation()).thenAnswer(invocation -> guarded(new Point(9, 20)));
 		WallObject wall = mock(WallObject.class);
+		when(ownedHere.getHash()).thenReturn(OWNED_HERE_HASH);
+		when(ownedElsewhere.getHash()).thenReturn(OWNED_ELSEWHERE_HASH);
+		when(wall.getHash()).thenReturn(WALL_HASH);
 
 		Tile tile = mock(Tile.class);
 		when(tile.getSceneLocation()).thenAnswer(invocation -> guarded(tileLocation));
@@ -108,11 +114,14 @@ public class Rs2TileObjectCacheTest
 	@Test
 	public void offClientThreadRefreshReadsSceneOnlyInsideClientThreadTask()
 	{
-		List<TileObjectType> types = cache.getStream()
-			.map(Rs2TileObjectModel::getTileObjectType)
-			.collect(Collectors.toList());
+		List<Rs2TileObjectModel> objects = cache.getStream().collect(Collectors.toList());
 
-		assertEquals(List.of(TileObjectType.GAME, TileObjectType.WALL), types);
+		assertEquals(List.of(TileObjectType.GAME, TileObjectType.WALL), objects.stream()
+			.map(Rs2TileObjectModel::getTileObjectType)
+			.collect(Collectors.toList()));
+		assertEquals(List.of(OWNED_HERE_HASH, WALL_HASH), objects.stream()
+			.map(Rs2TileObjectModel::getHash)
+			.collect(Collectors.toList()));
 		verify(clientThread, times(1)).runOnClientThreadOptional(any());
 	}
 
