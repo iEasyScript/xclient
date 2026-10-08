@@ -707,7 +707,27 @@ public class ProjectX {
      * @param ex         the exception
      */
     public static void logStackTrace(String scriptName, Exception ex) {
+        // Stopping a script interrupts its thread; one that was waiting on the client
+        // thread at that moment surfaces it as an exception. That is the script being
+        // switched off, not an error, so it stays out of the player's chat.
+        if (causedByInterrupt(ex)) {
+            Thread.currentThread().interrupt();
+            log(scriptName + " stopped while waiting: " + ex, Level.DEBUG);
+            return;
+        }
         log(scriptName, Level.ERROR, ex);
+    }
+
+    private static boolean causedByInterrupt(Throwable ex) {
+        for (Throwable t = ex; t != null; t = t.getCause()) {
+            if (t instanceof InterruptedException || t instanceof java.nio.channels.ClosedByInterruptException) {
+                return true;
+            }
+            if (t.getCause() == t) {
+                break;
+            }
+        }
+        return false;
     }
 
     public static void log(String message) {
