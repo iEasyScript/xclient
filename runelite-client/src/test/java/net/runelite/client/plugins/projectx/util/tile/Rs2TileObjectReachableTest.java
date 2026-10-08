@@ -11,7 +11,6 @@ public class Rs2TileObjectReachableTest {
     private static final int SIZE = 104;
     private static final int WALL_WEST = 1;
     private static final int WALL_NORTH = 2;
-    private static final int WALL_EAST = 4;
     private static final int NO_WALL = 0;
 
     private static int[][] openField() {
@@ -57,7 +56,16 @@ public class Rs2TileObjectReachableTest {
         wallBetweenColumns(flags, 48);
         flags[49][50] |= CollisionDataFlag.BLOCK_MOVEMENT_EAST;
 
-        assertFalse(reach(flags, 40, 50, 50, 50, WALL_EAST));
+        assertFalse(reach(flags, 40, 50, 50, 50, WALL_WEST));
+    }
+
+    @Test
+    public void wallObjectOnBlockedTileIsUnreachableFromBehindItsFace() {
+        int[][] flags = openField();
+        solidColumn(flags, 50);
+
+        assertFalse(reach(flags, 60, 50, 50, 50, WALL_WEST));
+        assertTrue("same tile from the front", reach(flags, 40, 50, 50, 50, WALL_WEST));
     }
 
     @Test

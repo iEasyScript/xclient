@@ -638,12 +638,20 @@ public abstract class Rs2Tile implements Tile {
         }
 
         for (int[] side : CARDINAL_SIDES) {
+            if (isBehindWallFace(wallOrientation, side[0], side[1])) continue;
             int nx = x + side[0];
             int ny = y + side[1];
             if (!isWithinBounds(nx, ny) || !reachable[nx][ny]) continue;
             if ((flags[nx][ny] & side[2]) == 0 && (flags[x][y] & side[3]) == 0) return true;
         }
 
+        return false;
+    }
+
+    private static boolean isBehindWallFace(int wallOrientation, int dx, int dy) {
+        for (int[] edge : WALL_EDGES) {
+            if ((wallOrientation & edge[0]) != 0 && edge[1] == -dx && edge[2] == -dy) return true;
+        }
         return false;
     }
 
