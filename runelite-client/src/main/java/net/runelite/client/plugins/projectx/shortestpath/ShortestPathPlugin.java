@@ -31,6 +31,7 @@ import net.runelite.api.*;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.widgets.ComponentID;
@@ -41,6 +42,7 @@ import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.events.PluginMessage;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.input.KeyListener;
@@ -156,6 +158,9 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
     @Inject
     private ConfigManager configManager;
 
+    @Inject
+    private SpiritTreePatchState spiritTreePatchState;
+
 	boolean drawCollisionMap;
 	boolean drawMap;
 	boolean drawMinimap;
@@ -228,6 +233,8 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
 
         List<Restriction> restrictions = Restriction.loadAllFromResources();
         pathfinderConfig = new PathfinderConfig(map, transports, restrictions, client, config);
+        // What this account was last seen to have planted; the client thread owns the patch state.
+        clientThread.invokeLater(this::loadSpiritTrees);
 
         panel = injector.getInstance(ShortestPathPanel.class);
         pohPanel = new PohPanel(config);
@@ -279,6 +286,7 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
 
     @Override
     protected void shutDown() {
+        clientThread.invokeLater(spiritTreePatchState::persistIfDirty);
         // Unregister hotkey listeners first so any in-flight keystroke can't
         // dereference panel/shortestPathScript after we null/tear them down.
         keyManager.unregisterKeyListener(hunterHotkeyListener);
@@ -851,6 +859,7 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
     public void onGameTick(GameTick tick) {
         handlePendingLoginRefresh();
         refreshLiveCollision();
+        sampleSpiritTreePatch();
 
         if (Rs2Walker.getCurrentTarget() != null) {
             return;
@@ -874,6 +883,60 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
                 }
             }
         }
+    }
+
+    // ---- planted spirit trees: which this account can travel to (see SpiritTreePatchState)
+
+    private void loadSpiritTrees() {
+        spiritTreePatchState.loadFromProfile();
+        if (pathfinderConfig != null) {
+            pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+        }
+    }
+
+    /** Samples a planted patch's farming varbit while standing, settled, in its region. */
+    private void sampleSpiritTreePatch() {
+        Player player = client.getLocalPlayer();
+        WorldPoint location = player == null ? null : player.getWorldLocation();
+        int region = location == null ? -1 : location.getRegionID();
+        spiritTreePatchState.notePlayerRegion(region, client.getTickCount());
+        if (player != null && spiritTreePatchState.isRegionSettled(region) && !SpiritTreePatchState.modalWidgetOpen(client)) {
+            String patch = SpiritTreePatchState.patchNameForRegion(region);
+            if (patch != null && spiritTreePatchState.applyVarbitSample(patch, client.getVarbitValue(SpiritTreePatchState.varbitForPatch(patch)))) {
+                publishSpiritTrees();
+            }
+        }
+        spiritTreePatchState.persistIfDirty();
+    }
+
+    @Subscribe
+    public void onWidgetLoaded(WidgetLoaded event) {
+        int group = event.getGroupId();
+        if (group != net.runelite.api.gameval.InterfaceID.MENU && group != net.runelite.api.gameval.InterfaceID.MENU_NEW) {
+            return;
+        }
+        boolean newMenu = group == net.runelite.api.gameval.InterfaceID.MENU_NEW;
+        clientThread.invokeLater(() -> {
+            Widget container = newMenu
+                    ? client.getWidget(net.runelite.api.gameval.InterfaceID.MENU_NEW, 9)
+                    : client.getWidget(net.runelite.api.gameval.InterfaceID.MENU, 3);
+            if (container != null && spiritTreePatchState.applyMenu(container.getDynamicChildren(), newMenu)) {
+                publishSpiritTrees();
+            }
+        });
+    }
+
+    @Subscribe
+    public void onRuneScapeProfileChanged(RuneScapeProfileChanged event) {
+        loadSpiritTrees();
+    }
+
+    /** Hands the pathfinder the new set; the transport cache key includes it, so the next route uses it. */
+    private void publishSpiritTrees() {
+        if (pathfinderConfig != null) {
+            pathfinderConfig.availableSpiritTrees = spiritTreePatchState.getTravelableTreesOrNull();
+        }
+        log.debug("Planted spirit trees now usable: {}", pathfinderConfig == null ? null : pathfinderConfig.availableSpiritTrees);
     }
 
     @Subscribe

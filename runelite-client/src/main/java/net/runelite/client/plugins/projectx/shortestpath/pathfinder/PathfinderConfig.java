@@ -68,6 +68,16 @@ public class PathfinderConfig {
 	// gets a high pathfinding penalty when avoidDangerousNpcs is on, so paths keep >=2 tiles away.
 	private static final Set<Integer> DANGEROUS_ADJACENT_TILES_PACKED = loadDangerousTilesFromResources();
 
+	/** Patch names for {@link #SPIRIT_TREE_DESTINATIONS_ORDERED}, as {@link SpiritTreePatchState} knows them. Same order. */
+	private static final String[] SPIRIT_TREE_PATCH_NAMES = {"Etceteria", "Brimhaven", "Port Sarim", "Hosidius", "Farming Guild"};
+
+	/**
+	 * Planted spirit trees known to be grown and usable on this account, from
+	 * {@link SpiritTreePatchState}; null while nothing has been observed. A planted
+	 * tree is only routed through once it is known to be usable.
+	 */
+	public volatile Set<String> availableSpiritTrees;
+
 	/** Order matches {@link #spiritTreeDestinationToggle(int)} — add destinations in both places only here + switch. */
 	private static final WorldPoint[] SPIRIT_TREE_DESTINATIONS_ORDERED = {
 			SPIRIT_TREE_ETCETERIA,
@@ -186,7 +196,8 @@ public class PathfinderConfig {
             useSpiritTreeBrimhaven,
             useSpiritTreePortSarim,
             useSpiritTreeHosidius,
-            useSpiritTreeFarmingGuild;
+            useSpiritTreeFarmingGuild,
+            respawnPrifddinas;
     //START projectx variables
     @Getter
     private volatile int distanceBeforeUsingTeleport;
@@ -353,6 +364,7 @@ public class PathfinderConfig {
         useSpiritTreePortSarim = ShortestPathPlugin.override("spiritTreePortSarim", config.spiritTreePortSarim());
         useSpiritTreeHosidius = ShortestPathPlugin.override("spiritTreeHosidius", config.spiritTreeHosidius());
         useSpiritTreeFarmingGuild = ShortestPathPlugin.override("spiritTreeFarmingGuild", config.spiritTreeFarmingGuild());
+        respawnPrifddinas = ShortestPathPlugin.override("respawnPrifddinas", config.respawnPrifddinas());
         useTeleportationItems = ShortestPathPlugin.override("useTeleportationItems", config.useTeleportationItems());
         useTeleportationMinigames = ShortestPathPlugin.override("useTeleportationMinigames", config.useTeleportationMinigames());
         useTeleportationLevers = ShortestPathPlugin.override("useTeleportationLevers", config.useTeleportationLevers());
@@ -1360,6 +1372,11 @@ public class PathfinderConfig {
             }
             return isUsable;
         }
+        if (!checkRespawnGate(transport)) {
+            log.debug("Transport ( O: {} D: {} ) lands at a respawn point that is not the active one", transport.getOrigin(), transport.getDestination());
+            return false;
+        }
+
         // Check Teleport Spell Settings
         if (transport.getType() == TELEPORTATION_SPELL) {
             boolean isUsable = isTeleportationSpellUsable(transport);
@@ -1394,6 +1411,30 @@ public class PathfinderConfig {
             return false;
         }
         return Rs2LeaguesTransport.isTransportAllowed(leaguesCtx, transport);
+    }
+
+    /** Where Respawn Teleport lands when no other respawn is active, and at Prifddinas. */
+    static final WorldPoint LUMBRIDGE_RESPAWN = new WorldPoint(3221, 3218, 0);
+    static final WorldPoint PRIFDDINAS_RESPAWN = new WorldPoint(3265, 6077, 0);
+
+    /**
+     * Respawn Teleport has one row per respawn point, each gated on that point's
+     * *_SPAWN varbit. Prifddinas sets none of them, so it reads exactly like the
+     * Lumbridge default; the "Prifddinas respawn point" setting says which it is.
+     */
+    boolean checkRespawnGate(Transport transport) {
+        String info = transport.getDisplayInfo();
+        if (info == null || !info.toLowerCase().contains("respawn")) {
+            return true;
+        }
+        WorldPoint destination = transport.getDestination();
+        if (PRIFDDINAS_RESPAWN.equals(destination)) {
+            return respawnPrifddinas;
+        }
+        if (LUMBRIDGE_RESPAWN.equals(destination)) {
+            return !respawnPrifddinas;
+        }
+        return true;
     }
 
     /**
@@ -1456,8 +1497,12 @@ public class PathfinderConfig {
     private boolean isSpiritTreeRouteEnabled(Transport transport) {
         WorldPoint origin = transport.getOrigin();
         WorldPoint destination = transport.getDestination();
+        Set<String> planted = availableSpiritTrees;
         for (int i = 0; i < SPIRIT_TREE_DESTINATIONS_ORDERED.length; i++) {
-            if (!spiritTreeDestinationToggle(i)) {
+            // Off in settings, or not known to be planted and grown on this account.
+            boolean usable = spiritTreeDestinationToggle(i)
+                    && planted != null && planted.contains(SPIRIT_TREE_PATCH_NAMES[i]);
+            if (!usable) {
                 WorldPoint toggledPoint = SPIRIT_TREE_DESTINATIONS_ORDERED[i];
                 if ((destination != null && destination.equals(toggledPoint))
                         || (origin != null && origin.distanceTo2D(toggledPoint) <= 5)) {
@@ -2037,6 +2082,16 @@ public class PathfinderConfig {
         if (useSpiritTreeFarmingGuild) bits |= 1L << s;
         s++;
         if (avoidWilderness) bits |= 1L << s;
+        s++;
+        if (respawnPrifddinas) bits |= 1L << s;
+        // Planted spirit trees seen grown on this account: a change must re-evaluate them.
+        Set<String> planted = availableSpiritTrees;
+        s++;
+        if (planted != null) bits |= 1L << s;
+        for (String patch : SPIRIT_TREE_PATCH_NAMES) {
+            s++;
+            if (planted != null && planted.contains(patch)) bits |= 1L << s;
+        }
         return bits;
     }
 

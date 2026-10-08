@@ -876,6 +876,19 @@ public interface ShortestPathConfig extends Config {
         return true;
     }
 
+	@ConfigItem(
+			keyName = "respawnPrifddinas",
+			name = "Prifddinas respawn point",
+			description = "Turn on if your respawn point is Prifddinas.<br>"
+				+ "The game doesn't tell the client about a Prifddinas respawn,<br>"
+				+ "so Respawn Teleport would otherwise be planned to Lumbridge",
+			position = 33,
+			section = sectionSettings
+	)
+	default boolean respawnPrifddinas() {
+		return false;
+	}
+
     @ConfigSection(
             name = "Developer",
             description = "Optional — most users can ignore.",
