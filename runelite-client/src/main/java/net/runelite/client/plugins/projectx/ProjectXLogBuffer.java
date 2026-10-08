@@ -24,7 +24,7 @@ import java.util.List;
  */
 public final class ProjectXLogBuffer extends AppenderBase<ILoggingEvent>
 {
-    private static final int CAPACITY = 5000;
+    private static final int CAPACITY = 20000;
     private static final int STACK_LINES = 12;
     private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
 
@@ -97,10 +97,17 @@ public final class ProjectXLogBuffer extends AppenderBase<ILoggingEvent>
         }
     }
 
+    /** Where {@code ProjectX.log} writes: most scripts' status and debug lines go through it. */
+    private static final String SHARED_LOGGER = "net.runelite.client.plugins.projectx.ProjectX";
+    /** The walker, interactions and other helpers every script drives. */
+    private static final String SHARED_UTIL_PREFIX = "net.runelite.client.plugins.projectx.util.";
+
     /**
      * The last {@code maxLines} lines from the past {@code minutes} minutes that came
-     * from {@code packagePrefix} (the script itself), plus every warning and error
-     * from anywhere, which is where client-side causes show up.
+     * from {@code packagePrefix} (the script itself), from the shared Project X logger
+     * that scripts write through, from the client helpers a script drives (walking,
+     * clicking), plus every warning and error from anywhere, which is where
+     * client-side causes show up.
      */
     public static String recent(String packagePrefix, int minutes, int maxLines)
     {
@@ -115,7 +122,11 @@ public final class ProjectXLogBuffer extends AppenderBase<ILoggingEvent>
                     continue;
                 }
                 boolean fromScript = packagePrefix != null && line.logger != null && line.logger.startsWith(packagePrefix);
-                if (fromScript || line.level.isGreaterOrEqual(Level.WARN))
+                // A script's own trace usually goes through ProjectX.log, not its own
+                // logger; without this a report missed exactly what the script did.
+                boolean shared = line.logger != null
+                    && (line.logger.equals(SHARED_LOGGER) || line.logger.startsWith(SHARED_UTIL_PREFIX));
+                if (fromScript || shared || line.level.isGreaterOrEqual(Level.WARN))
                 {
                     picked.add(line);
                 }

@@ -35,6 +35,21 @@ public class ProjectXLogBufferTest
     }
 
     @Test
+    public void keepsWhatScriptsLogThroughTheSharedLoggerAndTheWalker()
+    {
+        // Mad Cow's dodge trace, like most scripts' status lines, goes through ProjectX.log.
+        LoggerFactory.getLogger("net.runelite.client.plugins.projectx.ProjectX").info("[Mad Cow][Dodge] event-time immediate CHARGE");
+        LoggerFactory.getLogger("net.runelite.client.plugins.projectx.util.walker.Rs2Walker").info("Walker clicked tile");
+        LoggerFactory.getLogger("net.runelite.client.plugins.gpu.GpuPlugin").info("unrelated core plugin line");
+
+        String recent = ProjectXLogBuffer.recent("net.runelite.client.plugins.projectx.kspmadcow", 30, 100);
+
+        assertTrue(recent, recent.contains("[Mad Cow][Dodge] event-time immediate CHARGE"));
+        assertTrue(recent, recent.contains("Walker clicked tile"));
+        assertFalse(recent, recent.contains("unrelated core plugin line"));
+    }
+
+    @Test
     public void includesStackTracesAndKeepsOnlyTheLastLines()
     {
         for (int i = 0; i < 50; i++)

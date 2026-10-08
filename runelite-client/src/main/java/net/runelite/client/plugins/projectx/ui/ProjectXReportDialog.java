@@ -52,7 +52,7 @@ final class ProjectXReportDialog
 
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final int LOG_MINUTES = 30;
-    private static final int LOG_LINES = 1500;
+    private static final int LOG_LINES = 3000;
 
     /** Settings whose values must never leave the machine. */
     private static final Pattern SECRET_KEY = Pattern.compile("(?i)(password|passwd|token|secret|pin|webhook|apikey|api_key|auth|cookie|session)");
