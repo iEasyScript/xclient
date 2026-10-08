@@ -1,6 +1,7 @@
 package net.runelite.client.plugins.projectx.shortestpath;
 
-import java.awt.Color;
+import net.runelite.client.plugins.projectx.ui.ProjectXTheme;
+
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -102,6 +103,12 @@ public class ShortestPathPanel extends PluginPanel
 		setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 		setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+		JPanel header = ProjectXTheme.header("Web Walker", "Pick a place to walk to",
+			ImageUtil.loadImageResource(ShortestPathPlugin.class, "panel_icon.png"));
+		// The sections below are centred; a left-aligned header in the same BoxLayout sits off to one side.
+		header.setAlignmentX(Component.CENTER_ALIGNMENT);
+		add(header);
+		add(Box.createRigidArea(new Dimension(0, 10)));
 		add(createCustomLocationPanel());
 		add(Box.createRigidArea(new Dimension(0, 10)));
 		add(createBankPanel());
@@ -127,9 +134,10 @@ public class ShortestPathPanel extends PluginPanel
 		JLabel titleLabel = new JLabel("<html><b>" + title + "</b></html>", imageIcon, JLabel.CENTER);
 		titleLabel.setHorizontalTextPosition(JLabel.RIGHT);
 		titleLabel.setVerticalTextPosition(JLabel.CENTER);
+		titleLabel.setForeground(ProjectXTheme.GOLD_HI);
 
 		Border emptyBorder = BorderFactory.createEmptyBorder(5, 5, 5, 5);
-		Border lineBorder = BorderFactory.createLineBorder(Color.GRAY);
+		Border lineBorder = BorderFactory.createLineBorder(ProjectXTheme.GOLD_DEEP);
 
 		return BorderFactory.createCompoundBorder(
 			BorderFactory.createCompoundBorder(

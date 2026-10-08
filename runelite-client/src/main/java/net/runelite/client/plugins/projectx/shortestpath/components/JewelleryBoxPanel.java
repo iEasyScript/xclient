@@ -1,12 +1,13 @@
 package net.runelite.client.plugins.projectx.shortestpath.components;
 
+import net.runelite.client.plugins.projectx.ui.ProjectXTheme;
+
 
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.util.poh.data.JewelleryBoxType;
 import net.runelite.client.plugins.projectx.util.poh.data.PohTeleport;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.util.HashSet;
 import java.util.Set;
@@ -20,7 +21,7 @@ public class JewelleryBoxPanel extends JPanel {
     private JComboBox<JewelleryBoxType> jewelleryBoxCmb;
 
     public JewelleryBoxPanel() {
-        setBorder(new TitledBorder("Jewellery Box"));
+        setBorder(ProjectXTheme.section("Jewellery Box"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;

@@ -1,5 +1,7 @@
 package net.runelite.client.plugins.projectx.shortestpath;
 
+import net.runelite.client.plugins.projectx.ui.ProjectXTheme;
+
 
 import net.runelite.api.Skill;
 import net.runelite.api.coords.WorldPoint;
@@ -15,6 +17,7 @@ import net.runelite.client.plugins.projectx.util.poh.data.NexusPortal;
 import net.runelite.client.plugins.projectx.util.poh.data.PohPortal;
 import net.runelite.client.plugins.projectx.util.poh.data.PohTeleport;
 import net.runelite.client.ui.PluginPanel;
+import net.runelite.client.util.ImageUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -52,6 +55,14 @@ public class PohPanel extends PluginPanel {
 
         // Create scrollable content
         mainScrollPane = createMainScrollPane();
+        JPanel header = ProjectXTheme.header("POH Web Config", "Your house teleports, for the walker",
+            ImageUtil.loadImageResource(ShortestPathPlugin.class, "poh_icon.png"));
+        header.setBorder(BorderFactory.createCompoundBorder(header.getBorder(), BorderFactory.createEmptyBorder(0, 4, 0, 4)));
+        JPanel top = new JPanel(new BorderLayout());
+        top.setOpaque(false);
+        top.setBorder(BorderFactory.createEmptyBorder(10, 6, 0, 6));
+        top.add(header, BorderLayout.CENTER);
+        add(top, BorderLayout.NORTH);
         add(mainScrollPane, BorderLayout.CENTER);
         add(buildTopBar(), BorderLayout.SOUTH);
     }
@@ -135,6 +146,7 @@ public class PohPanel extends PluginPanel {
     private JButton buildTopBar() {
         detectButton = new JButton("Detect available POH teleports");
         detectButton.addActionListener(e -> detectPortalsFromPOH());
+        ProjectXTheme.stylePrimary(detectButton);
 
         return detectButton;
     }

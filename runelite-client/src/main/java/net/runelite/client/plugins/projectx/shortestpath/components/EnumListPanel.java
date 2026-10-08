@@ -1,11 +1,12 @@
 package net.runelite.client.plugins.projectx.shortestpath.components;
 
+import net.runelite.client.plugins.projectx.ui.ProjectXTheme;
+
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.shortestpath.ShortestPathConfig;
 import net.runelite.client.plugins.projectx.util.poh.data.PohTeleport;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
@@ -24,7 +25,7 @@ public class EnumListPanel<T extends Enum<T> & PohTeleport> extends JPanel {
     public EnumListPanel(Class<T> enumClass, String title) {
         this.title = title;
         this.enumClass = enumClass;
-        setBorder(new TitledBorder(title));
+        setBorder(ProjectXTheme.section(title));
         setLayout(new GridBagLayout());
 
         teleportList = new JList<>(selectedModel);

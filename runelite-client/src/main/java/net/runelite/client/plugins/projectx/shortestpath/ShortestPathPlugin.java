@@ -242,7 +242,7 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
 
         final BufferedImage pohIcon = ImageUtil.loadImageResource(ShortestPathPlugin.class, "poh_icon.png");
         pohNavButton = NavigationButton.builder()
-                .tooltip("Poh Web Config")
+                .tooltip("POH Web Config")
                 .icon(pohIcon)
                 .priority(9)
                 .panel(pohPanel)

@@ -1,5 +1,7 @@
 package net.runelite.client.plugins.projectx.shortestpath.components;
 
+import net.runelite.client.plugins.projectx.ui.ProjectXTheme;
+
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.shortestpath.ShortestPathPlugin;
@@ -7,7 +9,6 @@ import net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectM
 import net.runelite.client.ui.ColorScheme;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
 
 import static net.runelite.api.gameval.ObjectID.POH_EXIT_PORTAL;
@@ -18,7 +19,7 @@ public class ExitTilePanel extends JPanel {
     private JTextField tileField;
 
     public ExitTilePanel() {
-        setBorder(new TitledBorder("Exit Portal Location"));
+        setBorder(ProjectXTheme.section("Exit Portal Location"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.gridx = 0;
         gbc.gridy = 0;

@@ -100,21 +100,6 @@ public class ProjectXHomePanel extends PluginPanel
         add(left(balanceCard()));
         add(gap(14));
 
-        JPanel scriptsHeading = new JPanel(new BorderLayout());
-        scriptsHeading.setOpaque(false);
-        scriptsHeading.add(eyebrow("My scripts"), BorderLayout.WEST);
-        scriptCount.setFont(FontManager.getRunescapeSmallFont());
-        scriptCount.setForeground(ProjectXTheme.INK_FAINT);
-        scriptsHeading.add(scriptCount, BorderLayout.EAST);
-        scriptsHeading.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
-        add(left(scriptsHeading));
-        add(gap(6));
-
-        scriptList.setLayout(new BoxLayout(scriptList, BoxLayout.Y_AXIS));
-        scriptList.setOpaque(false);
-        add(left(scriptList));
-        add(gap(14));
-
         add(left(eyebrow("Project X")));
         add(gap(6));
         JPanel actions = new JPanel(new GridLayout(0, 2, 6, 6));
@@ -131,8 +116,7 @@ public class ProjectXHomePanel extends PluginPanel
         actions.add(button("Dashboard", false, () -> browse(ProjectXSite.dashboard())));
         actions.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
         add(left(actions));
-        add(gap(14));
-
+        add(gap(8));
         JLabel footer = new JLabel("Project X " + Objects.toString(RuneLiteProperties.getProjectXVersion(), "") + "  ·  xclient.dev");
         footer.setFont(FontManager.getRunescapeSmallFont());
         footer.setForeground(ProjectXTheme.INK_FAINT);
@@ -146,6 +130,23 @@ public class ProjectXHomePanel extends PluginPanel
             }
         });
         add(left(footer));
+        add(gap(16));
+
+        // Your scripts last: however many there are, the buttons above stay in reach.
+        JPanel scriptsHeading = new JPanel(new BorderLayout());
+        scriptsHeading.setOpaque(false);
+        scriptsHeading.add(eyebrow("My scripts"), BorderLayout.WEST);
+        scriptCount.setFont(FontManager.getRunescapeSmallFont());
+        scriptCount.setForeground(ProjectXTheme.INK_FAINT);
+        scriptsHeading.add(scriptCount, BorderLayout.EAST);
+        scriptsHeading.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
+        add(left(scriptsHeading));
+        add(gap(6));
+
+        scriptList.setLayout(new BoxLayout(scriptList, BoxLayout.Y_AXIS));
+        scriptList.setOpaque(false);
+        add(left(scriptList));
+        add(gap(14));
 
         timer = new Timer(REFRESH_MS, e -> refresh());
         timer.setInitialDelay(0);

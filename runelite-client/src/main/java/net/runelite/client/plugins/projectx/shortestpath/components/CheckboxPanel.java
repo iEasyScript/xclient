@@ -1,12 +1,13 @@
 package net.runelite.client.plugins.projectx.shortestpath.components;
 
+import net.runelite.client.plugins.projectx.ui.ProjectXTheme;
+
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.shortestpath.ShortestPathConfig;
 import net.runelite.client.plugins.projectx.util.poh.PohTeleports;
 import net.runelite.client.plugins.projectx.util.poh.data.*;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -33,7 +34,7 @@ public class CheckboxPanel extends JPanel {
     private final JCheckBox wildernessObeliskCb;
 
     public CheckboxPanel() {
-        setBorder(new TitledBorder("House Features"));
+        setBorder(ProjectXTheme.section("House Features"));
         GridBagLayout layout = new GridBagLayout();
         setLayout(layout);
 
