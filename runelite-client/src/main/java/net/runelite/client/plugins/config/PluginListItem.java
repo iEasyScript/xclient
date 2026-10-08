@@ -26,7 +26,7 @@ package net.runelite.client.plugins.config;
 
 import lombok.Getter;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.PluginManager;
+import net.runelite.client.plugins.projectx.AlwaysOnPlugins;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.ImageUtil;
@@ -158,7 +158,7 @@ class PluginListItem extends JPanel implements SearchablePlugin
 			if (pluginDescriptor.alwaysOn()) {
 				onOffToggle.setEnabled(false);
 				onOffToggle.setSelected(true);
-				onOffToggle.setToolTipText(PluginManager.ALWAYS_ON_TOOLTIP);
+				onOffToggle.setToolTipText(AlwaysOnPlugins.TOOLTIP);
 			}
 			onOffToggle.addActionListener(i ->
 			{

@@ -3,6 +3,7 @@ package net.runelite.client.plugins;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.RuneLiteConfig;
 import net.runelite.client.eventbus.EventBus;
+import net.runelite.client.plugins.projectx.AlwaysOnPlugins;
 import net.runelite.client.plugins.projectx.ProjectXPlugin;
 import net.runelite.client.plugins.projectx.inventorysetups.MInventorySetupsPlugin;
 import net.runelite.client.plugins.projectx.shortestpath.ShortestPathPlugin;
@@ -23,6 +24,11 @@ public class PluginManagerAlwaysOnTest
 {
 	@PluginDescriptor(name = "Always On Fixture", alwaysOn = true, enabledByDefault = false)
 	static class AlwaysOnFixturePlugin extends Plugin
+	{
+	}
+
+	@PluginDescriptor(name = "External Always On Fixture", alwaysOn = true, isExternal = true)
+	static class ExternalAlwaysOnFixturePlugin extends Plugin
 	{
 	}
 
@@ -78,6 +84,19 @@ public class PluginManagerAlwaysOnTest
 	{
 		assertTrue(pluginManager.isPluginAlwaysOn(new AlwaysOnFixturePlugin()));
 		assertFalse(pluginManager.isPluginAlwaysOn(new RegularFixturePlugin()));
+	}
+
+	@Test
+	public void externalAlwaysOnPluginIsNotLocked()
+	{
+		ExternalAlwaysOnFixturePlugin plugin = new ExternalAlwaysOnFixturePlugin();
+
+		assertFalse(pluginManager.isPluginAlwaysOn(plugin));
+		assertFalse(AlwaysOnPlugins.isLocked(plugin.getClass().getAnnotation(PluginDescriptor.class)));
+
+		pluginManager.setPluginEnabled(plugin, false);
+
+		verify(configManager).setConfiguration(RuneLiteConfig.GROUP_NAME, "externalalwaysonfixtureplugin", "false");
 	}
 
 	@Test

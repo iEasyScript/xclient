@@ -38,6 +38,7 @@ import net.runelite.client.events.ProfileChanged;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
+import net.runelite.client.plugins.projectx.AlwaysOnPlugins;
 import net.runelite.client.plugins.projectx.ProjectXConfigManager;
 import net.runelite.client.plugins.projectx.breakhandler.breakhandlerv2.BreakHandlerV2Config;
 import net.runelite.client.plugins.projectx.breakhandler.breakhandlerv2.PluginStopHelper;
@@ -252,11 +253,7 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
         if (pluginConfig.getPlugin() != null) {
             pluginToggle.setConflicts(pluginConfig.getConflicts());
             pluginToggle.setSelected(pluginManager.isPluginEnabled(pluginConfig.getPlugin()));
-            if (pluginManager.isPluginAlwaysOn(pluginConfig.getPlugin())) {
-                pluginToggle.setSelected(true);
-                pluginToggle.setEnabled(false);
-                pluginToggle.setToolTipText(PluginManager.ALWAYS_ON_TOOLTIP);
-            }
+            applyAlwaysOnLock();
             pluginToggle.addItemListener(i ->
             {
                 if (pluginToggle.isSelected()) {
@@ -898,7 +895,17 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
     public void onPluginChanged(PluginChanged event) {
         if (event.getPlugin() == this.pluginConfig.getPlugin()) {
             SwingUtilities.invokeLater(() ->
-                    pluginToggle.setSelected(event.isLoaded()));
+            {
+                pluginToggle.setSelected(event.isLoaded());
+                applyAlwaysOnLock();
+            });
+        }
+    }
+
+    private void applyAlwaysOnLock() {
+        if (pluginManager.isPluginAlwaysOn(pluginConfig.getPlugin())) {
+            pluginToggle.setEnabled(false);
+            pluginToggle.setToolTipText(AlwaysOnPlugins.TOOLTIP);
         }
     }
 

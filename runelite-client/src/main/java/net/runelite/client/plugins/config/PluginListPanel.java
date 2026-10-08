@@ -288,10 +288,6 @@ class PluginListPanel extends PluginPanel {
     }
 
     void stopPlugin(Plugin plugin) {
-        if (pluginManager.isPluginAlwaysOn(plugin)) {
-            return;
-        }
-
         pluginManager.setPluginEnabled(plugin, false);
 
         try {
