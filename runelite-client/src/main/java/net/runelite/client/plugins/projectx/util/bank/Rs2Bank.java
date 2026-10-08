@@ -172,12 +172,14 @@ public class Rs2Bank {
      */
     public static void invalidateBankMirrorCache(String reason)
     {
-        rs2BankData.setEmpty();
-        BANK_LIVE_EPOCH.set(0);
-        validLoadedCache.set(false);
-        rsProfileKey.set("");
-        bankLastOpenedAt = 0L;
-        lastSavedSnapshot = null;
+        synchronized (lock) {
+            rs2BankData.setEmpty();
+            BANK_LIVE_EPOCH.set(0);
+            validLoadedCache.set(false);
+            rsProfileKey.set("");
+            bankLastOpenedAt = 0L;
+            lastSavedSnapshot = null;
+        }
         if (log.isInfoEnabled())
         {
             String suffix = (reason == null || reason.isBlank()) ? "" : " reason=" + reason;
