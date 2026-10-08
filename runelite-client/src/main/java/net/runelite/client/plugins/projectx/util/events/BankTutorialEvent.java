@@ -1,38 +1,48 @@
 package net.runelite.client.plugins.projectx.util.events;
 
-import net.runelite.api.annotations.Component;
+import net.runelite.api.Client;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.plugins.projectx.BlockingEvent;
 import net.runelite.client.plugins.projectx.BlockingEventPriority;
+import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.util.Global;
 import net.runelite.client.plugins.projectx.util.widget.Rs2Widget;
 
-import java.util.List;
-
 public class BankTutorialEvent implements BlockingEvent {
-    @Component
-    private final int BANK_TUTORIAL_BUTTON_COMPONENT_ID = 43515912;
+
+    static final String CLOSE_TEXT = "Close";
 
     @Override
     public boolean validate() {
-        return Rs2Widget.isWidgetVisible(BANK_TUTORIAL_BUTTON_COMPONENT_ID);
+        return findCloseButton() != null;
     }
 
     @Override
     public boolean execute() {
-        Widget bankTutorialWidget = Rs2Widget.getWidget(BANK_TUTORIAL_BUTTON_COMPONENT_ID);
-        if (bankTutorialWidget == null) return false;
-        
-        Widget closebankTutorialWidget = Rs2Widget.findWidget("Close", List.of(bankTutorialWidget));
-        if (closebankTutorialWidget == null) return false;
-        Rs2Widget.clickWidget(closebankTutorialWidget);
-        
-        Global.sleepUntil(() -> !Rs2Widget.isWidgetVisible(BANK_TUTORIAL_BUTTON_COMPONENT_ID), 10000);
-        return !validate();
+        Widget closeButton = findCloseButton();
+        if (closeButton == null) return true;
+
+        Rs2Widget.clickWidget(closeButton);
+        return Global.sleepUntil(() -> findCloseButton() == null, 10000);
     }
 
     @Override
     public BlockingEventPriority priority() {
         return BlockingEventPriority.HIGH;
+    }
+
+    private static Widget findCloseButton() {
+        if (!ProjectX.isLoggedIn()) return null;
+        return ProjectX.getClientThread()
+                .runOnClientThreadOptional(() -> findCloseButton(ProjectX.getClient()))
+                .orElse(null);
+    }
+
+    static Widget findCloseButton(Client client) {
+        if (client == null) return null;
+        Widget informationBox = client.getWidget(InterfaceID.Screenhighlight.INFORMATION_BOX);
+        if (informationBox == null || informationBox.isHidden()) return null;
+        return Rs2Widget.searchChildren(CLOSE_TEXT, informationBox, false);
     }
 }
