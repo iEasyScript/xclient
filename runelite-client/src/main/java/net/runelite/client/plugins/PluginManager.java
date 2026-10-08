@@ -510,7 +510,7 @@ public class PluginManager {
         final String keyName = Strings.isNullOrEmpty(pluginDescriptor.configName()) ? plugin.getClass().getSimpleName() : pluginDescriptor.configName();
         final String value = configManager.getConfiguration(RuneLiteConfig.GROUP_NAME, keyName.toLowerCase());
 
-        if (pluginDescriptor.alwaysOn())
+        if (isPluginAlwaysOn(plugin))
             return true;
 
         return value != null ? Boolean.parseBoolean(value) : pluginDescriptor.enabledByDefault();

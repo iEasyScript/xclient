@@ -100,6 +100,14 @@ public class PluginManagerAlwaysOnTest
 	}
 
 	@Test
+	public void externalAlwaysOnPluginHonorsSavedDisabledState()
+	{
+		when(configManager.getConfiguration(RuneLiteConfig.GROUP_NAME, "externalalwaysonfixtureplugin")).thenReturn("false");
+
+		assertFalse(pluginManager.isPluginEnabled(new ExternalAlwaysOnFixturePlugin()));
+	}
+
+	@Test
 	public void walkerInventorySetupsAndProjectXStayAlwaysOn()
 	{
 		assertTrue(ShortestPathPlugin.class.getAnnotation(PluginDescriptor.class).alwaysOn());

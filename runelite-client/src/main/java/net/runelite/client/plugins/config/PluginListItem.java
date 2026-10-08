@@ -155,7 +155,7 @@ class PluginListItem extends JPanel implements SearchablePlugin
 		if (pluginConfig.getPlugin() != null)
 		{
 			PluginDescriptor pluginDescriptor = pluginConfig.getPlugin().getClass().getAnnotation(PluginDescriptor.class);
-			if (pluginDescriptor.alwaysOn()) {
+			if (AlwaysOnPlugins.isLocked(pluginDescriptor)) {
 				onOffToggle.setEnabled(false);
 				onOffToggle.setSelected(true);
 				onOffToggle.setToolTipText(AlwaysOnPlugins.TOOLTIP);
