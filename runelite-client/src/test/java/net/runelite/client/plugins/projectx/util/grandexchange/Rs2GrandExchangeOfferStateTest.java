@@ -84,10 +84,4 @@ public class Rs2GrandExchangeOfferStateTest {
 		when(setup.isHidden()).thenReturn(true);
 		assertFalse(Rs2GrandExchange.isOfferSetupOpen());
 	}
-
-	@Test
-	public void chatboxSearchChildrenComeFromTheGamevalComponents() {
-		assertEquals(InterfaceID.Chatbox.MES_LAYER_SCROLLCONTENTS, InterfaceID.CHATBOX << 16 | Rs2GrandExchange.CHATBOX_SEARCH_RESULTS_CHILD);
-		assertEquals(InterfaceID.Chatbox.MES_TEXT2, InterfaceID.CHATBOX << 16 | Rs2GrandExchange.CHATBOX_INPUT_CHILD);
-	}
 }

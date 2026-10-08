@@ -499,8 +499,9 @@ public class Rs2GrandExchange {
 
             int times = absPercent / 5;
             IntStream.range(0, times).forEach(i -> {
+                long priceBeforeClick = getOfferPrice();
                 Rs2Widget.clickWidget(adjust5Widget);
-                sleepUntil(() -> GrandExchangeWidget.hasOfferPriceChanged(basePrice), 1600);
+                sleepUntil(() -> GrandExchangeWidget.hasOfferPriceChanged(priceBeforeClick), 1600);
             });
         } else {
             Widget adjustXWidget = isIncrease
