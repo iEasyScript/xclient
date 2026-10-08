@@ -242,7 +242,6 @@ public class Rs2TileItemModel implements TileItem, IEntity {
                     index = i;
                     break;
                 }
-                if (index == -1) return false;
             } else {
                 for (int i = 0; i < groundActions.length; i++) {
                     String groundAction = groundActions[i];
@@ -251,6 +250,8 @@ public class Rs2TileItemModel implements TileItem, IEntity {
                     break;
                 }
             }
+
+            if (index == -1) return false;
 
             if (!pickup && ProjectX.getClientThread().runOnClientThreadOptional(
                     () -> ProjectX.getClient().isWidgetSelected()).orElse(false)) {
