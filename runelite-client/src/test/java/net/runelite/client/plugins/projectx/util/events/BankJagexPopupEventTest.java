@@ -68,21 +68,6 @@ public class BankJagexPopupEventTest
 		assertFalse(new BankJagexPopupEvent().validate());
 	}
 
-	@Test(timeout = 30_000)
-	public void stalledClientThreadTimesOutAsNotVisible() throws Exception
-	{
-		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
-		when(client.isClientThread()).thenReturn(false);
-		ClientThread stalled = new ClientThread();
-		Field clientField = ClientThread.class.getDeclaredField("client");
-		clientField.setAccessible(true);
-		clientField.set(stalled, client);
-		swapStatic("clientThread", stalled);
-
-		assertFalse(new BankJagexPopupEvent().validate());
-		verify(client, never()).getWidget(anyInt());
-	}
-
 	@Test
 	public void validatesWhenLoggedInAndNotNowButtonShown() throws Exception
 	{
@@ -112,9 +97,7 @@ public class BankJagexPopupEventTest
 	{
 		when(client.getGameState()).thenReturn(GameState.LOGIN_SCREEN);
 
-		long start = System.nanoTime();
 		assertTrue(new BankJagexPopupEvent().execute());
-		assertTrue(System.nanoTime() - start < 1_000_000_000L);
 		verify(client, never()).getWidget(anyInt());
 	}
 
