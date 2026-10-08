@@ -359,6 +359,10 @@ public class Rs2Walker {
         // interim=<old goal> camping at Clock Tower when the script restarts walks every ~40s.
         clearInterimTarget("walk-start");
         resetRouteProgress();
+        // Successful crossings belong to the previous route, too. Keeping their suppression window
+        // hides a self-closing entrance on a return walk and lets scans select the door beyond it.
+        // The per-edge attempt cooldown (routeState.lastDoorAttempt*) remains intact.
+        recentlyOpenedStationaryDoors.clear();
         synchronized (expectedTransportDestinations) {
             expectedTransportDestinations.clear();
         }
