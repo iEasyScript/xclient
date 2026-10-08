@@ -277,7 +277,6 @@ net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findOb
 net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObjectByIdAndDistance$8(int, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
 net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObjectByImposter$15(int, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
 net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findObjectByLocation$6(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$findReachableObject$13(Rs2WorldPoint, GameObject): int  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
 net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getDecorativeObject$69(int, DecorativeObject): boolean  ->  net.runelite.api.DecorativeObject#getId(): int
 net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getDecorativeObject$70(Set, DecorativeObject): boolean  ->  net.runelite.api.DecorativeObject#getId(): int
 net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject#lambda$getDecorativeObject$71(Set, DecorativeObject): boolean  ->  net.runelite.api.DecorativeObject#getId(): int
