@@ -190,7 +190,7 @@ public class WildernessElite extends ComplexStateQuestHelper
 			inResource,
 			"<col=0040ff>Achievement Diary Stage Task - Current stage: 4.</col>"
 		);
-		((ChatMessageRequirement) caughtCrab).setInvalidateRequirement(
+		((ChatMessageRequirement) barsSmelted).setInvalidateRequirement(
 			new ChatMessageRequirement(
 				new Conditions(LogicType.NOR, inResource),
 				"<col=0040ff>Achievement Diary Stage Task - Current stage: 4.</col>"
@@ -201,7 +201,7 @@ public class WildernessElite extends ComplexStateQuestHelper
 			inResource,
 			"<col=0040ff>Achievement Diary Stage Task - Current stage: 2.</col>"
 		);
-		((ChatMessageRequirement) caughtCrab).setInvalidateRequirement(
+		((ChatMessageRequirement) runiteFromGolems).setInvalidateRequirement(
 			new ChatMessageRequirement(
 				new Conditions(LogicType.NOR, inResource),
 				"<col=0040ff>Achievement Diary Stage Task - Current stage: 2.</col>"
