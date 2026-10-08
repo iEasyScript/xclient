@@ -2,6 +2,7 @@ package net.runelite.client.plugins.projectx.util.player;
 
 import lombok.Getter;
 import net.runelite.api.*;
+import net.runelite.api.Point;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
@@ -42,6 +43,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -408,9 +411,8 @@ public class Rs2Player {
         return false;
     }
 
-    private static final java.util.concurrent.locks.ReentrantLock RUN_TOGGLE_LOCK =
-            new java.util.concurrent.locks.ReentrantLock();
-    private static final long RUN_TOGGLE_RETRY_NANOS = java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(1200);
+    private static final ReentrantLock RUN_TOGGLE_LOCK = new ReentrantLock();
+    private static final long RUN_TOGGLE_RETRY_NANOS = TimeUnit.MILLISECONDS.toNanos(1200);
     private static long lastRunToggleAttempt;
     private static boolean runToggleAttempted;
 
@@ -434,7 +436,7 @@ public class Rs2Player {
             if (runToggleAttempted && System.nanoTime() - lastRunToggleAttempt < RUN_TOGGLE_RETRY_NANOS) {
                 return false;
             }
-            net.runelite.api.Point target = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            Point target = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
                 Client client = ProjectX.getClient();
                 if (client.getGameState() != GameState.LOGGED_IN
                         || (client.getVarpValue(173) == 1) == toggle
@@ -447,7 +449,7 @@ public class Rs2Player {
                 int x = bounds.x + bounds.width / 2;
                 int y = bounds.y + bounds.height / 2;
                 if (x < 0 || y < 0 || x >= client.getCanvasWidth() || y >= client.getCanvasHeight()) return null;
-                return new net.runelite.api.Point(x, y);
+                return new Point(x, y);
             }).orElse(null);
             if (target == null) return false;
             try {

@@ -4213,6 +4213,7 @@ public class Rs2Walker {
 
     static final SceneClickPolicy SCENE_CLICKS = SceneClickPolicy.create();
     static final int SCENE_WALK_CONFIRM_TIMEOUT_MS = 600;
+    static final int SCENE_WALK_CONFIRM_POLL_MS = 25;
 
     private static boolean walkFastCanvasOnScreenOnly(WorldPoint worldPoint, boolean toggleRun) {
         if (worldPoint == null || SCENE_CLICKS.isSuppressed(System.currentTimeMillis())) {
@@ -4274,7 +4275,7 @@ public class Rs2Walker {
         sleepUntil(() -> {
             latest[0] = snapshot.get();
             return SceneClickPolicy.isSettled(before, latest[0][0], latest[0][1]);
-        }, SCENE_WALK_CONFIRM_TIMEOUT_MS);
+        }, () -> { }, SCENE_WALK_CONFIRM_TIMEOUT_MS, SCENE_WALK_CONFIRM_POLL_MS);
         return latest[0];
     }
 
