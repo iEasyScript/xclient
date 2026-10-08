@@ -71,9 +71,9 @@
 
 # River Kelda
 2841 10129 0	2892 10225 0	Travel;Dwarven Boatman;13826				The Giant Dwarf		6
-2888 10226 0	2838 10126 0	Travel;Dwarven Boatman;17768				The Giant Dwarf		6
-2839 10129 0	2837 10143 0	Travel;Dwarven Ferryman;13825			2 Coins	The Giant Dwarf		6
-2855 10146 0	2863 10133 0	Travel;Dwarven Ferryman;13829			2 Coins	The Giant Dwarf		6
+2888 10226 0	2838 10127 0	Travel;Dwarven Boatman;17768				The Giant Dwarf		6
+2837 10128 0	2837 10143 0	Travel;Dwarven Ferryman;13825			2 Coins	The Giant Dwarf		6
+2855 10145 0	2863 10133 0	Travel;Dwarven Ferryman;13829			2 Coins	The Giant Dwarf		6
 									
 # Fossil Island, Lithkren									
 3660 3848 0	3583 3973 0	Travel;Rowboat;29916				Dragon Slayer II		5	
@@ -84,14 +84,14 @@
 # Fossil Island, Underwater									
 3724 3807 0	3734 3893 0	Travel;Rowboat;30914						4	2. North of Island
 3734 3893 0	3724 3807 0	Travel;Rowboat;30915						4	2. The Camp
-3734 3893 0	3763 3899 0	Travel;Rowboat;30915						4	3. To Sea
+3734 3893 0	3764 3899 0	Travel;Rowboat;30915						4	3. To Sea
 3763 3899 0	3734 3893 0	Travel;Rowboat;30919						3	2. North of Island
 3724 3807 0	3763 3899 0	Travel;Rowboat;30914						4	4. To Sea
 3763 3899 0	3724 3807 0	Travel;Rowboat;30919						4	3. The Camp
 									
 # Hosidius, Crabclaw Isle									
 1783 3458 0	1779 3417 0	Travel;Sandicrahb;7483						5	
-1779 3417 0	1783 3458 0	Travel;Sandicrahb;7484						5	
+1779 3417 0	1784 3458 0	Travel;Sandicrahb;7484						5	
 									
 # Crash Island, Ape Atoll									
 2892 2724 0	2803 2706 0	Travel;Lumdo;1454						5	
@@ -113,14 +113,14 @@
 1342 3645 0	1369 3639 0	Board;Boaty;33614						5	Molch Island
 1342 3645 0	1384 3665 0	Board;Boaty;33614						5	Battlefront
 1342 3645 0	1408 3612 0	Board;Boaty;33614						5	Shayzien
-1369 3639 0	1342 3645 0	Board;Boaty;33614						5	Molch
+1369 3639 0	1341 3645 0	Board;Boaty;33614						5	Molch
 1369 3639 0	1384 3665 0	Board;Boaty;33614						5	Battlefront
 1369 3639 0	1408 3612 0	Board;Boaty;33614						5	Shayzien
 1384 3665 0	1369 3639 0	Board;Boaty;33614						5	Molch Island
-1384 3665 0	1342 3645 0	Board;Boaty;33614						5	Molch
+1384 3665 0	1341 3645 0	Board;Boaty;33614						5	Molch
 1384 3665 0	1408 3612 0	Board;Boaty;33614						5	Shayzien
 1408 3612 0	1369 3639 0	Board;Boaty;33614						5	Molch Island
-1408 3612 0	1342 3645 0	Board;Boaty;33614						5	Molch
+1408 3612 0	1341 3645 0	Board;Boaty;33614						5	Molch
 1408 3612 0	1384 3665 0	Board;Boaty;33614						5	Battlefront
 									
 # Burgh de Rott, Meiyerditch, Icyene Graveyard, Slepe									
@@ -149,3 +149,34 @@
 3661 3278 0	3671 3542 0	Travel;Row boat;32602			10000 Coins			5	
 3661 3278 0	3671 3542 0	Travel;Row boat;32602			10000 Coins			5	
 3661 3278 0	3671 3542 0	Travel;Row boat;32602			10000 Coins			5
+
+# Imported from Skretzo/shortest-path c31e3eff5c (boats.tsv)
+# Hosidius, Crabclaw Isle
+1783 3458 0	1778 3417 0	Travel;Sandicrahb;7483			10000 Coins			5
+1783 3458 0	1778 3417 0	Travel;Sandicrahb;7483					7930=1	5
+# Rowboat over Custodia's lake
+1256 3394 0	1282 3385 0	Travel;Rowboat;57272						5
+1256 3395 0	1282 3385 0	Travel;Rowboat;57272						5
+1256 3396 0	1282 3385 0	Travel;Rowboat;57272						5
+1281 3385 0	1256 3395 0	Travel;Rowboat;57271						5
+1282 3385 0	1256 3395 0	Travel;Rowboat;57271						5
+1283 3385 0	1256 3395 0	Travel;Rowboat;57271						5
+# Kathy Corkat boat between Piscatoris and Gnome Stronghold (50 coins outbound before Swan Song varbit 2098=200)
+2368 3486 0	2357 3641 0	Travel;Kathy Corkat;4298			50 Coins		2098<200	10	Piscatoris
+2368 3486 0	2357 3641 0	Travel;Kathy Corkat;4298					2098=200	10	Piscatoris
+2357 3641 0	2368 3486 0	Travel;Kathy Corkat;4299						10	Gnome Stronghold
+# Vatrachos Island Boat
+1773 2961 0	1877 2975 0	Travel;Rowboat;58635					18351=1	5
+1877 2975 0	1773 2961 0	Travel;Rowboat;58634					18351=1	5
+# Angler's Retreat Boat
+2543 2844 0	2471 2724 0	Travel;Rowboat;58637					18355=1	5
+2471 2724 0	2543 2844 0	Travel;Rowboat;58636					18355=1	5
+# Tear of the Soul Boat
+2291 2796 0	2321 2779 0	Travel;Rowboat;58639					18356=1	5
+2321 2779 0	2291 2796 0	Travel;Rowboat;58638					18356=1	5
+# Ynysdail Boat
+2218 3424 0	2227 3469 0	Travel;Rowboat;58641					18370=1	5
+2227 3469 0	2218 3424 0	Travel;Rowboat;58640					18370=1	5
+# Buccaneer's Haven Boat
+2203 3803 0	2086 3689 0	Travel;Rowboat;58643					18371=1	5
+2086 3689 0	2203 3803 0	Travel;Rowboat;58642					18371=1	5

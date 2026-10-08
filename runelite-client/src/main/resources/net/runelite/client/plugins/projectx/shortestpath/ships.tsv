@@ -51,3 +51,11 @@
 # Sunset Coast, Aldarin								
 1496 2985 0	1446 2976 1	Travel;Antonia;13984		20 Coins		Y	6	Aldarin
 1442 2977 0	1491 2985 1	Travel;Antonia;13985		20 Coins		Y	6	Sunset Coast
+
+# Imported from Skretzo/shortest-path c31e3eff5c (ships.tsv)
+# Port Sarim, Pandemonium
+3029 3217 0	3064 3003 0	The Pandemonium;Captain Tobias;14979		30 Coins	Pandemonium		10	Pandemonium
+3064 3003 0	3032 3217 1	Port Sarim;Seaman Morris;8631		30 Coins	Pandemonium		10	Port Sarim
+# Musa Point, Pandemonium
+2956 3146 0	3064 3003 0	The Pandemonium;Customs officer;14985		30 Coins	Pandemonium		10	Pandemonium
+3064 3003 0	2956 3143 1	Musa Point;Seaman Morris;8631		30 Coins	Pandemonium		10	Musa Point

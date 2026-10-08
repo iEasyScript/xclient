@@ -99,3 +99,19 @@
 3232 9312 0	3233 2887 0	Use;Portal;6550				1		
 3185 3472 0	1760 5487 0	Enter-member;Clan hall portal;41724			933>1	8		
 1760 5487 0	3185 3472 0	Leave;Portal;41617				8		
+
+# Imported from Skretzo/shortest-path c31e3eff5c (teleportation_portals.tsv)
+# Temple of the Eye
+3104 9573 0	3615 9470 0	Enter;Portal;43841		Temple of the Eye		1	Y
+3616 9470 0	3104 9573 0	Enter;Portal;43694		Temple of the Eye		1	Y
+3614 9470 0	3104 9573 0	Enter;Portal;43694		Temple of the Eye		1	Y
+# Myths' Guild Portals
+2456 2855 2	2904 3512 0	Enter;Portal of Heroes;31621		Dragon Slayer II		1	Y	Heroes' Guild
+2456 2854 2	2904 3512 0	Enter;Portal of Heroes;31621		Dragon Slayer II		1	Y	Heroes' Guild
+2456 2853 2	2904 3512 0	Enter;Portal of Heroes;31621		Dragon Slayer II		1	Y	Heroes' Guild
+2458 2855 2	3191 3365 0	Enter;Portal of Champions;31618		Dragon Slayer II		1	Y	Champions' Guild
+2457 2855 2	3191 3365 0	Enter;Portal of Champions;31618		Dragon Slayer II		1	Y	Champions' Guild
+2456 2855 2	3191 3365 0	Enter;Portal of Champions;31618		Dragon Slayer II		1	Y	Champions' Guild
+2458 2855 2	2729 3367 0	Enter;Portal of Legends;31622		Dragon Slayer II		1	Y	Legends' Guild
+2458 2854 2	2729 3367 0	Enter;Portal of Legends;31622		Dragon Slayer II		1	Y	Legends' Guild
+2458 2853 2	2729 3367 0	Enter;Portal of Legends;31622		Dragon Slayer II		1	Y	Legends' Guild
