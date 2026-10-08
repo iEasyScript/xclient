@@ -26,6 +26,7 @@ package net.runelite.client.plugins.projectx.ui;
 
 import lombok.Getter;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.config.SearchablePlugin;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.util.ImageUtil;
@@ -189,6 +190,7 @@ class ProjectXPluginListItem extends JPanel implements SearchablePlugin
 			if (pluginDescriptor.alwaysOn()) {
 				onOffToggle.setEnabled(false);
 				onOffToggle.setSelected(true);
+				onOffToggle.setToolTipText(PluginManager.ALWAYS_ON_TOOLTIP);
 				pluginListPanel.startPlugin(pluginConfig.getPlugin());
 			}
 			if (pluginDescriptor.disableOnStartUp()) {

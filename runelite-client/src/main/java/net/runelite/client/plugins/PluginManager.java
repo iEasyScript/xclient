@@ -78,6 +78,8 @@ public class PluginManager {
     private static final String PLUGIN_PACKAGE = "net.runelite.client.plugins";
     private static final File SIDELOADED_PLUGINS = new File(RuneLite.RUNELITE_DIR, "sideloaded-plugins");
 
+    public static final String ALWAYS_ON_TOOLTIP = "Always on: required by Project X";
+
     private final boolean safeMode;
     private final EventBus eventBus;
     private final Scheduler scheduler;
@@ -480,6 +482,10 @@ public class PluginManager {
     }
 
     public void setPluginEnabled(Plugin plugin, boolean enabled) {
+        if (!enabled && isPluginAlwaysOn(plugin)) {
+            return;
+        }
+
         final PluginDescriptor pluginDescriptor = plugin.getClass().getAnnotation(PluginDescriptor.class);
         final String keyName = Strings.isNullOrEmpty(pluginDescriptor.configName()) ? plugin.getClass().getSimpleName() : pluginDescriptor.configName();
         configManager.setConfiguration(RuneLiteConfig.GROUP_NAME, keyName.toLowerCase(), String.valueOf(enabled));
@@ -509,6 +515,11 @@ public class PluginManager {
             return true;
 
         return value != null ? Boolean.parseBoolean(value) : pluginDescriptor.enabledByDefault();
+    }
+
+    public boolean isPluginAlwaysOn(Plugin plugin) {
+        final PluginDescriptor pluginDescriptor = plugin.getClass().getAnnotation(PluginDescriptor.class);
+        return pluginDescriptor != null && pluginDescriptor.alwaysOn();
     }
 
     /**

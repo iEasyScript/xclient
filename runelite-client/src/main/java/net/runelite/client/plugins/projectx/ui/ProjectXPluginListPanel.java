@@ -327,6 +327,10 @@ public class ProjectXPluginListPanel extends ProjectXPluginPanel {
     }
 
     void stopPlugin(Plugin plugin) {
+        if (pluginManager.isPluginAlwaysOn(plugin)) {
+            return;
+        }
+
         // The player switched it off: a session that ends this way is never a stop alert.
         ProjectXSessionTracker.markStop(plugin, ProjectXSessionTracker.End.MANUAL);
         pluginManager.setPluginEnabled(plugin, false);
