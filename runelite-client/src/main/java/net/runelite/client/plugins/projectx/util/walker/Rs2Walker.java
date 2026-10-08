@@ -78,6 +78,7 @@ import net.runelite.client.plugins.projectx.util.walker.door.Rs2WalkerAwaits;
 import net.runelite.client.plugins.projectx.util.walker.door.model.AwaitTicket;
 import net.runelite.client.plugins.projectx.util.walker.door.model.DoorResolution;
 import net.runelite.client.plugins.projectx.util.walker.banking.Rs2WalkerBankingPlanner;
+import net.runelite.client.plugins.projectx.util.walker.banking.TransportWithdrawalConfirmation;
 import net.runelite.client.plugins.projectx.util.walker.awaits.Rs2WalkerRuntimeAwaits;
 import net.runelite.client.plugins.projectx.util.walker.puzzles.DraynorBasementSolver;
 import net.runelite.client.plugins.projectx.util.walker.stall.Rs2WalkerStallPolicy;
@@ -12594,25 +12595,42 @@ public class Rs2Walker {
             if (!missingItemsWithQuantities.isEmpty()) {
                 log.debug("Withdrawing transport items with quantities: " + missingItemsWithQuantities);
 
-                // Withdraw the correct amount of each unique item
-                for (Map.Entry<Integer, Integer> entry : missingItemsWithQuantities.entrySet()) {
-                    int itemId = entry.getKey();
-                    int amountNeeded = entry.getValue();
-                    int currentQuantity = Rs2Inventory.itemQuantity(itemId);
-                    int amountToWithdraw = Math.max(0, amountNeeded );
-
-                    if (amountToWithdraw > 0) {
-                        if (Rs2Bank.hasBankItem(itemId, amountToWithdraw)) {
-                            log.debug("Withdrawing {} x {} (item ID: {})", amountToWithdraw, itemId, itemId);
-                            Rs2Bank.withdrawX(itemId, amountToWithdraw);
-                            // count(id) counts slots; a stack of runes is one slot, so compare quantities.
-                            sleepUntil(() -> Rs2Inventory.itemQuantity(itemId) >= currentQuantity + amountToWithdraw, 3000);
-                        } else {
+                // A non-stackable provider (jewellery, a staff) withdrawn in noted mode is unusable
+                // for the transport, so switch to item mode first.
+                if (!Rs2Bank.hasWithdrawAsItem() && !Rs2Bank.setWithdrawAsItem()) {
+                    log.warn("Failed to switch bank to item withdraw mode; skipping transport withdrawals");
+                } else {
+                    // Withdraw the correct amount of each unique item
+                    for (Map.Entry<Integer, Integer> entry : missingItemsWithQuantities.entrySet()) {
+                        int itemId = entry.getKey();
+                        int amountToWithdraw = Math.max(0, entry.getValue());
+                        if (amountToWithdraw == 0) {
+                            continue;
+                        }
+                        if (!Rs2Bank.hasBankItem(itemId, amountToWithdraw)) {
                             log.warn("Required transport item {} not found in bank (need {} but bank has less)",
                                     itemId, amountToWithdraw);
+                            continue;
                         }
-                    } else {
-                        log.debug("Already have enough of item {}: {} (need {})", itemId, currentQuantity, amountNeeded);
+                        // withdrawX can resolve a saved id to a different bank row, so confirm on the
+                        // summed inventory quantity of the requested id and the row actually withdrawn.
+                        Rs2ItemModel bankRow = Rs2Bank.getBankItemForSavedId(itemId);
+                        TransportWithdrawalConfirmation confirmation = TransportWithdrawalConfirmation.start(
+                                itemId, bankRow == null ? -1 : bankRow.getId(), amountToWithdraw,
+                                Rs2Inventory::itemQuantity);
+                        log.debug("Withdrawing {} x {} (target quantity {})",
+                                amountToWithdraw, confirmation.getItemIds(), confirmation.getTargetQuantity());
+                        if (Rs2Bank.withdrawX(itemId, amountToWithdraw)) {
+                            sleepUntil(() -> confirmation.evaluate(Rs2Inventory::itemQuantity, Rs2Bank.isOpen())
+                                            != TransportWithdrawalConfirmation.State.PENDING,
+                                    TransportWithdrawalConfirmation.TIMEOUT_MS);
+                        }
+                        if (confirmation.evaluate(Rs2Inventory::itemQuantity, true)
+                                != TransportWithdrawalConfirmation.State.CONFIRMED) {
+                            log.warn("Failed to withdraw required transport item {} x{} (carried {} of {})",
+                                    itemId, amountToWithdraw, confirmation.carriedQuantity(Rs2Inventory::itemQuantity),
+                                    confirmation.getTargetQuantity());
+                        }
                     }
                 }
 

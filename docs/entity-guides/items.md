@@ -213,14 +213,22 @@ An explicit `Take` must remain `GROUND_ITEM_THIRD_OPTION`, even when an inventor
 
 **Why this matters:** The walker waited for three new matching slots after withdrawing three air runes for Falador Teleport. The runes occupy one stack, so the wait always ran to its timeout.
 
-**Pattern to follow:**
+Two more traps sit on the same check. An id-based `withdrawX` can resolve a saved id to a different bank row (linked or same-name id, see section 4), so the inventory gains the row id, not the requested one. With the bank in noted mode a non-stackable item such as jewellery or a staff arrives noted and is unusable for the transport. The bank now has a single Note toggle (`InterfaceID.Bankmain.NOTE`, actions "Enable Notes"/"Disable Notes"); `setWithdrawAs` clicks it in both directions, since the old Item button is gone and `QUANTITY1_TEXT` only selects quantity 1. A fixed short wait also turns a slow tick into a reported failure.
+
+**Pattern to follow:** switch to item mode first, then confirm on inventory quantity of the requested id plus the bank row id, waiting until confirmed or the bank closes, and decide from the final state.
 
 ```java
-int before = Rs2Inventory.itemQuantity(itemId);
-if (!Rs2Bank.withdrawX(itemId, amount)
-        || !sleepUntil(() -> Rs2Inventory.itemQuantity(itemId) >= before + amount, 3000)) {
+if (!Rs2Bank.hasWithdrawAsItem() && !Rs2Bank.setWithdrawAsItem()) {
     return false;
 }
+Rs2ItemModel row = Rs2Bank.getBankItemForSavedId(itemId);
+TransportWithdrawalConfirmation confirmation = TransportWithdrawalConfirmation.start(
+        itemId, row == null ? -1 : row.getId(), amount, Rs2Inventory::itemQuantity);
+if (Rs2Bank.withdrawX(itemId, amount)) {
+    sleepUntil(() -> confirmation.evaluate(Rs2Inventory::itemQuantity, Rs2Bank.isOpen())
+            != TransportWithdrawalConfirmation.State.PENDING, TransportWithdrawalConfirmation.TIMEOUT_MS);
+}
+return confirmation.evaluate(Rs2Inventory::itemQuantity, true) == TransportWithdrawalConfirmation.State.CONFIRMED;
 ```
 
 **Where this applies:** `Rs2Walker.walkWithBankingState` and any bank or inventory workflow that verifies a quantity of stackable items.
