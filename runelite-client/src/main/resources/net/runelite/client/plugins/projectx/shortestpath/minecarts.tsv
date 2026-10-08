@@ -1,4 +1,4 @@
-# Origin	Destination	menuOption menuTarget objectID	Skills	Currency	Quests	Duration	Display info
+# Origin	Destination	menuOption menuTarget objectID	Skills	Currency	Quests	Duration	Display info	Varbits
 # Keldagrim, Grand Exchange							
 3141 3504 0	2909 10174 0	Travel;Trapdoor;16168			The Giant Dwarf	21	
 3140 3503 0	2909 10174 0	Travel;Trapdoor;16168			The Giant Dwarf	21	
@@ -78,3 +78,8 @@
 	1590 3620 0			20 Coins		5	B: Shayzien East
 # Shayzien West							
 	1415 3577 0			20 Coins		5	C: Shayzien West
+
+# Imported from Skretzo/shortest-path c31e3eff5c (minecarts.tsv)
+# Arceuus
+1670 3832 0		Travel;Minecart;28835		20 Coins				7796<11
+1670 3832 0		Travel;Minecart;28835						7796=11
