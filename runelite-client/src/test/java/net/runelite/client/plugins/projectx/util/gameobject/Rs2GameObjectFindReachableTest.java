@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -49,13 +50,19 @@ public class Rs2GameObjectFindReachableTest {
     private final Map<GameObject, String[]> actions = new HashMap<>();
     private final Set<GameObject> reachable = new HashSet<>();
     private final List<GameObject> reachabilityChecked = new ArrayList<>();
+    private boolean onClientThread;
 
     @Before
     public void setUp() {
         ClientThread clientThread = mock(ClientThread.class);
         when(clientThread.runOnClientThreadOptional(any())).thenAnswer(inv -> {
             Callable<?> callable = inv.getArgument(0);
-            return Optional.ofNullable(callable.call());
+            onClientThread = true;
+            try {
+                return Optional.ofNullable(callable.call());
+            } finally {
+                onClientThread = false;
+            }
         });
 
         projectx = Mockito.mockStatic(ProjectX.class);
@@ -77,11 +84,13 @@ public class Rs2GameObjectFindReachableTest {
                 });
         gameObjects.when(() -> Rs2GameObject.getGameObjects(any(), any(WorldPoint.class), anyInt()))
                 .thenAnswer(inv -> {
+                    assertTrue("scene scan must run inside the client-thread call", onClientThread);
                     Predicate<GameObject> predicate = inv.getArgument(0);
                     return scene.stream().filter(predicate).collect(Collectors.toList());
                 });
         gameObjects.when(() -> Rs2GameObject.isReachable(any(GameObject.class)))
                 .thenAnswer(inv -> {
+                    assertTrue("reachability must run inside the client-thread call", onClientThread);
                     GameObject o = inv.getArgument(0);
                     reachabilityChecked.add(o);
                     return reachable.contains(o);
