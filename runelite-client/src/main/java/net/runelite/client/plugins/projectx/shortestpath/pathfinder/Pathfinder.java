@@ -59,8 +59,9 @@ public class Pathfinder implements Runnable {
     // Comparator chain is (fCost, gCost, tiebreaker):
     //   1. fCost — standard A* primary ordering.
     //   2. gCost — required for correctness under early-discovery. addNeighbors() marks
-    //      a neighbor visited at insert time (not at pop), so a node only ever enters
-    //      the PQ once. If two equal-fCost nodes have different gCost, popping the
+    //      a walking neighbor visited at insert time (not at pop), so a walking node only
+    //      ever enters the PQ once. (Transport destinations are claimed at pop instead:
+    //      see claimTransport().) If two equal-fCost nodes have different gCost, popping the
     //      higher-gCost one first would fix their shared neighbor's gCost to a
     //      suboptimal value (because visited is already set when the lower-g node later
     //      tries to discover the same neighbor). Preferring lower gCost on ties keeps
@@ -201,6 +202,34 @@ public class Pathfinder implements Runnable {
         return anchors;
     }
 
+    /**
+     * Claims a transport's destination as it leaves the pending queue.
+     *
+     * <p>Transports wait in a cost-ordered queue, so claiming the tile when one was
+     * queued let an expensive transport shadow a cheaper one queued after it: a
+     * 24-tick home teleport took Lumbridge before a tablet and POH portal could.
+     * Now the first, cheapest, to be taken wins the tile and later ones are dropped.
+     * Walking tiles still claim on queueing: they are expanded in order, so the
+     * first to reach a tile is the cheapest.
+     *
+     * @return false if the tile was already claimed, so this one is skipped
+     */
+    private static boolean claimTransport(VisitedTiles visitedTiles, Node node) {
+        if (visitedTiles.get(node.packedPosition)) {
+            return false;
+        }
+        visitedTiles.set(node.packedPosition);
+        return true;
+    }
+
+    /** Bidirectional meeting maps keep the cheapest node seen at each tile. */
+    private static void keepCheapest(Map<Integer, Node> at, Node node) {
+        Node existing = at.get(node.packedPosition);
+        if (existing == null || node.cost < existing.cost) {
+            at.put(node.packedPosition, node);
+        }
+    }
+
     private void addNeighbors(Node node) {
         List<Node> nodes = map.getNeighbors(node, visited, config, targets);
         boolean afterTransport = node instanceof TransportNode;
@@ -209,11 +238,12 @@ public class Pathfinder implements Runnable {
                 continue;
             }
 
-            visited.set(neighbor.packedPosition);
             if (neighbor instanceof TransportNode) {
+                // Claimed when it leaves pending, not now: see claimTransport().
                 pending.add(neighbor);
                 ++stats.transportsChecked;
             } else {
+                visited.set(neighbor.packedPosition);
                 neighbor.heuristic = afterTransport ? 0 : heuristicToNearestTarget(neighbor.packedPosition);
                 boundary.add(neighbor);
                 ++stats.nodesChecked;
@@ -451,16 +481,17 @@ public class Pathfinder implements Runnable {
                 continue;
             }
 
-            visited.set(neighbor.packedPosition);
             if (neighbor instanceof TransportNode) {
+                // Claimed when it leaves pending, not now: see claimTransport().
                 pending.add(neighbor);
                 ++stats.transportsChecked;
             } else {
+                visited.set(neighbor.packedPosition);
                 neighbor.heuristic = afterTransport ? 0 : heuristicToNearestTarget(neighbor.packedPosition);
                 boundary.add(neighbor);
                 ++stats.nodesChecked;
             }
-            forwardAt.putIfAbsent(neighbor.packedPosition, neighbor);
+            keepCheapest(forwardAt, neighbor);
             Node b = backwardAt.get(neighbor.packedPosition);
             if (b != null) {
                 maybeImproveMeeting(neighbor, b, bestMeetingCost, meetF, meetB);
@@ -478,16 +509,16 @@ public class Pathfinder implements Runnable {
                 continue;
             }
 
-            visitedB.set(pred.packedPosition);
             if (pred instanceof TransportNode) {
                 pendingBackward.add(pred);
                 ++stats.transportsChecked;
             } else {
+                visitedB.set(pred.packedPosition);
                 pred.heuristic = afterTransport ? 0 : heuristicFromStart(pred.packedPosition);
                 boundaryBackward.add(pred);
                 ++stats.nodesChecked;
             }
-            backwardAt.putIfAbsent(pred.packedPosition, pred);
+            keepCheapest(backwardAt, pred);
             Node f = forwardAt.get(pred.packedPosition);
             if (f != null) {
                 maybeImproveMeeting(f, pred, bestMeetingCost, meetF, meetB);
@@ -511,8 +542,11 @@ public class Pathfinder implements Runnable {
             Node b = boundary.peek();
             Node p = pending.peek();
             Node node;
-            if (p != null && (b == null || p.cost < b.cost)) {
+            if (p != null && (b == null || p.cost <= b.cost)) {
                 node = pending.poll();
+                if (!claimTransport(visited, node)) {
+                    continue;
+                }
             } else {
                 node = boundary.poll();
             }
@@ -626,8 +660,11 @@ public class Pathfinder implements Runnable {
                 Node b = boundary.peek();
                 Node p = pending.peek();
                 Node node;
-                if (p != null && (b == null || p.cost < b.cost)) {
+                if (p != null && (b == null || p.cost <= b.cost)) {
                     node = pending.poll();
+                    if (!claimTransport(visited, node)) {
+                        continue;
+                    }
                 } else {
                     node = boundary.poll();
                 }
@@ -683,8 +720,11 @@ public class Pathfinder implements Runnable {
                 Node b = boundaryBackward.peek();
                 Node p = pendingBackward.peek();
                 Node node;
-                if (p != null && (b == null || p.cost < b.cost)) {
+                if (p != null && (b == null || p.cost <= b.cost)) {
                     node = pendingBackward.poll();
+                    if (!claimTransport(visitedB, node)) {
+                        continue;
+                    }
                 } else {
                     node = boundaryBackward.poll();
                 }
