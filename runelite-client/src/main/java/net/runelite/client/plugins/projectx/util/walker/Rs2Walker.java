@@ -12563,20 +12563,21 @@ public class Rs2Walker {
                 for (Map.Entry<Integer, Integer> entry : missingItemsWithQuantities.entrySet()) {
                     int itemId = entry.getKey();
                     int amountNeeded = entry.getValue();
-                    int currentCount = Rs2Inventory.count(itemId);
+                    int currentQuantity = Rs2Inventory.itemQuantity(itemId);
                     int amountToWithdraw = Math.max(0, amountNeeded );
 
                     if (amountToWithdraw > 0) {
                         if (Rs2Bank.hasBankItem(itemId, amountToWithdraw)) {
                             log.debug("Withdrawing {} x {} (item ID: {})", amountToWithdraw, itemId, itemId);
                             Rs2Bank.withdrawX(itemId, amountToWithdraw);
-                            sleepUntil(() -> Rs2Inventory.count(itemId) >= currentCount + amountToWithdraw, 3000);
+                            // count(id) counts slots; a stack of runes is one slot, so compare quantities.
+                            sleepUntil(() -> Rs2Inventory.itemQuantity(itemId) >= currentQuantity + amountToWithdraw, 3000);
                         } else {
                             log.warn("Required transport item {} not found in bank (need {} but bank has less)",
                                     itemId, amountToWithdraw);
                         }
                     } else {
-                        log.debug("Already have enough of item {}: {} (need {})", itemId, currentCount, amountNeeded);
+                        log.debug("Already have enough of item {}: {} (need {})", itemId, currentQuantity, amountNeeded);
                     }
                 }
 
