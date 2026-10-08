@@ -66,6 +66,7 @@ import net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorDetection;
 import net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorProbe;
 import net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorAheadResolver;
 import net.runelite.client.plugins.projectx.util.walker.door.Rs2DoorGeometry;
+import net.runelite.client.plugins.projectx.util.walker.geometry.SceneClickPolicy;
 import net.runelite.client.plugins.projectx.util.walker.geometry.WalkerPathGeometry;
 import net.runelite.client.plugins.projectx.util.walker.obstacle.MineableResolver;
 import net.runelite.client.plugins.projectx.util.walker.obstacle.ObstacleResolution;
@@ -4210,15 +4211,35 @@ public class Rs2Walker {
         return walkFastCanvas(worldPoint, true);
     }
 
+    static final SceneClickPolicy SCENE_CLICKS = SceneClickPolicy.create();
+    static final int SCENE_WALK_CONFIRM_TIMEOUT_MS = 600;
+
     private static boolean walkFastCanvasOnScreenOnly(WorldPoint worldPoint, boolean toggleRun) {
+        if (worldPoint == null || SCENE_CLICKS.isSuppressed(System.currentTimeMillis())) {
+            return false;
+        }
+        // Toggle run before capturing coordinates: the orb click moves the mouse.
+        Rs2Player.toggleRunEnergy(toggleRun);
+        return dispatchSceneWalk(worldPoint);
+    }
+
+    /**
+     * Clicks a scene tile only when it is rendered and inside the viewport, then confirms the client
+     * destination before reporting success. Software rendering draws only 25 tiles around the camera,
+     * and the scene keeps reporting the GPU draw distance after GPU is disabled, so a projected tile can
+     * accept a click that sets no destination. Unconfirmed clicks return false so callers fall back to the
+     * minimap; repeated failures pause scene clicks briefly.
+     */
+    static boolean dispatchSceneWalk(WorldPoint worldPoint) {
         Point canvasPoint = sceneCanvasPoint(worldPoint);
         if (canvasPoint == null) {
             return false;
         }
+        Client client = ProjectX.getClient();
+        LocalPoint before = client.isClientThread() ? null
+                : ProjectX.getClientThread().runOnClientThreadOptional(client::getLocalDestinationLocation).orElse(null);
         int canvasX = canvasPoint.getX();
         int canvasY = canvasPoint.getY();
-
-        Rs2Player.toggleRunEnergy(toggleRun);
         NewMenuEntry entry = new NewMenuEntry()
                 .param0(canvasX)
                 .param1(canvasY)
@@ -4228,8 +4249,33 @@ public class Rs2Walker {
                 .option("Walk here");
 
         ProjectX.doInvoke(entry,
-                new Rectangle(canvasX, canvasY, ProjectX.getClient().getCanvasWidth(), ProjectX.getClient().getCanvasHeight()));
+                new Rectangle(canvasX, canvasY, client.getCanvasWidth(), client.getCanvasHeight()));
+        if (client.isClientThread()) {
+            return true;
+        }
+        LocalPoint[] observed = awaitSceneWalkDestination(worldPoint, before);
+        SceneClickPolicy.Outcome outcome = SceneClickPolicy.classify(before, observed[0], observed[1]);
+        if (SCENE_CLICKS.record(outcome, System.currentTimeMillis())) {
+            log.info("[Walker] Scene clicks failed repeatedly; using minimap for {}ms", SceneClickPolicy.SUPPRESSION_MS);
+        }
+        if (outcome != SceneClickPolicy.Outcome.CONFIRMED) {
+            walkerDiag("scene_click_unconfirmed outcome=%s errorTiles=%d to=%s", outcome,
+                    SceneClickPolicy.destinationErrorTiles(observed[0], observed[1]), compactWorldPoint(worldPoint));
+            return false;
+        }
         return true;
+    }
+
+    private static LocalPoint[] awaitSceneWalkDestination(WorldPoint worldPoint, LocalPoint before) {
+        java.util.function.Supplier<LocalPoint[]> snapshot = () -> ProjectX.getClientThread().runOnClientThreadOptional(() ->
+                new LocalPoint[] {ProjectX.getClient().getLocalDestinationLocation(), localPointForWorld(worldPoint)})
+                .orElse(new LocalPoint[2]);
+        LocalPoint[][] latest = {snapshot.get()};
+        sleepUntil(() -> {
+            latest[0] = snapshot.get();
+            return SceneClickPolicy.isSettled(before, latest[0][0], latest[0][1]);
+        }, SCENE_WALK_CONFIRM_TIMEOUT_MS);
+        return latest[0];
     }
 
     /**
@@ -4244,6 +4290,12 @@ public class Rs2Walker {
         }
         LocalPoint localPoint = localPointForWorld(worldPoint);
         if (localPoint == null || !Rs2Camera.isTileOnScreen(localPoint)) {
+            return null;
+        }
+        Client client = ProjectX.getClient();
+        int drawDistance = SceneClickPolicy.renderedDrawDistance(client.isGpu(),
+                client.getTopLevelWorldView().getScene().getDrawDistance());
+        if (!SceneClickPolicy.isWithinRenderedArea(client.getCameraX(), client.getCameraY(), localPoint, drawDistance)) {
             return null;
         }
         Point canvasPoint = Perspective.localToCanvas(
@@ -4275,7 +4327,6 @@ public class Rs2Walker {
             return false;
         }
         Rs2Player.toggleRunEnergy(toggleRun);
-        Point canv;
         LocalPoint localPoint = LocalPoint.fromWorld(ProjectX.getClient().getTopLevelWorldView(), worldPoint);
 
         if (ProjectX.getClient().getTopLevelWorldView().isInstance() && localPoint == null) {
@@ -4293,33 +4344,17 @@ public class Rs2Walker {
             return false;
         }
 
-        canv = Perspective.localToCanvas(ProjectX.getClient(), localPoint, ProjectX.getClient().getTopLevelWorldView().getPlane());
-
-        int canvasX = canv != null ? canv.getX() : -1;
-        int canvasY = canv != null ? canv.getY() : -1;
-
-        //if the tile is not on screen, use minimap
-        if (!Rs2Camera.isTileOnScreen(localPoint) || canvasX < 0 || canvasY < 0) {
-            WorldPoint playerLoc = Rs2Player.getWorldLocation();
-            if (playerLoc != null
-                    && playerLoc.getPlane() == worldPoint.getPlane()
-                    && walkMiniMapToward(worldPoint, playerLoc, 13)) {
-                return true;
-            }
-            return Rs2Walker.walkMiniMap(worldPoint);
+        if (!SCENE_CLICKS.isSuppressed(System.currentTimeMillis())
+                && dispatchSceneWalk(worldPoint)) {
+            return true;
         }
-
-        NewMenuEntry entry = new NewMenuEntry()
-                .param0(canvasX)
-                .param1(canvasY)
-                .type(MenuAction.WALK)
-                .identifier(0)
-                .itemId(0)
-                .option("Walk here");
-
-        ProjectX.doInvoke(entry,
-                new Rectangle(canvasX, canvasY, ProjectX.getClient().getCanvasWidth(), ProjectX.getClient().getCanvasHeight()));
-        return true;
+        WorldPoint playerLoc = Rs2Player.getWorldLocation();
+        if (playerLoc != null
+                && playerLoc.getPlane() == worldPoint.getPlane()
+                && walkMiniMapToward(worldPoint, playerLoc, 13)) {
+            return true;
+        }
+        return Rs2Walker.walkMiniMap(worldPoint);
     }
 
     public static WorldPoint walkCanvas(WorldPoint worldPoint) {

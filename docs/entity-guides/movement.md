@@ -349,3 +349,24 @@ energy (>1000 by default), replacing the walker's rounded >10% (>=1100) check.
 
 **Defensive check:** `Rs2PlayerRunEnergyTest` covers threshold boundaries, explicit disable,
 missing/hidden orbs, interior geometry, pending updates, and client-thread requests.
+
+## 18. A scene walk click is only valid on a tile rendered at click time
+
+`MenuAction.WALK` carries canvas coordinates. The client resolves the destination from the
+tile under that point during the next rendered frame. A point over an unrendered tile selects
+nothing. If the camera or player moved after the point was computed, it selects a different
+tile. Checking that the projection lies inside the viewport proves neither condition.
+
+**Why this matters:** Software rendering (GPU off) draws only 25 tiles around the camera eye,
+not around the player. `Scene.getDrawDistance()` keeps reporting the GPU value after GPU is
+disabled, so read `client.isGpu()` first. Tiles beyond that square still project into the
+viewport, and the old helper reported success for clicks that set no destination.
+
+**Where this applies:** `Rs2Walker.walkFastCanvasOnScreenOnly`, `dispatchSceneWalk`,
+and the public `Rs2Walker.walkFastCanvas`. Toggle run before computing the point. Reject tiles
+within 2 of the rendered edge. After dispatch, report success only once the client destination
+lies within 2 tiles of the target. Otherwise return false so the caller's minimap fallback runs
+once. After two consecutive failures, scene clicks pause for 3 seconds.
+
+**Defensive check:** `SceneClickPolicyTest` covers draw-distance selection, camera-relative
+bounds, destination classification, and bounded suppression.
