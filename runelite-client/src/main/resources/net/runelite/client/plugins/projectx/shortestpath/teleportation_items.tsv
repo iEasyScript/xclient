@@ -375,7 +375,7 @@
 1311 9497 0		31099 31101 31102 31103 31104 31105	The Final Dawn			Y	T	29	4	Mokhaiotl waystone: Channel
 
 #Varlemore Waystone
-1439 9564 0		29090 29092 29093 29094 29095 29096 29097	Perilous Moons			Y	Y	29	4	Calcified moth: Crush
+1439 9564 0		29090 29092 29093 29094 29095 29096 29097	Perilous Moons			Y	T	29	4	Calcified moth: Crush
 # Cowbell amulet (Varlamore) - backfilled 2026-07-20 from upstream Skretzo/shortest-path
 3259 3277 0		33104				Y	T	20	4	Cowbell amulet
 # Sailors amulet (charged, Varlamore) - backfilled 2026-07-20 from upstream
