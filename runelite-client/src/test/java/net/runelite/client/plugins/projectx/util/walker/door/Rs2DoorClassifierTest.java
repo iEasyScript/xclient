@@ -134,4 +134,15 @@ public class Rs2DoorClassifierTest {
         assertNull(Rs2DoorClassifier.getDoorAction(compWithActions("Examine", "Look-at"), doorActions));
         assertNull(Rs2DoorClassifier.getDoorAction(null, doorActions));
     }
+
+    @Test
+    public void aTrapdoorIsNeverARouteDoor() {
+        assertFalse(Rs2DoorClassifier.isDoorLikeGameObjectName("Trapdoor"));
+        assertFalse(Rs2DoorClassifier.isDoorLikeGameObjectName("Trap door"));
+        assertFalse(Rs2DoorClassifier.isDoorLikeNameOrAction("Trapdoor", "Open"));
+        assertFalse(Rs2DoorClassifier.isDoorLikeNameOrAction("Trapdoor", "Climb-down"));
+        assertTrue(Rs2DoorClassifier.isDoorLikeNameOrAction("Door", "Open"));
+        assertTrue(Rs2DoorClassifier.isDoorLikeNameOrAction("Large door", "Open"));
+        assertTrue(Rs2DoorClassifier.isDoorLikeNameOrAction("Strange wall", "Push"));
+    }
 }

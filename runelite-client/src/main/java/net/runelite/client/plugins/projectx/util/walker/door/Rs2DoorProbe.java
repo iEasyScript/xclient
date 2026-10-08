@@ -84,7 +84,9 @@ public final class Rs2DoorProbe {
     }
 
     public static boolean isDoorLikeCatalogTransport(Transport transport) {
-        if (transport == null || transport.getType() != TransportType.TRANSPORT) {
+        if (transport == null || transport.getType() != TransportType.TRANSPORT
+                || Rs2DoorClassifier.isTrapdoorName(transport.getName())
+                || Rs2DoorClassifier.isTrapdoorName(transport.getDisplayInfo())) {
             return false;
         }
         return Rs2DoorClassifier.isDoorLikeGameObjectName(transport.getName())

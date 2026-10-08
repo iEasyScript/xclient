@@ -53,6 +53,14 @@ public class Rs2DoorProbeTest {
     }
 
     @Test
+    public void aTrapdoorTransportIsNotDoorLike() {
+        assertFalse(Rs2DoorProbe.isDoorLikeCatalogTransport(
+                transport(TransportType.TRANSPORT, "Trapdoor", "Trapdoor", "Climb-down")));
+        assertFalse(Rs2DoorProbe.isDoorLikeCatalogTransport(
+                transport(TransportType.TRANSPORT, "Trapdoor", "Trapdoor", "Open")));
+    }
+
+    @Test
     public void nonTransportTypeIsNeverDoorLike() {
         // Only TRANSPORT-type rows are considered; an agility shortcut named "Gate" must not qualify.
         assertFalse(Rs2DoorProbe.isDoorLikeCatalogTransport(

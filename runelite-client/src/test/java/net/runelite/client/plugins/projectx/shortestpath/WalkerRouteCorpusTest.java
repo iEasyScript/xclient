@@ -1,5 +1,6 @@
 package net.runelite.client.plugins.projectx.shortestpath;
 
+import net.runelite.api.Quest;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.projectx.shortestpath.pathfinder.Pathfinder;
 import net.runelite.client.plugins.projectx.shortestpath.pathfinder.PathfinderConfig;
@@ -321,5 +322,17 @@ public class WalkerRouteCorpusTest {
                 TUNNEL_EAST_SURFACE, TUNNEL_WEST_SURFACE);
         assertFalse("a player without Fishing Contest must not be routed through the tunnel",
                 visits(surface, TUNNEL_EAST_UNDER, 5));
+    }
+
+    @Test
+    public void zanarisShedDoorRequiresLostCity() {
+        Transport shed = allTransports.getOrDefault(new WorldPoint(3202, 3169, 0), Collections.emptySet()).stream()
+                .filter(transport -> transport.getObjectId() == 2406)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Zanaris shed door row is missing"));
+
+        assertTrue(shed.getQuests().containsKey(Quest.LOST_CITY));
+        assertTrue(shed.isMembers());
+        assertFalse(unrestricted(shed));
     }
 }

@@ -23,6 +23,8 @@ public final class Rs2DoorClassifier {
     /** {@code fence} must be whole-word — substring matches {@code defence} ("fence" inside) otherwise. */
     private static final Pattern FENCE_AS_WORD = Pattern.compile("\\bfence\\b", Pattern.CASE_INSENSITIVE);
 
+    private static final Pattern TRAPDOOR_NAME = Pattern.compile("\\btrap\\s?door", Pattern.CASE_INSENSITIVE);
+
     /** Lower index = higher priority when multiple actions match (prefix, ASCII lower). */
     private static final List<String> DOOR_ACTION_PRIORITY = List.of(
             "pay-toll", "pick-lock", "walk-through", "go-through", "open", "pass", "enter",
@@ -95,8 +97,25 @@ public final class Rs2DoorClassifier {
                 .orElse(null);
     }
 
+    public static boolean isTrapdoorName(String name) {
+        return name != null && TRAPDOOR_NAME.matcher(name).find();
+    }
+
+    /**
+     * Door-like by name or by a door walk action. A trapdoor is never a route door, even with an Open
+     * action: the Draynor sewer trapdoor beside the main road was Open-clicked on walks that never use
+     * the sewer. The transport executor still opens trapdoors when a route selects them.
+     */
+    public static boolean isDoorLikeNameOrAction(String name, String walkAction) {
+        if (isTrapdoorName(name)) {
+            return false;
+        }
+        return isDoorLikeGameObjectName(name)
+                || (walkAction != null && doorActionPriorityIndex(walkAction) < Integer.MAX_VALUE);
+    }
+
     public static boolean isDoorLikeGameObjectName(String name) {
-        if (name == null) {
+        if (name == null || isTrapdoorName(name)) {
             return false;
         }
         String n = name.toLowerCase(Locale.ROOT);

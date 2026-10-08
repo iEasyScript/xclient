@@ -6132,6 +6132,10 @@ public class Rs2Walker {
                     Telemetry.recordDoorReject("name-not-door");
                     continue;
                 }
+                if (Rs2DoorClassifier.isTrapdoorName(comp.getName())) {
+                    Telemetry.recordDoorReject("trapdoor");
+                    continue;
+                }
 
                 if (Rs2DoorClassifier.doorCompositionSpecifiesOnlyCloseOrShut(comp)) {
                     Telemetry.recordDoorReject("skip-close-only-open");
@@ -7559,8 +7563,7 @@ public class Rs2Walker {
             return false;
         }
         String action = Rs2DoorClassifier.pickWalkDoorAction(comp);
-        return Rs2DoorClassifier.isDoorLikeGameObjectName(comp.getName())
-                || (action != null && Rs2DoorClassifier.doorActionPriorityIndex(action) < Integer.MAX_VALUE);
+        return Rs2DoorClassifier.isDoorLikeNameOrAction(comp.getName(), action);
     }
 
     private static boolean isPendingRouteDoorObject(TileObject object, WorldPoint fromWp, WorldPoint toWp,
@@ -7584,8 +7587,7 @@ public class Rs2Walker {
             return false;
         }
         String action = Rs2DoorClassifier.pickWalkDoorAction(comp);
-        return Rs2DoorClassifier.isDoorLikeGameObjectName(comp.getName())
-                || (action != null && Rs2DoorClassifier.doorActionPriorityIndex(action) < Integer.MAX_VALUE);
+        return Rs2DoorClassifier.isDoorLikeNameOrAction(comp.getName(), action);
     }
 
 
@@ -7717,8 +7719,7 @@ public class Rs2Walker {
 			if (Rs2DoorClassifier.doorCompositionSpecifiesOnlyCloseOrShut(comp)) continue;
 
 			String action = Rs2DoorClassifier.pickWalkDoorAction(comp);
-			boolean doorLike = Rs2DoorClassifier.isDoorLikeGameObjectName(comp.getName())
-					|| (action != null && Rs2DoorClassifier.doorActionPriorityIndex(action) < Integer.MAX_VALUE);
+			boolean doorLike = Rs2DoorClassifier.isDoorLikeNameOrAction(comp.getName(), action);
 			if (!doorLike) continue;
 			if (Rs2DoorProbe.isCatalogTransportObject(w) && !Rs2DoorDetection.isDoorLikeSceneObject(w)) continue;
 			candidates++;
@@ -7743,8 +7744,7 @@ public class Rs2Walker {
 			if (Rs2DoorClassifier.doorCompositionSpecifiesOnlyCloseOrShut(comp)) continue;
 
 			String action = Rs2DoorClassifier.pickWalkDoorAction(comp);
-			boolean doorLike = Rs2DoorClassifier.isDoorLikeGameObjectName(comp.getName())
-					|| (action != null && Rs2DoorClassifier.doorActionPriorityIndex(action) < Integer.MAX_VALUE);
+			boolean doorLike = Rs2DoorClassifier.isDoorLikeNameOrAction(comp.getName(), action);
 			if (!doorLike) continue;
 			if (Rs2DoorProbe.isCatalogTransportObject(g) && !Rs2DoorDetection.isDoorLikeSceneObject(g)) continue;
 			candidates++;
@@ -7809,8 +7809,7 @@ public class Rs2Walker {
 
 			String action = Rs2DoorClassifier.pickWalkDoorAction(comp);
 
-			boolean doorLike = Rs2DoorClassifier.isDoorLikeGameObjectName(comp.getName())
-					|| (action != null && Rs2DoorClassifier.doorActionPriorityIndex(action) < Integer.MAX_VALUE);
+			boolean doorLike = Rs2DoorClassifier.isDoorLikeNameOrAction(comp.getName(), action);
 			if (!doorLike) continue;
 			if (Rs2DoorProbe.isCatalogTransportObject(w) && !Rs2DoorDetection.isDoorLikeSceneObject(w)) continue;
 
@@ -7846,8 +7845,7 @@ public class Rs2Walker {
 
 			String action = Rs2DoorClassifier.pickWalkDoorAction(comp);
 
-			boolean doorLike = Rs2DoorClassifier.isDoorLikeGameObjectName(comp.getName())
-					|| (action != null && Rs2DoorClassifier.doorActionPriorityIndex(action) < Integer.MAX_VALUE);
+			boolean doorLike = Rs2DoorClassifier.isDoorLikeNameOrAction(comp.getName(), action);
 			if (!doorLike) continue;
 			if (Rs2DoorProbe.isCatalogTransportObject(g) && !Rs2DoorDetection.isDoorLikeSceneObject(g)) continue;
 
@@ -7941,8 +7939,7 @@ public class Rs2Walker {
 				if (Rs2DoorClassifier.doorCompositionSpecifiesOnlyCloseOrShut(comp)) continue;
 
 				String action = Rs2DoorClassifier.pickWalkDoorAction(comp);
-				boolean doorLike = Rs2DoorClassifier.isDoorLikeGameObjectName(comp.getName())
-						|| (action != null && Rs2DoorClassifier.doorActionPriorityIndex(action) < Integer.MAX_VALUE);
+				boolean doorLike = Rs2DoorClassifier.isDoorLikeNameOrAction(comp.getName(), action);
 				if (!doorLike) continue;
 				if (Rs2DoorProbe.isCatalogTransportObject(w) && !Rs2DoorDetection.isDoorLikeSceneObject(w)) continue;
 
@@ -7980,8 +7977,7 @@ public class Rs2Walker {
 				if (Rs2DoorClassifier.doorCompositionSpecifiesOnlyCloseOrShut(comp)) continue;
 
 				String action = Rs2DoorClassifier.pickWalkDoorAction(comp);
-				boolean doorLike = Rs2DoorClassifier.isDoorLikeGameObjectName(comp.getName())
-						|| (action != null && Rs2DoorClassifier.doorActionPriorityIndex(action) < Integer.MAX_VALUE);
+				boolean doorLike = Rs2DoorClassifier.isDoorLikeNameOrAction(comp.getName(), action);
 				if (!doorLike) continue;
 				if (Rs2DoorProbe.isCatalogTransportObject(g) && !Rs2DoorDetection.isDoorLikeSceneObject(g)) continue;
 
