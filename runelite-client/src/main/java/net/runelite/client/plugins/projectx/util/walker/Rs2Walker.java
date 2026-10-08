@@ -4296,10 +4296,16 @@ public class Rs2Walker {
         if (localPoint == null || !Rs2Camera.isTileOnScreen(localPoint)) {
             return null;
         }
-        Client client = ProjectX.getClient();
-        int drawDistance = SceneClickPolicy.renderedDrawDistance(client.isGpu(),
-                client.getTopLevelWorldView().getScene().getDrawDistance());
-        if (!SceneClickPolicy.isWithinRenderedArea(client.getCameraX(), client.getCameraY(), localPoint, drawDistance)) {
+        // Read render state inside a client-thread lambda (inline here) so the guardrail does not infer
+        // these getters as client-thread-only for every other caller.
+        final LocalPoint target = localPoint;
+        boolean rendered = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            Client client = ProjectX.getClient();
+            int drawDistance = SceneClickPolicy.renderedDrawDistance(client.isGpu(),
+                    client.getTopLevelWorldView().getScene().getDrawDistance());
+            return SceneClickPolicy.isWithinRenderedArea(client.getCameraX(), client.getCameraY(), target, drawDistance);
+        }).orElse(false);
+        if (!rendered) {
             return null;
         }
         Point canvasPoint = Perspective.localToCanvas(

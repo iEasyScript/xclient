@@ -306,7 +306,6 @@ net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#<init>(TileO
 net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#<init>(TileObject, Tile): void  ->  net.runelite.api.GameObject#sizeX(): int
 net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#<init>(TileObject, Tile): void  ->  net.runelite.api.GameObject#sizeY(): int
 net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#blocksLineOfSight(): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
-net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#getActions(): String[]  ->  net.runelite.api.ObjectComposition#getActions(): String[]
 net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#getCanonicalLocation(): WorldPoint  ->  net.runelite.api.GameObject#getSceneMinLocation(): Point
 net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#getCanonicalLocation(): WorldPoint  ->  net.runelite.api.Tile#getSceneLocation(): Point
 net.runelite.client.plugins.projectx.util.gameobject.Rs2ObjectModel#getCanonicalLocation(): WorldPoint  ->  net.runelite.api.Tile#getWorldLocation(): WorldPoint
@@ -675,17 +674,6 @@ net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getTileInternal(int, int)
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getWalkableTilesAroundTileInternal(WorldPoint, int): List  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#getWalkableTilesAroundTileInternal(WorldPoint, int): List  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isBankBoothInternal(WorldPoint): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileReachableInternal(WorldPoint): boolean  ->  net.runelite.api.Client#getBaseX(): int
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileReachableInternal(WorldPoint): boolean  ->  net.runelite.api.Client#getBaseY(): int
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileReachableInternal(WorldPoint): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileReachableInternal(WorldPoint): boolean  ->  net.runelite.api.Scene#isInstance(): boolean
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileReachableInternal(WorldPoint): boolean  ->  net.runelite.api.WorldView#getScene(): Scene
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isEdgePassableInternal(WorldPoint, WorldPoint): boolean  ->  net.runelite.api.Client#getBaseX(): int
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isEdgePassableInternal(WorldPoint, WorldPoint): boolean  ->  net.runelite.api.Client#getBaseY(): int
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isEdgePassableInternal(WorldPoint, WorldPoint): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isEdgePassableInternal(WorldPoint, WorldPoint): boolean  ->  net.runelite.api.Scene#isInstance(): boolean
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isEdgePassableInternal(WorldPoint, WorldPoint): boolean  ->  net.runelite.api.WorldView#getPlane(): int
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isEdgePassableInternal(WorldPoint, WorldPoint): boolean  ->  net.runelite.api.WorldView#getScene(): Scene
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isTileObjectReachableInternal(TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isValidTileInternal(Tile): boolean  ->  net.runelite.api.Client#getPlane(): int
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isValidTileInternal(Tile): boolean  ->  net.runelite.api.CollisionData#getFlags(): int[][]
@@ -698,8 +686,7 @@ net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isVisited(WorldPoint, boo
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isWalkableTileInternal(Tile): boolean  ->  net.runelite.api.Tile#getSceneLocation(): Point
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isWalkableWorldPointInternal(WorldPoint): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#isWalkableWorldPointInternal(WorldPoint): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#lambda$isBankBoothInternal$32(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.tile.Rs2Tile#lambda$isBankBoothInternal$34(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.tile.Rs2Tile#lambda$isBankBoothInternal$33(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#pathToInternal(Tile, Tile): List  ->  net.runelite.api.Client#getScene(): Scene
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#pathToInternal(Tile, Tile): List  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
 net.runelite.client.plugins.projectx.util.tile.Rs2Tile#pathToInternal(Tile, Tile): List  ->  net.runelite.api.CollisionData#getFlags(): int[][]
@@ -801,29 +788,29 @@ net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isUnresolvedRouteDoor
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isUnresolvedRouteDoorObject(TileObject, WorldPoint, WorldPoint, WorldPoint, int): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$getPointWithWallDistance$18(WorldView, int[][], WorldPoint): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$getPointWithWallDistance$19(WorldView, int[][], WorldPoint): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleFairyRing$193(Transport, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleMinigameTeleport$162(Widget, Object[]): boolean  ->  net.runelite.api.widgets.Widget#getOnOpListener(): Object[]
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleMinigameTeleport$164(String): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$140(int, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$146(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$146(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$147(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$147(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$113(int, boolean, Integer, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$115(TileObject): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$117(Transport, TileObject): int  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$118(TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$119(Transport, Object): Integer  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$120(Transport, Object): Integer  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$122(int, List, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleFairyRing$199(Transport, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleMinigameTeleport$168(Widget, Object[]): boolean  ->  net.runelite.api.widgets.Widget#getOnOpListener(): Object[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleMinigameTeleport$170(String): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$146(int, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$152(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$152(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$153(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$153(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$119(int, boolean, Integer, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$121(TileObject): boolean  ->  net.runelite.api.ObjectComposition#getName(): String
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$123(Transport, TileObject): int  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleWildernessObelisk$154(Transport, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleWildernessObelisk$155(Transport, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$124(TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$125(Transport, Object): Integer  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$126(Transport, Object): Integer  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$128(int, List, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleTransports$129(Transport, TileObject): int  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleWildernessObelisk$160(Transport, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleWildernessObelisk$161(Transport, GameObject): boolean  ->  net.runelite.api.GameObject#getId(): int
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$processWalk$7(): boolean  ->  net.runelite.api.widgets.Widget#getSpriteId(): int
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$processWalk$8(): boolean  ->  net.runelite.api.widgets.Widget#getSpriteId(): int
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$resolveProbeGameObject$43(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$resolveProbeGameObject$44(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$tryHandleBlockingPathObjectsWithTimeout$70(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$resolveProbeGameObject$49(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$resolveProbeGameObject$50(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$tryHandleBlockingPathObjectsWithTimeout$76(WorldPoint, GameObject): boolean  ->  net.runelite.api.GameObject#getWorldLocation(): WorldPoint
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#localPointForWorld(WorldPoint): LocalPoint  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#localPointForWorld(WorldPoint): LocalPoint  ->  net.runelite.api.WorldView#isInstance(): boolean
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#localPointForWorld(WorldPoint): LocalPoint  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
@@ -859,8 +846,6 @@ net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkCanvas(WorldPoint
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvas(WorldPoint, boolean): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvas(WorldPoint, boolean): boolean  ->  net.runelite.api.WorldView#isInstance(): boolean
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvas(WorldPoint, boolean): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvasOnScreenOnly(WorldPoint, boolean): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastCanvasOnScreenOnly(WorldPoint, boolean): boolean  ->  net.runelite.api.WorldView#getPlane(): int
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastLocal(LocalPoint): void  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkFastLocal(LocalPoint): void  ->  net.runelite.api.WorldView#getPlane(): int
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#walkNextToInstance(GameObject): void  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
