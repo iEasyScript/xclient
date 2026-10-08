@@ -15,6 +15,7 @@ import net.runelite.client.plugins.projectx.util.menu.NewMenuEntry;
 import net.runelite.client.plugins.projectx.util.misc.Rs2UiHelper;
 import net.runelite.client.plugins.projectx.util.tile.Rs2Tile;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
+import net.runelite.client.plugins.projectx.util.walker.recovery.CantReachTargetRecovery;
 
 import java.util.Arrays;
 import java.util.function.Predicate;
@@ -192,9 +193,11 @@ public class Rs2NpcModel extends Rs2ActorModel implements IEntity
 
         ProjectX.status = action + " " + npcName;
         try {
-            if (ProjectX.isCantReachTargetDetectionEnabled && ProjectX.cantReachTarget) {
+            if (CantReachTargetRecovery.shouldStart(
+                    ProjectX.isCantReachTargetDetectionEnabled, ProjectX.cantReachTarget)) {
                 if (!hasLineOfSight()) {
-                    if (ProjectX.cantReachTargetRetries >= Rs2Random.between(3, 5)) {
+                    if (CantReachTargetRecovery.retryExhausted(
+                            ProjectX.cantReachTargetRetries, Rs2Random.between(3, 5))) {
                         ProjectX.pauseAllScripts.compareAndSet(false, true);
                         ProjectX.showMessage("Your bot tried to interact with an NPC for "
                                 + ProjectX.cantReachTargetRetries + " times but failed. Please take a look at what is happening.");
@@ -205,7 +208,8 @@ public class Rs2NpcModel extends Rs2ActorModel implements IEntity
                         log.error("Error interacting with NPC '{}' for action '{}': WorldPoint is null", npcName, action);
                         return false;
                     }
-                    Rs2Walker.walkTo(Rs2Tile.getNearestWalkableTileWithLineOfSight(npcWorldPoint), 0);
+                    CantReachTargetRecovery.walkTo(
+                            Rs2Tile.getNearestWalkableTileWithLineOfSight(npcWorldPoint), 0);
                     ProjectX.pauseAllScripts.compareAndSet(true, false);
                     ProjectX.cantReachTargetRetries++;
                     return false;
