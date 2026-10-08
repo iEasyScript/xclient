@@ -1,5 +1,6 @@
 package net.runelite.client.plugins.projectx.util.dialogues;
 
+import net.runelite.api.gameval.InterfaceID.Chatbox;
 import net.runelite.api.widgets.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.plugins.projectx.ProjectX;
@@ -126,7 +127,7 @@ public class Rs2Dialogue {
      */
     private static boolean hasSpellFilterContinue() {
         return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-            Widget widget = ProjectX.getClient().getWidget(162, 44);
+            Widget widget = ProjectX.getClient().getWidget(Chatbox.MES_TEXT2);
             return widget != null && !widget.isHidden() && isContinuePromptText(widget.getText());
         }).orElse(false);
     }

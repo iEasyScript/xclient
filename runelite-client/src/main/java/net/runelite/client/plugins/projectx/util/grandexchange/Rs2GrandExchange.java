@@ -55,6 +55,9 @@ public class Rs2GrandExchange {
     private static final int COLLECT_ALL_BUTTON = 30474246;
     @Component
     private static final int GE_FRAME = InterfaceID.GeOffers.FRAME;
+    static final int GE_NEWOFFER_PRICE_VARP = 5753;
+    static final int CHATBOX_SEARCH_RESULTS_CHILD = InterfaceID.Chatbox.MES_LAYER_SCROLLCONTENTS & 0xFFFF;
+    static final int CHATBOX_INPUT_CHILD = InterfaceID.Chatbox.MES_TEXT2 & 0xFFFF;
     private static final String GE_TRACKER_API_URL = "https://www.ge-tracker.com/api/items/";
 
     // Wiki API for real-time prices (Alternative source)
@@ -108,6 +111,10 @@ public class Rs2GrandExchange {
      */
     public static boolean isOfferScreenOpen() {
         return Rs2Widget.isWidgetVisible(InterfaceID.GE_OFFERS, 15);
+    }
+
+    static boolean isOfferSetupOpen() {
+        return Rs2Widget.isWidgetVisible(InterfaceID.GeOffers.SETUP);
     }
 
     /**
@@ -212,7 +219,8 @@ public class Rs2GrandExchange {
                 sleepUntil(GrandExchangeWidget::isOfferTextVisible);
 
 
-                Rs2Widget.sleepUntilHasWidgetText("Start typing the name of an item to search for it", 162, 52, false, 5000);
+                Rs2Widget.sleepUntilHasWidgetText("Start typing the name of an item to search for it",
+                        InterfaceID.CHATBOX, CHATBOX_SEARCH_RESULTS_CHILD, false, 5000);
 
                 String searchName = request.getItemName();
                 boolean itemMatchedWithPreviousSearch = isPreviousSearchMatch(request.getItemName());
@@ -234,7 +242,7 @@ public class Rs2GrandExchange {
                     return false;
                 }
                 confirm();
-                success = sleepUntil(() -> !isOfferScreenOpen());
+                success = sleepUntil(() -> !isOfferSetupOpen());
                 break;
 
             case SELL:
@@ -260,7 +268,7 @@ public class Rs2GrandExchange {
                 }
 
                 confirm();
-                success = sleepUntil(() -> !isOfferScreenOpen());
+                success = sleepUntil(() -> !isOfferSetupOpen());
                 break;
         }
 
@@ -283,7 +291,8 @@ public class Rs2GrandExchange {
         }
         Rs2Keyboard.typeString(request.getItemName());
 
-        if (!Rs2Widget.sleepUntilHasWidgetText(searchName, 162, 44, false, 5000)) return true;
+        if (!Rs2Widget.sleepUntilHasWidgetText(searchName,
+                InterfaceID.CHATBOX, CHATBOX_INPUT_CHILD, false, 5000)) return true;
 
         sleepUntil(() -> getSearchResultWidget(request.getItemName(), request.isExact()) != null, 2200);
 
@@ -476,7 +485,7 @@ public class Rs2GrandExchange {
 
         boolean isIncrease = percent > 0;
         int absPercent = Math.abs(percent);
-        int basePrice = ProjectX.getVarbitValue(VarbitID.GE_NEWOFFER_TYPE);
+        long basePrice = getOfferPrice();
 
         if (absPercent % 5 == 0) {
             Widget adjust5Widget = isIncrease
@@ -630,12 +639,9 @@ public class Rs2GrandExchange {
      * @param price the price per item to set for the offer
      */
     private static void setPrice(int price) {
-        // Unconditionally, because there is no longer a way to ask what the offer
-        // price currently is. This used to skip the work when it already matched, by
-        // reading varbit 4398 -- which the 2026-09-30 Grand Exchange rewrite deleted,
-        // so the read returns zero and the comparison could only ever say "differs".
-        // Setting it every time is what was happening anyway; now it says so.
-        {
+        // The 2026-09-30 Grand Exchange rewrite deleted varbit 4398; the in-progress
+        // offer price now lives in long varp 5753 (see getOfferPrice()).
+        if (price != getOfferPrice()) {
             Widget pricePerItemButtonX = GrandExchangeWidget.getPricePerItemButton_X();
             if (pricePerItemButtonX == null) return;
             ProjectX.getMouse().click(pricePerItemButtonX.getBounds());
@@ -1701,6 +1707,11 @@ public class Rs2GrandExchange {
 
     static int getOfferQuantity() {
         return ProjectX.getVarbitValue(VarbitID.GE_NEWOFFER_QUANTITY);
+    }
+
+    static long getOfferPrice() {
+        return ProjectX.getClientThread().runOnClientThreadOptional(() ->
+                ProjectX.getClient().getVarpLongValue(GE_NEWOFFER_PRICE_VARP)).orElse(0L);
     }
 
     public static void setChatboxValue(int value) {
