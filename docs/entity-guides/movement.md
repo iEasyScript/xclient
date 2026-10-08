@@ -295,3 +295,7 @@ Sticky interim targets should also clear when route-index progress goes stale. I
 When a route-following minimap click is outside the minimap clip, fallback clicks must stay on the raw path. A generic "reachable tile closer to target" fallback can select a tile far away from the route in open areas, especially near the final destination.
 
 For adjacent same-plane shortcuts, do not treat any movement away from the origin as success. Some shortcuts, such as stepping stones, can fail and place the player on a fallback tile; once the player is settled away from the expected destination, stop the landing wait and replan from the actual tile.
+
+## 14. Validate scene clicks against the viewport
+
+Direct scene clicks must validate the projected click area against the viewport on the client thread and reuse the validated canvas point when dispatching the click. An on-screen tile check alone can still produce a point outside the usable viewport.

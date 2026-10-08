@@ -1528,6 +1528,16 @@ public class Rs2WalkerUnitTest {
     }
 
     @Test
+    public void sceneClickRequiresEntireClickAreaInsideViewport() {
+        java.awt.Rectangle viewport = new java.awt.Rectangle(10, 20, 500, 300);
+        assertTrue(Rs2Walker.isCanvasPointInsideViewport(new net.runelite.api.Point(250, 150), viewport));
+        assertFalse(Rs2Walker.isCanvasPointInsideViewport(new net.runelite.api.Point(700, 150), viewport));
+        assertFalse(Rs2Walker.isCanvasPointInsideViewport(new net.runelite.api.Point(12, 150), viewport));
+        assertFalse(Rs2Walker.isCanvasPointInsideViewport(new net.runelite.api.Point(250, 318), viewport));
+        assertFalse(Rs2Walker.isCanvasPointInsideViewport(null, viewport));
+    }
+
+    @Test
     public void interimPreclickTiles_runHandsOffEarlierThanWalk() {
         assertEquals(6, Rs2Walker.interimPreclickTiles(false));
         assertEquals(8, Rs2Walker.interimPreclickTiles(true));

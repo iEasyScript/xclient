@@ -4214,19 +4214,12 @@ public class Rs2Walker {
     }
 
     private static boolean walkFastCanvasOnScreenOnly(WorldPoint worldPoint, boolean toggleRun) {
-        LocalPoint localPoint = localPointForWorld(worldPoint);
-        if (localPoint == null || !Rs2Camera.isTileOnScreen(localPoint)) {
+        Point canvasPoint = sceneCanvasPoint(worldPoint);
+        if (canvasPoint == null) {
             return false;
         }
-        Point canvasPoint = Perspective.localToCanvas(
-                ProjectX.getClient(),
-                localPoint,
-                ProjectX.getClient().getTopLevelWorldView().getPlane());
-        int canvasX = canvasPoint != null ? canvasPoint.getX() : -1;
-        int canvasY = canvasPoint != null ? canvasPoint.getY() : -1;
-        if (canvasX < 0 || canvasY < 0) {
-            return false;
-        }
+        int canvasX = canvasPoint.getX();
+        int canvasY = canvasPoint.getY();
 
         Rs2Player.toggleRunEnergy(toggleRun);
         NewMenuEntry entry = new NewMenuEntry()
@@ -4240,6 +4233,32 @@ public class Rs2Walker {
         ProjectX.doInvoke(entry,
                 new Rectangle(canvasX, canvasY, ProjectX.getClient().getCanvasWidth(), ProjectX.getClient().getCanvasHeight()));
         return true;
+    }
+
+    /**
+     * Projects a scene tile to the canvas on the client thread and returns the point only when the
+     * whole click area sits inside the usable viewport. An on-screen tile check alone can still
+     * produce a point outside the viewport.
+     */
+    private static Point sceneCanvasPoint(WorldPoint worldPoint) {
+        if (!ProjectX.getClientThread().isClientThread()) {
+            return ProjectX.getClientThread().runOnClientThreadOptional(() -> sceneCanvasPoint(worldPoint))
+                    .orElse(null);
+        }
+        LocalPoint localPoint = localPointForWorld(worldPoint);
+        if (localPoint == null || !Rs2Camera.isTileOnScreen(localPoint)) {
+            return null;
+        }
+        Point canvasPoint = Perspective.localToCanvas(
+                ProjectX.getClient(), localPoint, worldPoint.getPlane());
+        Rectangle viewport = new Rectangle(ProjectX.getClient().getViewportXOffset(),
+                ProjectX.getClient().getViewportYOffset(), ProjectX.getClient().getViewportWidth(),
+                ProjectX.getClient().getViewportHeight());
+        return isCanvasPointInsideViewport(canvasPoint, viewport) ? canvasPoint : null;
+    }
+
+    static boolean isCanvasPointInsideViewport(Point point, Rectangle viewport) {
+        return point != null && viewport.contains(new Rectangle(point.getX() - 4, point.getY() - 4, 8, 8));
     }
 
     private static LocalPoint localPointForWorld(WorldPoint worldPoint) {
