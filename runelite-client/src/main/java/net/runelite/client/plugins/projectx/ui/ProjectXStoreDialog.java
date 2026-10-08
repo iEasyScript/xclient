@@ -185,7 +185,7 @@ final class ProjectXStoreDialog
         {
             body.add(label("This script is free."));
         }
-        buttons.add(button("Top up X Tokens", () -> LinkBrowser.browse(ProjectXSite.baseUrl().resolve("tokens").toString())));
+        buttons.add(button("Top up X Tokens", () -> LinkBrowser.browse(ProjectXSite.tokens().toString())));
         buttons.add(button("Open store page", () -> LinkBrowser.browse(str(s, "storeUrl"))));
         body.add(buttons);
 

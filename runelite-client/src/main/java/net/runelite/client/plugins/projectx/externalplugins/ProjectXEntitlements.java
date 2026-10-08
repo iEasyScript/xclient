@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -179,6 +180,18 @@ public class ProjectXEntitlements
     public boolean isPaid(String internalName)
     {
         return paid.contains(internalName);
+    }
+
+    /** When access to a paid plugin ends, as last heard from the site; empty if none is known. */
+    public Optional<Instant> accessEndsAt(String internalName)
+    {
+        return Optional.ofNullable(expiries.get(internalName));
+    }
+
+    /** Whether the access {@link #accessEndsAt} reports is a free trial. */
+    public boolean isOnTrial(String internalName)
+    {
+        return trialDeadlines.containsKey(internalName);
     }
 
     public boolean isEntitled(String internalName)
@@ -415,7 +428,7 @@ public class ProjectXEntitlements
                 // "Get", not "Buy": most of the store is free now, and
                 // telling somebody to buy a free script sends them looking
                 // for a price that is not there.
-                : " Get access at " + storeUrls.getOrDefault(internalName, ProjectXSite.baseUrl().toString());
+                : " Get access at " + storeUrls.getOrDefault(internalName, ProjectXSite.store().toString());
 
         log.info("{} {}{}", name, problem, fix);
         notifier.notify(name + " " + problem + fix);

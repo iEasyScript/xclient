@@ -17,6 +17,7 @@ import net.runelite.client.events.RuneScapeProfileChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.projectx.pouch.PouchOverlay;
+import net.runelite.client.plugins.projectx.ui.ProjectXHomePanel;
 import net.runelite.client.plugins.projectx.ui.ProjectXPluginConfigurationDescriptor;
 import net.runelite.client.plugins.projectx.ui.ProjectXPluginListPanel;
 import net.runelite.client.plugins.projectx.ui.ProjectXTopLevelConfigPanel;
@@ -89,6 +90,9 @@ public class ProjectXPlugin extends Plugin
 	private Provider<ProjectXTopLevelConfigPanel> topLevelConfigPanelProvider;
 
 	@Inject
+	private Provider<ProjectXHomePanel> homePanelProvider;
+
+	@Inject
 	private ClientToolbar clientToolbar;
 
 	@Inject
@@ -100,6 +104,11 @@ public class ProjectXPlugin extends Plugin
 	private ProjectXTopLevelConfigPanel topLevelConfigPanel;
 
 	private NavigationButton navButton;
+
+	private NavigationButton homeButton;
+
+	/** Set once the home tab has been shown on a first start, so it is not forced open again. */
+	private static final String HOME_SHOWN_KEY = "homeShown";
 
 	@Provides
 	@Singleton
@@ -187,16 +196,30 @@ public class ProjectXPlugin extends Plugin
 
 		topLevelConfigPanel = topLevelConfigPanelProvider.get();
 
-		final BufferedImage icon = ImageUtil.loadImageResource(getClass(), "projectx_config_icon_lg.png");
-
 		navButton = NavigationButton.builder()
-			.tooltip("Community Plugins")
-			.icon(icon)
+			.tooltip("Scripts")
+			.icon(scriptsIcon())
 			.priority(0)
 			.panel(topLevelConfigPanel)
 			.build();
 
 		clientToolbar.addNavigation(navButton);
+
+		// The Project X home tab, first in the sidebar: account, X Tokens, your scripts.
+		ProjectXHomePanel homePanel = homePanelProvider.get();
+		homePanel.setOpenScripts(() -> SwingUtilities.invokeLater(() -> clientToolbar.openPanel(navButton)));
+		homeButton = NavigationButton.builder()
+			.tooltip("Project X")
+			.icon(ImageUtil.loadImageResource(getClass(), "projectx_config_icon_lg.png"))
+			.priority(-1)
+			.panel(homePanel)
+			.build();
+		clientToolbar.addNavigation(homeButton);
+		if (configManager.getConfiguration(ProjectXConfig.configGroup, HOME_SHOWN_KEY) == null)
+		{
+			configManager.setConfiguration(ProjectXConfig.configGroup, HOME_SHOWN_KEY, true);
+			SwingUtilities.invokeLater(() -> clientToolbar.openPanel(homeButton));
+		}
 
 		new InputSelector(clientToolbar);
 
@@ -213,12 +236,31 @@ public class ProjectXPlugin extends Plugin
 
 	}
 
+	/** A gold two-by-two grid: the script library. Drawn, so it is ours and not a stock icon. */
+	private static BufferedImage scriptsIcon()
+	{
+		BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+		java.awt.Graphics2D g = img.createGraphics();
+		g.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+		g.setColor(net.runelite.client.plugins.projectx.ui.ProjectXTheme.GOLD);
+		for (int x : new int[]{1, 9})
+		{
+			for (int y : new int[]{1, 9})
+			{
+				g.fillRoundRect(x, y, 6, 6, 2, 2);
+			}
+		}
+		g.dispose();
+		return img;
+	}
+
 	protected void shutDown()
 	{
 		overlayManager.remove(projectxOverlay);
 		overlayManager.remove(gembagOverlay);
 		overlayManager.remove(pouchOverlay);
 		clientToolbar.removeNavigation(navButton);
+		clientToolbar.removeNavigation(homeButton);
 		if (gameChatAppender.isStarted()) gameChatAppender.stop();
 		sessionTracker.stop();
 		whatsNew.stop();

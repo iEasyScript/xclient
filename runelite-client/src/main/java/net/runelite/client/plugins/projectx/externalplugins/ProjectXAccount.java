@@ -388,6 +388,15 @@ public class ProjectXAccount
         @SerializedName("role")
         private String role;
 
+        @SerializedName("tokenBalance")
+        private Integer tokenBalance;
+
+        /** Spendable X Tokens, or null if the site did not say. */
+        public Integer tokenBalance()
+        {
+            return tokenBalance;
+        }
+
         public String id()
         {
             return id;

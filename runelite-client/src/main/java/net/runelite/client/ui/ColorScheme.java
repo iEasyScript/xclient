@@ -31,23 +31,30 @@ import java.awt.Color;
  */
 public class ColorScheme
 {
-	/* The orange color used for the branding's accents */
-	public static final Color BRAND_ORANGE = new Color(220, 138, 0);
+	/*
+	 * Project X: the accent is the crest's worked gold and the greys are obsidian,
+	 * as on xclient.dev and in the launcher. The look-and-feel is built from these
+	 * (RuneLiteLAF.properties), so changing them re-themes the whole client.
+	 * Brightness matches RuneLite's originals so no text loses contrast.
+	 */
 
-	/* The orange color used for the branding's accents, with lowered opacity */
-	public static final Color BRAND_ORANGE_TRANSPARENT = new Color(220, 138, 0, 120);
+	/* The gold used for the branding's accents (named for RuneLite's orange, which it replaces) */
+	public static final Color BRAND_ORANGE = new Color(200, 160, 74);
 
-	public static final Color DARKER_GRAY_COLOR = new Color(30, 30, 30);
-	public static final Color DARK_GRAY_COLOR = new Color(40, 40, 40);
-	public static final Color MEDIUM_GRAY_COLOR = new Color(77, 77, 77);
-	public static final Color LIGHT_GRAY_COLOR = new Color(165, 165, 165);
+	/* The accent, with lowered opacity */
+	public static final Color BRAND_ORANGE_TRANSPARENT = new Color(200, 160, 74, 120);
 
-	public static final Color TEXT_COLOR = new Color(198, 198, 198);
-	public static final Color CONTROL_COLOR = new Color(30, 30, 30);
-	public static final Color BORDER_COLOR = new Color(23, 23, 23);
+	public static final Color DARKER_GRAY_COLOR = new Color(26, 29, 37);
+	public static final Color DARK_GRAY_COLOR = new Color(35, 39, 49);
+	public static final Color MEDIUM_GRAY_COLOR = new Color(70, 75, 89);
+	public static final Color LIGHT_GRAY_COLOR = new Color(167, 161, 148);
 
-	public static final Color DARKER_GRAY_HOVER_COLOR = new Color(60, 60, 60);
-	public static final Color DARK_GRAY_HOVER_COLOR = new Color(35, 35, 35);
+	public static final Color TEXT_COLOR = new Color(214, 208, 196);
+	public static final Color CONTROL_COLOR = new Color(26, 29, 37);
+	public static final Color BORDER_COLOR = new Color(17, 19, 25);
+
+	public static final Color DARKER_GRAY_HOVER_COLOR = new Color(54, 59, 72);
+	public static final Color DARK_GRAY_HOVER_COLOR = new Color(30, 34, 43);
 
 	/* The color for the green progress bar (used in ge offers, farming tracker, etc)*/
 	public static final Color PROGRESS_COMPLETE_COLOR = new Color(55, 240, 70);
@@ -68,6 +75,6 @@ public class ColorScheme
 	public static final Color GRAND_EXCHANGE_LIMIT = new Color(50, 160, 250);
 
 	/* The background color of the scrollbar's track */
-	public static final Color SCROLL_TRACK_COLOR = new Color(25, 25, 25);
+	public static final Color SCROLL_TRACK_COLOR = new Color(21, 24, 31);
 
 }

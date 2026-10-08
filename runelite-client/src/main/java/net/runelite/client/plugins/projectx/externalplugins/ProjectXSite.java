@@ -118,12 +118,66 @@ public final class ProjectXSite
      */
     public static HttpUrl scriptPage(String internalName)
     {
-        HttpUrl.Builder builder = baseUrl().newBuilder().encodedPath("/store");
-        if (internalName != null && !internalName.isEmpty())
+        if (internalName == null || internalName.isEmpty())
         {
-            builder.encodedPath("/script").addPathSegment(internalName);
+            return store();
         }
-        return builder.build();
+        return shared("script").newBuilder().addPathSegment(internalName).build();
+    }
+
+    // ---- pages, always this game's
+
+    /**
+     * The site serves OSRS and RS3. Its own pages live under /osrs and /rs3, and the
+     * pages both share (dashboard, tokens, account) follow the last game the browser
+     * looked at unless told. Every link from this client says OSRS, which also makes
+     * OSRS the game the site remembers from then on.
+     */
+    public static final String GAME = "osrs";
+
+    /** The OSRS front page. */
+    public static HttpUrl home()
+    {
+        return baseUrl().newBuilder().encodedPath("/" + GAME).build();
+    }
+
+    /** The OSRS store. */
+    public static HttpUrl store()
+    {
+        return baseUrl().newBuilder().encodedPath("/" + GAME + "/store").build();
+    }
+
+    /** The player's OSRS dashboard: runs, run time and experience. */
+    public static HttpUrl dashboard()
+    {
+        return shared("dashboard");
+    }
+
+    /** Buying X Tokens, with the way back leading to the OSRS store. */
+    public static HttpUrl tokens()
+    {
+        return shared("tokens");
+    }
+
+    /** Account settings and client API tokens. */
+    public static HttpUrl account()
+    {
+        return shared("account");
+    }
+
+    /** Instance slots. */
+    public static HttpUrl instances()
+    {
+        return shared("instances");
+    }
+
+    /** A page both games share, asked for as OSRS. */
+    private static HttpUrl shared(String path)
+    {
+        return baseUrl().newBuilder()
+            .encodedPath("/" + path)
+            .addQueryParameter("game", GAME)
+            .build();
     }
 
     /** True when the URL points at the site itself, so it may receive the user's API token. */

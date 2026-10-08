@@ -44,6 +44,25 @@ public class ScriptQueuePlugin extends Plugin
     private ScriptQueuePanel panel;
     private NavigationButton navButton;
 
+    /** The live tab, for {@link #open()}. Null while the plugin is off. */
+    private static volatile ScriptQueuePlugin instance;
+
+    /**
+     * Opens the Script Queue tab, for buttons elsewhere (the Project X home tab).
+     *
+     * @return false if the Script Queue is turned off
+     */
+    public static boolean open()
+    {
+        ScriptQueuePlugin live = instance;
+        if (live == null || live.navButton == null)
+        {
+            return false;
+        }
+        SwingUtilities.invokeLater(() -> live.clientToolbar.openPanel(live.navButton));
+        return true;
+    }
+
     @Override
     protected void startUp()
     {
@@ -55,11 +74,13 @@ public class ScriptQueuePlugin extends Plugin
             .panel(panel)
             .build();
         clientToolbar.addNavigation(navButton);
+        instance = this;
     }
 
     @Override
     protected void shutDown()
     {
+        instance = null;
         if (panel != null)
         {
             panel.shutdown();
@@ -85,7 +106,7 @@ public class ScriptQueuePlugin extends Plugin
         BufferedImage img = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = img.createGraphics();
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g.setColor(new Color(220, 138, 0));
+        g.setColor(net.runelite.client.plugins.projectx.ui.ProjectXTheme.GOLD);
         g.setStroke(new BasicStroke(2f));
         for (int y : new int[]{3, 8, 13})
         {

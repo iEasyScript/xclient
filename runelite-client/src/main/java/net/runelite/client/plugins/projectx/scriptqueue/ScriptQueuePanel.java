@@ -56,6 +56,7 @@ class ScriptQueuePanel extends PluginPanel
     private final JSpinner level = new JSpinner(new SpinnerNumberModel(70, 2, 99, 1));
     private final JCheckBox loop = new JCheckBox("Loop the queue");
     private final JCheckBox logout = new JCheckBox("Log out when it finishes");
+    private final JCheckBox breakBetween = new JCheckBox("Take a break between scripts");
     private final JSpinner pauseMin = new JSpinner(new SpinnerNumberModel(20, 0, 600, 5));
     private final JSpinner pauseMax = new JSpinner(new SpinnerNumberModel(90, 0, 900, 5));
 
@@ -100,7 +101,7 @@ class ScriptQueuePanel extends PluginPanel
         title.setFont(FontManager.getRunescapeBoldFont());
         title.setForeground(ColorScheme.BRAND_ORANGE);
         content.add(left(title));
-        content.add(left(wrap("Runs your scripts one after another. Each moves on when its time is up, its goal is reached, or it stops by itself.")));
+        content.add(left(wrap("Runs your scripts one after another. Each moves on when its time is up, its goal is reached, or it stops by itself. BreakHandler breaks pause the queue.")));
         content.add(gap());
 
         stepList.setLayout(new BoxLayout(stepList, BoxLayout.Y_AXIS));
@@ -138,6 +139,10 @@ class ScriptQueuePanel extends PluginPanel
         options.setBorder(BorderFactory.createTitledBorder("Options"));
         options.add(loop);
         options.add(logout);
+        options.add(breakBetween);
+        breakBetween.setToolTipText("<html>Before each next script, take a BreakHandler break.<br>"
+            + "Its settings decide how long, whether to log out, and the world to log back in to.<br>"
+            + "Turns the BreakHandler on if it is off.</html>");
         options.add(row(new JLabel("Pause between (s)"), row(pauseMin, pauseMax)));
         content.add(left(options));
         content.add(gap());
@@ -149,7 +154,7 @@ class ScriptQueuePanel extends PluginPanel
 
         add(content, BorderLayout.NORTH);
 
-        for (JCheckBox box : new JCheckBox[]{loop, logout})
+        for (JCheckBox box : new JCheckBox[]{loop, logout, breakBetween})
         {
             box.setOpaque(false);
             box.addActionListener(e -> save());
@@ -170,6 +175,8 @@ class ScriptQueuePanel extends PluginPanel
         List<ScriptChoice> choices = pluginManager.getPlugins().stream()
             .filter(p -> p.getClass().getName().startsWith("net.runelite.client.plugins.projectx."))
             .filter(p -> !(p instanceof ScriptQueuePlugin))
+            // Breaks are an option of the queue, not a step in it.
+            .filter(p -> !p.getClass().getName().contains(".breakhandler."))
             .filter(p -> !p.getClass().getSimpleName().equals("ProjectXPlugin"))
             .map(p -> new ScriptChoice(p.getClass().getName(), nameOf(p)))
             .filter(c -> c.name != null)
@@ -278,7 +285,7 @@ class ScriptQueuePanel extends PluginPanel
         {
             return;
         }
-        runner = new ScriptQueueRunner(steps, loop.isSelected(), logout.isSelected(),
+        runner = new ScriptQueueRunner(steps, loop.isSelected(), logout.isSelected(), breakBetween.isSelected(),
             (Integer) pauseMin.getValue(), (Integer) pauseMax.getValue(), this::setStatus);
         runnerThread = new Thread(() ->
         {
@@ -317,7 +324,7 @@ class ScriptQueuePanel extends PluginPanel
 
     private void setStatus(String text)
     {
-        SwingUtilities.invokeLater(() -> status.setText("<html><div style='width:190px'>" + text + "</div></html>"));
+        SwingUtilities.invokeLater(() -> status.setText("<html><div style='width:170px'>" + text + "</div></html>"));
     }
 
     // ---- persistence
@@ -327,6 +334,7 @@ class ScriptQueuePanel extends PluginPanel
         configManager.setConfiguration(GROUP, "steps", gson.toJson(steps));
         configManager.setConfiguration(GROUP, "loop", loop.isSelected());
         configManager.setConfiguration(GROUP, "logout", logout.isSelected());
+        configManager.setConfiguration(GROUP, "breakBetween", breakBetween.isSelected());
         configManager.setConfiguration(GROUP, "pauseMin", (Integer) pauseMin.getValue());
         configManager.setConfiguration(GROUP, "pauseMax", (Integer) pauseMax.getValue());
     }
@@ -351,6 +359,7 @@ class ScriptQueuePanel extends PluginPanel
         }
         loop.setSelected(Boolean.parseBoolean(configManager.getConfiguration(GROUP, "loop")));
         logout.setSelected(Boolean.parseBoolean(configManager.getConfiguration(GROUP, "logout")));
+        breakBetween.setSelected(Boolean.parseBoolean(configManager.getConfiguration(GROUP, "breakBetween")));
         pauseMin.setValue(intOr(configManager.getConfiguration(GROUP, "pauseMin"), 20));
         pauseMax.setValue(intOr(configManager.getConfiguration(GROUP, "pauseMax"), 90));
     }
@@ -380,7 +389,7 @@ class ScriptQueuePanel extends PluginPanel
 
     private static JLabel wrap(String text)
     {
-        JLabel l = new JLabel("<html><div style='width:190px'>" + text + "</div></html>");
+        JLabel l = new JLabel("<html><div style='width:170px'>" + text + "</div></html>");
         l.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
         return l;
     }

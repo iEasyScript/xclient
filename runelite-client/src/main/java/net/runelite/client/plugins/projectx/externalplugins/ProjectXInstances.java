@@ -96,7 +96,7 @@ public class ProjectXInstances
         if (Strings.isNullOrEmpty(token))
         {
             refusal = "Project X needs your account to start.\n\n"
-                    + "Create an API token on " + ProjectXSite.baseUrl() + "account\n"
+                    + "Create an API token on " + ProjectXSite.account() + "\n"
                     + "and paste it into Project X settings -> Project X account -> API token.";
             return false;
         }
@@ -111,14 +111,14 @@ public class ProjectXInstances
             if (response.code() == 401)
             {
                 refusal = "Your Project X API token was not accepted.\n\n"
-                        + "Create a new one on " + ProjectXSite.baseUrl() + "account";
+                        + "Create a new one on " + ProjectXSite.account();
                 return false;
             }
 
             if (response.code() == 409)
             {
                 refusal = describeShortfall(response) + "\n\n"
-                        + "Close a client, or add an instance at " + ProjectXSite.baseUrl() + "instances";
+                        + "Close a client, or add an instance at " + ProjectXSite.instances();
                 return false;
             }
 
