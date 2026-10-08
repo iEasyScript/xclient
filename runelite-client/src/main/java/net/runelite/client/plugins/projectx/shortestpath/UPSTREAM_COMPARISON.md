@@ -5,6 +5,40 @@ Original baseline: `07fca57` ("Data fixes and minor cleanups (#400)"). **Everyth
 
 ---
 
+## Data sync 2026-10-08 → upstream `c31e3eff5c`
+
+Transport data was synced with **`tools/shortestpath_sync.py`** (repo root), a reusable converter
+from upstream's TSV grammar to ours; rows we deliberately refuse live in
+`tools/shortestpath_sync_exclusions.tsv`. Re-run: `python tools/shortestpath_sync.py fetch --dest <dir>`,
+then `diff` / `apply --upstream <dir> <file>.tsv` per file (the script's docstring explains every rule).
+
+**Item-requirement semantics (verified):** `;` in `Item IDs` does *not* mean "all of". The pathfinder
+gate (`PathfinderConfig.hasRequiredItems`) flattens every group and accepts any id; the banking planner
+(`Rs2WalkerBankingPlanner.getMissingTransportItemIdsWithQuantities`) withdraws the best-stocked id of
+the *first group only*. So the only shape enforced correctly is one space-separated "any of" group, and
+a true AND of two items cannot be expressed. The converter skips such upstream rows (grapples:
+crossbow AND grapple; Kharazi jungle: axe AND machete) instead of importing them without a requirement,
+and `TransportDataIntegrityTest` now fails on any `;` in `Item IDs` (and on any requirement cell the
+lenient parser would drop).
+
+| File | Rows before → after | Notes |
+|---|---|---|
+| agility_shortcuts.tsv | 286 → 707 | +421; 97 moved from transports.tsv with upstream's Agility level; 12 tile fixes |
+| transports.tsv | 5731 → 5877 | +244 new, −98 relocated; 1 tile fix |
+| charter_ships.tsv | 229 → 405 | 5 Sailing-era ports; arrivals at old ports reuse our deck tiles |
+| boats / ships / canoes | 107/37/25 → 128/41/45 | 8 boat tile fixes; Pandemonium ships; 5 new canoe stations |
+| teleportation_items.tsv | 292 → 301 | +9; 43 landing fixes (+2 by hand) |
+| teleportation_spells.tsv | 48 → 58 | Respawn Teleport, Seers', Aldarin house; 18 landing fixes |
+| teleportation_portals.tsv | 100 → 112 | Myths' Guild portals, Temple of the Eye |
+| magic_carpets / minecarts / spirit_trees | 12/47/145 → 17/49/154 | Nardah carpet, Arceuus minecart, Laguna Aurorae tree |
+| teleportation_minigames / quetzals / fairy_rings | unchanged counts | BF + GotR landings, Quetzacalli Gorge, BJP tile fixes |
+
+Not synced: `seasonal_transports.tsv`, `teleportation_boxes.tsv`, `teleportation_portals_poh.tsv` and any
+row touching upstream's POH tile (`1858 7051 0`) — our POH is modelled in code. Home teleports for the
+Ancient/Lunar/Arceuus books and West Ardougne Teleport need `Rs2Spells` entries before they can be added.
+
+---
+
 ## Re-baseline 2026-07-20 → upstream `7e7e5bf94b`
 
 Added the `skretzo` remote and fetched. Current upstream HEAD (`skretzo/master`) is **`7e7e5bf94b`** ("Update collision map") — **122 commits ahead** of the pinned `07fca57`, including a **major architectural refactor**. The `07fca57`-based punch list below is now largely obsolete; use this section as the current map.
