@@ -3,6 +3,9 @@ package net.runelite.client.plugins.projectx.shortestpath.pathfinder;
 import net.runelite.api.Quest;
 import net.runelite.api.QuestState;
 import net.runelite.api.Skill;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.plugins.projectx.shortestpath.Transport;
+import net.runelite.client.plugins.projectx.shortestpath.WorldPointUtil;
 import net.runelite.client.plugins.projectx.shortestpath.TransportVarPlayer;
 import net.runelite.client.plugins.projectx.shortestpath.TransportVarbit;
 import net.runelite.client.plugins.projectx.util.magic.Runes;
@@ -17,12 +20,68 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 public class PathfinderConfigTransportRefreshHashTest {
 
     private static final int[] NO_VARBITS = new int[0];
     private static final int[] NO_VARPLAYERS = new int[0];
+
+    @Test
+    public void bankedFareCanBeSplitBetweenInventoryAndBank() {
+        assertTrue(PathfinderConfig.hasAvailableCurrencyForFare(400, 100, 500, true));
+        assertFalse(PathfinderConfig.hasAvailableCurrencyForFare(400, 100, 500, false));
+        assertFalse(PathfinderConfig.hasAvailableCurrencyForFare(400, 99, 500, true));
+    }
+
+    @Test
+    public void chronicleChargeKeyChangesOnlyWhenUsabilityChanges() {
+        assertEquals(-1, PathfinderConfig.chronicleChargeState(null));
+        assertEquals(-1, PathfinderConfig.chronicleChargeState("invalid"));
+        assertEquals(0, PathfinderConfig.chronicleChargeState("0"));
+        assertEquals(1, PathfinderConfig.chronicleChargeState("1"));
+        assertEquals(1, PathfinderConfig.chronicleChargeState("12"));
+    }
+
+    @Test
+    public void restoringEarlierPolicyRestoresItsBlockedEdges() throws java.io.IOException {
+        PathfinderConfig config = new PathfinderConfig(null, new HashMap<>(), List.of(), null, null);
+        java.io.File learnedEdges = java.io.File.createTempFile("learned-blocked-edges", ".tsv");
+        learnedEdges.deleteOnExit();
+        config.setLearnedBlockedEdgesFileForTest(learnedEdges);
+        WorldPoint from = new WorldPoint(3200, 3200, 0);
+        WorldPoint to = new WorldPoint(3201, 3200, 0);
+        int fromPacked = WorldPointUtil.packWorldPoint(from);
+        int toPacked = WorldPointUtil.packWorldPoint(to);
+        long edge = PathfinderConfig.transportEdgeKey(fromPacked, toPacked);
+        PathfinderConfig.TransportRefreshSnapshot blocked =
+                PathfinderConfig.TransportRefreshSnapshot.capture(1, 1, new int[0],
+                        new int[0], new int[0], new int[0], new int[0],
+                        new HashMap<>(), Set.of(), Set.of(edge));
+        PathfinderConfig.TransportRefreshSnapshot open =
+                PathfinderConfig.TransportRefreshSnapshot.capture(2, 2, new int[0],
+                        new int[0], new int[0], new int[0], new int[0],
+                        new HashMap<>(), Set.of(), Set.of());
+
+        blocked.restoreInto(config);
+        assertTrue(config.isBlockedTransportEdge(fromPacked, toPacked));
+        open.restoreInto(config);
+        assertFalse(config.isBlockedTransportEdge(fromPacked, toPacked));
+        blocked.restoreInto(config);
+        assertTrue("A/B/A cache hit must restore A's edge policy",
+                config.isBlockedTransportEdge(fromPacked, toPacked));
+
+        WorldPoint learnedFrom = new WorldPoint(3300, 3300, 0);
+        WorldPoint learnedTo = new WorldPoint(3301, 3300, 0);
+        int learnedFromPacked = WorldPointUtil.packWorldPoint(learnedFrom);
+        int learnedToPacked = WorldPointUtil.packWorldPoint(learnedTo);
+        config.learnBlockedEdge(learnedFrom, learnedTo, "test");
+        open.restoreInto(config);
+        assertTrue("restoring a snapshot must retain blocks learned after it was captured",
+                config.isBlockedTransportEdge(learnedFromPacked, learnedToPacked));
+    }
 
     @Test
     public void verificationHashDiffersForNotStartedVsInProgressQuestState() {
@@ -252,5 +311,20 @@ public class PathfinderConfigTransportRefreshHashTest {
     @Test
     public void unknownRelevantSetFingerprintsEverything() {
         assertTrue(PathfinderConfig.itemAffectsTransportUsability(995000, null));
+    }
+
+    @Test
+    public void catalogVariantsNeverDropPreviouslyRelevantItems() {
+        Set<Integer> baseCatalog = Set.of(1856);
+        Set<Integer> pohCatalog = Set.of(954);
+        Set<Integer> expanded = PathfinderConfig.expandTransportRelevantItemState(
+                baseCatalog, pohCatalog);
+
+        assertTrue(PathfinderConfig.itemAffectsTransportUsability(1856, expanded));
+        assertTrue(PathfinderConfig.itemAffectsTransportUsability(954, expanded));
+        assertEquals("switching back to an earlier catalog must retain the wider fingerprint",
+                expanded, PathfinderConfig.expandTransportRelevantItemState(expanded, baseCatalog));
+        assertEquals("an unknown currency must keep the safe all-item fallback",
+                null, PathfinderConfig.expandTransportRelevantItemState(expanded, null));
     }
 }

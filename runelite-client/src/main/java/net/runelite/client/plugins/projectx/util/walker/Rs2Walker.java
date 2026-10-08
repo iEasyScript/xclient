@@ -2762,10 +2762,8 @@ public class Rs2Walker {
                                 int finishThRecovery = tightFinishThreshold(target, pathLastRecovery, distance);
                                 waitForMovementStartAfterRecovery(target, playerLoc, clickedRecoveryTarget, target,
                                         finishThRecovery);
-                                // Next outer iteration runs checkIfStuck/isStuckTooLong before tile delta — avoid
-                                // spurious stall-recalc right after issuing recovery movement.
-                                routeState.lastMovedTimeMs = System.currentTimeMillis();
-                                routeState.stuckCount = 0;
+                                // The wait can time out without movement. Let checkIfStuck on the next
+                                // pass credit an actual tile change instead of crediting the click.
                                 exitReason = "local-recovery-click";
                                 break;
                             }
@@ -2834,11 +2832,10 @@ public class Rs2Walker {
 										INTERIM_MOVING_POLL_MS);
                                 WorldPoint posAfterWait = Rs2Player.getWorldLocation();
                                 recordInterimDistanceProgress(interimFinal, posAfterWait, System.currentTimeMillis());
-								if ((posAfterWait != null && posBeforeWait.distanceTo2D(posAfterWait) > 0)
-                                        || Rs2Player.isMoving()) {
-									routeState.lastMovedTimeMs = System.currentTimeMillis();
-									routeState.stuckCount = 0;
-								}
+                                if (posAfterWait != null && !posAfterWait.equals(posBeforeWait)) {
+                                    routeState.lastMovedTimeMs = System.currentTimeMillis();
+                                    routeState.stuckCount = 0;
+                                }
                                 boolean closeEnoughForNextClick = posAfterWait != null
                                         && interimFinal.distanceTo2D(posAfterWait) <= INTERIM_CLOSE_TILES;
                                 if (!closeEnoughForNextClick && Rs2Player.isMoving()) {
@@ -4155,8 +4152,6 @@ public class Rs2Walker {
         }
         if ("active route idle nudge".equals(logLabel)) {
             routeState.lastActiveRouteIdleNudgeAtMs = routeState.interimSetAtMs;
-        } else {
-            routeState.lastMovedTimeMs = routeState.interimSetAtMs;
         }
         routeState.idleNudgeStationarySinceMs = routeState.interimSetAtMs;
         routeState.idleNudgeLastObservedLocation = playerLoc;
@@ -8592,6 +8587,7 @@ public class Rs2Walker {
         return routeState.routeProgressIdx;
     }
 
+    /** Anchors later click selection without treating an issued click as observed route progress. */
     static void hintRouteProgressIndex(List<WorldPoint> path, int hintedIdx, WorldPoint target) {
         if (path == null || path.isEmpty() || hintedIdx < 0 || hintedIdx >= path.size()) {
             return;
@@ -8611,13 +8607,13 @@ public class Rs2Walker {
             routeState.routeProgressPathEnd = pathEnd;
             routeState.routeProgressPathSize = path.size();
             routeState.routeProgressIdx = hintedIdx;
-            recordRouteProgressAdvanced();
+            // Start the new route's stagnation clock, but a click hint is not player movement.
+            routeState.routeProgressAdvancedAtMs = System.currentTimeMillis();
             return;
         }
 
         if (hintedIdx > routeState.routeProgressIdx) {
             routeState.routeProgressIdx = hintedIdx;
-            recordRouteProgressAdvanced();
         }
     }
 
