@@ -1,0 +1,24 @@
+# Upstream (Skretzo/shortest-path) rows that tools/shortestpath_sync.py must never import.
+# Columns: upstream file, origin ('*' = any), destination ('*' = any), match, reason.
+# match: '*', an object/NPC id, 'item:<id>', 'display:<prefix>' or 'option:<menu option>'.
+transports.tsv	*	*	2149	Garden of Tranquillity trellis is deliberately omitted (testVarrockSewerPathAvoidsDisabledPalaceTrellisShortcut)
+transports.tsv	*	*	option:Join	Castle Wars recruiters are NPCs; our walker only interacts with objects for TRANSPORT rows
+transports.tsv	3304 3124 0	3013 3180 0	4642	Shantay Pass arrest (NPC dialogue that jails the player) is not a walking route
+transports.tsv	3088 9972 0	3088 3572 0	16680	dungeon-side return reuses the surface ladder's object id and option; not interactable from below
+transports.tsv	3089 9971 0	3089 3571 0	16680	dungeon-side return reuses the surface ladder's object id and option; not interactable from below
+transports.tsv	3088 9970 0	3088 3570 0	16680	dungeon-side return reuses the surface ladder's object id and option; not interactable from below
+transports.tsv	3087 9971 0	3087 3571 0	16680	dungeon-side return reuses the surface ladder's object id and option; not interactable from below
+boats.tsv	*	*	14727	Achilka boat is already modelled as NPC transports in npcs.tsv
+boats.tsv	*	*	14728	Achilka boat is already modelled as NPC transports in npcs.tsv
+boats.tsv	*	*	14729	Achilka boat is already modelled as NPC transports in npcs.tsv
+teleportation_items.tsv	*	*	item:28564	Trinket of fairies is a Deadman Mode item
+teleportation_spells.tsv	*	2546 3112 0	display:Watchtower Teleport	conflicts with our Watchtower Teleport landing (2932 4711 2); needs in-game verification before replacing
+teleportation_spells.tsv	*	2771 9102 0	display:Ape Atoll Teleport	conflicts with our Arceuus Ape Atoll Teleport landing (2768 2702 0); needs in-game verification before replacing
+teleportation_minigames.tsv	*	*	display:Rat Pits Minigame Teleport: 3. Keldagrim	our Keldagrim Rat Pits row is disabled pending an in-game fix
+teleportation_minigames.tsv	*	*	display:Blast Furnace	landing tile corrected by hand on our existing row (upstream 9eda13df53)
+teleportation_minigames.tsv	*	*	display:Guardians of the Rift	landing tile corrected by hand on our existing row (upstream #333)
+teleportation_items.tsv	*	*	display:Achievement diary cape: 7.	our Kaleb Paramaya diary-cape row is deliberately commented out
+teleportation_items.tsv	*	*	display:Achievement diary cape: 8.	our Jungle forester diary-cape row is deliberately commented out
+teleportation_items.tsv	*	*	display:Achievement diary cape: 9.	our TzHaar-Mej diary-cape row is deliberately commented out
+teleportation_items.tsv	*	*	display:Western banner	landing tile corrected by hand on our existing Western banner row
+teleportation_items.tsv	*	*	display:Giantsoul amulet: 2. Obor	landing tile corrected by hand on our existing Giantsoul Amulet: Obor row
