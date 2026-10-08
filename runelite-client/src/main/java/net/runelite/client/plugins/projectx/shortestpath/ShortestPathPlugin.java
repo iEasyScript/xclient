@@ -690,8 +690,8 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
         } else if (client != null) {
             // Flag is off, so no active store — delete the on-disk tree via a transient handle.
             final LiveCollisionPersistence tmpStore = new LiveCollisionPersistence(client.getRevision());
-            tmpStore.deleteAllNow();
-            tmpStore.shutdown();
+            tmpStore.deleteAllAsync();
+            tmpStore.shutdownAsync();
         }
         lastLiveCaptureBaseX = Integer.MIN_VALUE;
         lastLiveCaptureBaseY = Integer.MIN_VALUE;

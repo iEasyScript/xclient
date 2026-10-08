@@ -854,6 +854,8 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
         if (component instanceof JCheckBox) {
             JCheckBox checkbox = (JCheckBox) component;
             configManager.setConfiguration(cd.getGroup().value(), cid.getItem().keyName(), "" + checkbox.isSelected());
+            checkbox.setSelected(Boolean.parseBoolean(
+                    configManager.getConfiguration(cd.getGroup().value(), cid.getItem().keyName())));
         } else if (component instanceof JSpinner) {
             JSpinner spinner = (JSpinner) component;
             configManager.setConfiguration(cd.getGroup().value(), cid.getItem().keyName(), "" + spinner.getValue());
