@@ -22,4 +22,3 @@ teleportation_items.tsv	*	*	display:Achievement diary cape: 8.	our Jungle forest
 teleportation_items.tsv	*	*	display:Achievement diary cape: 9.	our TzHaar-Mej diary-cape row is deliberately commented out
 teleportation_items.tsv	*	*	display:Western banner	landing tile corrected by hand on our existing Western banner row
 teleportation_items.tsv	*	*	display:Giantsoul amulet: 2. Obor	landing tile corrected by hand on our existing Giantsoul Amulet: Obor row
-teleportation_spells.tsv	*	3265 6077 0	display:Respawn Teleport	Prifddinas respawn is gated by an upstream config option we lack; ungated it would shadow the Lumbridge default respawn
