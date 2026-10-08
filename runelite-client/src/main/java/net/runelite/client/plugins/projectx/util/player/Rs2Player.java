@@ -444,12 +444,9 @@ public class Rs2Player {
                 Widget widget = Rs2Widget.getWidget(WidgetInfo.MINIMAP_TOGGLE_RUN_ORB.getId());
                 if (widget == null || widget.isHidden()) return null;
                 Rectangle bounds = widget.getBounds();
-                if (bounds == null || bounds.width < 3 || bounds.height < 3
-                        || !new Rectangle(0, 0, client.getCanvasWidth(), client.getCanvasHeight()).contains(bounds)) return null;
-                int x = bounds.x + bounds.width / 2;
-                int y = bounds.y + bounds.height / 2;
-                if (x < 0 || y < 0 || x >= client.getCanvasWidth() || y >= client.getCanvasHeight()) return null;
-                return new Point(x, y);
+                if (bounds == null || bounds.width < 3 || bounds.height < 3 || bounds.x < 0 || bounds.y < 0
+                        || !Rs2UiHelper.isRectangleWithinCanvas(bounds)) return null;
+                return new Point(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
             }).orElse(null);
             if (target == null) return false;
             try {

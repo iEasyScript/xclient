@@ -4237,7 +4237,8 @@ public class Rs2Walker {
             return false;
         }
         Client client = ProjectX.getClient();
-        LocalPoint before = client.isClientThread() ? null
+        boolean onClientThread = ProjectX.getClientThread().isClientThread();
+        LocalPoint before = onClientThread ? null
                 : ProjectX.getClientThread().runOnClientThreadOptional(client::getLocalDestinationLocation).orElse(null);
         int canvasX = canvasPoint.getX();
         int canvasY = canvasPoint.getY();
@@ -4251,7 +4252,7 @@ public class Rs2Walker {
 
         ProjectX.doInvoke(entry,
                 new Rectangle(canvasX, canvasY, client.getCanvasWidth(), client.getCanvasHeight()));
-        if (client.isClientThread()) {
+        if (onClientThread) {
             return true;
         }
         LocalPoint[] observed = awaitSceneWalkDestination(worldPoint, before);
