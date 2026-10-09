@@ -14,7 +14,7 @@ public enum JewelleryLocationEnum {
     TEARS_OF_GUTHIX(TeleportType.JEWELLERY, "Games Necklace" , "Tears of Guthix", new WorldPoint(3245, 9500, 0), "games_necklace_teleport_icon.png", 5),
     CORPOREAL_BEAST(TeleportType.JEWELLERY, "Games Necklace" , "Corporeal Beast", new WorldPoint(2967, 4384, 0), "games_necklace_teleport_icon.png", 4),
     WINTERTODT_CAMP(TeleportType.JEWELLERY, "Games Necklace" , "Wintertodt Camp", new WorldPoint(1624, 3938, 0), "games_necklace_teleport_icon.png", 6),
-    PVP_ARENA(TeleportType.JEWELLERY, "Ring of Dueling" , "Al Kharid PvP Arena", new WorldPoint(3315, 3235, 0), "ring_of_dueling_teleport_icon.png", 2),
+    PVP_ARENA(TeleportType.JEWELLERY, "Ring of Dueling" , "Emir's Arena", new WorldPoint(3315, 3235, 0), "ring_of_dueling_teleport_icon.png", 2),
     FEROX_ENCLAVE(TeleportType.JEWELLERY, "Ring of Dueling" , "Ferox Enclave", new WorldPoint(3151, 3636, 0), "ring_of_dueling_teleport_icon.png", 4),
     CASTLE_WARS(TeleportType.JEWELLERY, "Ring of Dueling" , "Castle Wars", new WorldPoint(2441, 3091, 0), "ring_of_dueling_teleport_icon.png", 3),
     FORTIS_COLOSSEUM(TeleportType.JEWELLERY, "Ring of Dueling" , "Fortis Colosseum", TeleportLocationData.FORTIS_COLOSSEUM.getLocation(), "ring_of_dueling_teleport_icon.png", 4),

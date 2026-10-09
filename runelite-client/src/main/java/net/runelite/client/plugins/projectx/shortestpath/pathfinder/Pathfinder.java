@@ -133,6 +133,18 @@ public class Pathfinder implements Runnable {
         cancelled = true;
     }
 
+    /** A cancelled search never becomes {@link #isDone()}; callers must not wait on it. */
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    private final long createdAtMs = System.currentTimeMillis();
+
+    /** How long since this search was created (queued), in ms. */
+    public long getAgeMs() {
+        return System.currentTimeMillis() - createdAtMs;
+    }
+
     public PathfinderStats getStats() {
         if (stats.started && stats.ended) {
             return stats;

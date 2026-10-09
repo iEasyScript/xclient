@@ -20,6 +20,11 @@ public class Rs2LocalPoint {
             int worldX = worldPoint.getX();
             int worldY = worldPoint.getY();
             int worldPlane = ProjectX.getClient().getTopLevelWorldView().getPlane();
+            net.runelite.api.Player player = ProjectX.getClient().getLocalPlayer();
+            LocalPoint playerLocal = player == null ? null : player.getLocalLocation();
+            int[] playerScene = playerLocal == null ? null : new int[]{playerLocal.getSceneX(), playerLocal.getSceneY()};
+            LocalPoint best = null;
+            int bestDistance = Integer.MAX_VALUE;
 
             for (int chunkX = 0; chunkX < instanceTemplateChunks[worldPlane].length; chunkX++)
             {
@@ -40,12 +45,21 @@ public class Rs2LocalPoint {
                         int localX = (rotatedWorldPoint.getX() - templateChunkX) + (chunkX * CHUNK_SIZE);
                         int localY = (rotatedWorldPoint.getY() - templateChunkY) + (chunkY * CHUNK_SIZE);
 
-                        return LocalPoint.fromScene(localX, localY, ProjectX.getClient().getTopLevelWorldView());
+                        // One template chunk can be placed several times in an instance (a house
+                        // reuses its room templates), so the same template tile can be in more than
+                        // one place. The first match could be a room away and off the minimap; the
+                        // walker means the copy beside the player.
+                        int distance = playerScene == null ? 0
+                                : Math.max(Math.abs(localX - playerScene[0]), Math.abs(localY - playerScene[1]));
+                        if (best == null || distance < bestDistance) {
+                            best = LocalPoint.fromScene(localX, localY, ProjectX.getClient().getTopLevelWorldView());
+                            bestDistance = distance;
+                        }
                     }
                 }
             }
 
-            return null;
+            return best;
         }).orElse(null);
     }
 

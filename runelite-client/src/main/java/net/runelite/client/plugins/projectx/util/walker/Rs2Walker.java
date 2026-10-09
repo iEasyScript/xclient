@@ -1188,6 +1188,42 @@ public class Rs2Walker {
      * {@code null} {@code target} is rejected by {@link #walkWithState(WorldPoint, int)} ({@link WalkerState#EXIT});
      * result is {@code false}, same as any non-arrival outcome.
      */
+    /** Longest any search may run before it is assumed abandoned, whatever its own cutoff. */
+    private static final long STALE_PATHFINDER_MIN_MS = 30_000L;
+
+    /**
+     * True when the current search will never finish and must be replaced: it was
+     * cancelled (a cancelled search never reports done), its task has ended without
+     * finishing, or it has run far past any calculation cutoff. Without this a walk
+     * whose search was cancelled and never replaced left every later walkTo returning
+     * MOVING at once, with nothing logged, until something cleared it -- a script
+     * asking to walk to the bank every two seconds for minutes and never moving.
+     */
+    static boolean isStalePathfinder(Pathfinder pf) {
+        if (pf == null || pf.isDone()) {
+            return false;
+        }
+        if (pf.isCancelled()) {
+            return true;
+        }
+        java.util.concurrent.Future<?> future = ShortestPathPlugin.pathfinderFuture;
+        if (future != null && future.isDone() && Rs2PathApi.getPathfinder() == pf) {
+            return true;
+        }
+        long cutoff = ShortestPathPlugin.pathfinderConfig == null ? 0L : ShortestPathPlugin.pathfinderConfig.getCalculationCutoffMillis();
+        return pf.getAgeMs() > Math.max(STALE_PATHFINDER_MIN_MS, cutoff * 3);
+    }
+
+    /** Logs and reports a stale search so the caller restarts instead of waiting on it. */
+    private static boolean discardIfStale(Pathfinder pf, WorldPoint target) {
+        if (!isStalePathfinder(pf)) {
+            return false;
+        }
+        log.warn("[Walker] discarding a search that will never finish (cancelled={} age={}ms) and starting a new one to {}",
+                pf.isCancelled(), pf.getAgeMs(), target);
+        return true;
+    }
+
     public static boolean walkTo(WorldPoint target) {
         return walkWithState(target, reachedDistanceOrDefault()) == WalkerState.ARRIVED;
     }
@@ -1509,7 +1545,7 @@ public class Rs2Walker {
         }
 
         final Pathfinder pathfinder = Rs2PathApi.getPathfinder();
-        if (pathfinder != null && !pathfinder.isDone()) {
+        if (pathfinder != null && !pathfinder.isDone() && !discardIfStale(pathfinder, target)) {
             return WalkerState.MOVING;
         }
         boolean hasCurrentPath = pathfinder != null
@@ -1604,6 +1640,10 @@ public class Rs2Walker {
             return WalkerState.MOVING;
         }
         Pathfinder pathfinder = Rs2PathApi.getPathfinder();
+        if (pathfinder != null && !pathfinder.isDone() && discardIfStale(pathfinder, target)) {
+            setTarget(target);
+            return WalkerState.MOVING;
+        }
         if (pathfinder == null || !pathfinder.isDone()) {
             return WalkerState.MOVING; // path still computing — wait, don't reset it
         }
@@ -12393,7 +12433,7 @@ public class Rs2Walker {
             return WalkerState.ARRIVED;
         }
         final Pathfinder pathfinder = Rs2PathApi.getPathfinder();
-        if (pathfinder != null && !pathfinder.isDone())
+        if (pathfinder != null && !pathfinder.isDone() && !discardIfStale(pathfinder, target))
             return WalkerState.MOVING;
 
         boolean bankTripWhenCacheUnavailable = config == null || config.bankTripWhenCacheUnavailable();

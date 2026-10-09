@@ -249,6 +249,9 @@ public class Rs2Camera {
     }
 
     public static boolean isTileOnScreen(LocalPoint localPoint) {
+        // A tile outside the loaded scene (a ground item just past its edge, say) is not on
+        // screen, and asking for its height throws ArrayIndexOutOfBounds inside the game client.
+        if (localPoint == null || !localPoint.isInScene()) return false;
         Client client = ProjectX.getClient();
         int viewportHeight = client.getViewportHeight();
         int viewportWidth = client.getViewportWidth();
