@@ -201,7 +201,7 @@ public class ProjectXSessionTracker
         if (event.isLoaded())
         {
             String internalName = plugin.getClass().getSimpleName();
-            if (!projectxPluginManager.getManifestMap().containsKey(internalName) || runs.containsKey(plugin))
+            if (!isStoreScript(plugin) || runs.containsKey(plugin))
             {
                 return;
             }
@@ -221,6 +221,21 @@ public class ProjectXSessionTracker
         Mark mark = marks.remove(plugin);
         End end = mark != null && System.currentTimeMillis() - mark.at < MARK_WINDOW_MS ? mark.end : End.SELF_STOP;
         finish(run, end);
+    }
+
+    /**
+     * A script from the store: its classes came out of a downloaded store jar.
+     *
+     * <p>Not by name. Matching the class name against the catalogue also matched
+     * RuneLite's own Slayer, Pest Control, Herbiboar, Tears of Guthix, Daily Tasks,
+     * Discord and Barrows plugins, which share names with store scripts and are on
+     * all the time -- so every dashboard showed them, each "run" lasting the whole
+     * client session and credited with everything gained in it. And a script that
+     * started with the client, before the catalogue had loaded, was never tracked.
+     */
+    static boolean isStoreScript(Plugin plugin)
+    {
+        return plugin != null && plugin.getClass().getClassLoader() instanceof PluginJarClassLoader;
     }
 
     @Subscribe
@@ -275,6 +290,7 @@ public class ProjectXSessionTracker
             run.died = true;
             JsonObject json = new JsonObject();
             json.addProperty("kind", "death");
+            json.addProperty("source", "store");
             json.addProperty("scriptInternalName", run.internalName);
             json.addProperty("scriptName", run.name);
             executor.execute(() -> post(json));
@@ -341,6 +357,10 @@ public class ProjectXSessionTracker
             }
         }
         JsonObject json = new JsonObject();
+        // Clients before this one also reported RuneLite's own plugins that share a store
+        // script's name; the site ignores those names unless the report says it is a store run.
+        json.addProperty("source", "store");
+        json.addProperty("clientVersion", net.runelite.client.RuneLiteProperties.getProjectXVersion());
         json.addProperty("scriptInternalName", run.internalName);
         json.addProperty("scriptName", run.name);
         json.addProperty("scriptVersion", run.version);
