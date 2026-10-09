@@ -158,6 +158,12 @@ public class ProjectXPluginManifest {
     /** What the store says is wrong, when {@link #health} is BROKEN. */
     private String healthNote;
 
+    /**
+     * Class names this script was published under before. The store renamed it; the client
+     * uses these to retire the old build and carry its state across.
+     */
+    private List<String> previousInternalNames;
+
     public boolean isBroken() {
         return "BROKEN".equalsIgnoreCase(health);
     }

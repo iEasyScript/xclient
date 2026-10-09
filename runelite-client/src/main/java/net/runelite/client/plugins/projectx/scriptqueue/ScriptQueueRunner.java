@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Works through the queue on its own thread: start a script, watch for its step to
@@ -117,10 +118,32 @@ final class ScriptQueueRunner implements Runnable
         }
     }
 
+    /**
+     * The script a step names, when its class is not loaded: a store script can be renamed
+     * (a new class name, the same script), and a queue saved before that still names the
+     * old class. Only an unambiguous match counts.
+     */
+    private static Plugin byName(String name)
+    {
+        if (name == null)
+        {
+            return null;
+        }
+        List<Plugin> matches = ProjectX.getPluginManager().getPlugins().stream()
+            .filter(p -> p.getClass().getName().startsWith("net.runelite.client.plugins.projectx."))
+            .filter(p -> name.equals(ScriptQueuePanel.nameOf(p)))
+            .collect(Collectors.toList());
+        return matches.size() == 1 ? matches.get(0) : null;
+    }
+
     private void runStep(int index, QueueStep step) throws InterruptedException
     {
         String prefix = "Step " + (index + 1) + "/" + steps.size() + ": " + step.getPluginName();
         Plugin plugin = ProjectX.getPlugin(step.getPluginClass());
+        if (plugin == null)
+        {
+            plugin = byName(step.getPluginName());
+        }
         if (plugin == null)
         {
             status.accept(prefix + " isn't installed. Skipping.");

@@ -192,7 +192,7 @@ class ScriptQueuePanel extends PluginPanel
         }
     }
 
-    private static String nameOf(Plugin plugin)
+    static String nameOf(Plugin plugin)
     {
         PluginDescriptor d = plugin.getClass().getAnnotation(PluginDescriptor.class);
         if (d == null || d.hidden())

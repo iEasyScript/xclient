@@ -42,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.RuneLite;
 import net.runelite.client.RuneLiteProperties;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.RuneLiteConfig;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ClientShutdown;
@@ -140,6 +141,8 @@ public class ProjectXPluginManager {
 
     /** "name:version" pairs already logged as waiting for their script to stop; logged once each. */
     private final Set<String> deferredUpdateLogged = ConcurrentHashMap.newKeySet();
+    /** Renamed scripts whose old build is still running: the new one waits until it stops. */
+    private final Set<String> renamePending = ConcurrentHashMap.newKeySet();
 
     @Inject
     @Named("safeMode")
@@ -226,6 +229,7 @@ public class ProjectXPluginManager {
             // learned that anything had been published after it started: updates only ever arrived
             // with a restart. One small request to the site per pass.
             loadManifest();
+            retireRenamed();
             installEntitled();
             updateOutdated();
             refresh();
@@ -248,6 +252,9 @@ public class ProjectXPluginManager {
                 continue;
             }
             if (!entitlements.isPaid(internalName) || !entitlements.isEntitled(internalName)) {
+                continue;
+            }
+            if (renamePending.contains(internalName)) {
                 continue;
             }
             if (isKnownUnloadable(internalName) || loadedExternalNames().contains(internalName)) {
@@ -295,6 +302,9 @@ public class ProjectXPluginManager {
 
             String latest = manifest.getVersion();
             if (Strings.isNullOrEmpty(latest) || !getPluginJarFile(internalName).exists()) {
+                continue;
+            }
+            if (renamePending.contains(internalName)) {
                 continue;
             }
             if (isKnownUnloadable(internalName)) {
@@ -357,6 +367,86 @@ public class ProjectXPluginManager {
         String latest = manifest.getVersion();
         String installed = getInstalledPluginVersion(internalName).orElse(null);
         return !Strings.isNullOrEmpty(latest) && installed != null && !latest.equals(installed);
+    }
+
+    /**
+     * A script the store has renamed -- its plugin class has a new name -- arrives as a
+     * plugin the client has never seen, while the old one is still loaded from the jar
+     * the new build replaces. Left alone, both would be loaded at once. The old one is
+     * unloaded first; if it is running, the new build waits until it is stopped rather
+     * than ending a script mid-run.
+     */
+    private void retireRenamed() {
+        Set<String> pending = new HashSet<>();
+        for (ProjectXPluginManifest manifest : manifestMap.values()) {
+            String internalName = manifest.getInternalName();
+            List<String> previous = manifest.getPreviousInternalNames();
+            if (internalName == null || previous == null) {
+                continue;
+            }
+            for (String old : previous) {
+                Plugin loaded = findLoadedPlugin(old);
+                if (loaded == null || old.equalsIgnoreCase(internalName)) {
+                    continue;
+                }
+                if (pluginManager.isPluginActive(loaded)) {
+                    pending.add(internalName);
+                    if (deferredUpdateLogged.add(old + "->" + internalName)) {
+                        log.info("{} is now {}; switching once it is stopped", old, internalName);
+                    }
+                    continue;
+                }
+                log.info("{} is now {}; unloading the old build", old, internalName);
+                if (!unloadPlugin(old)) {
+                    pending.add(internalName);
+                } else {
+                    eventBus.post(new ExternalPluginsChanged());
+                }
+            }
+        }
+        renamePending.retainAll(pending);
+        renamePending.addAll(pending);
+    }
+
+    /**
+     * Moves what the client keeps under a renamed script's old class name -- whether it is
+     * switched on -- to the new one, so the rename is invisible to the player. Runs when
+     * the catalogue loads, before the new build does, so a script that was on stays on.
+     */
+    private void carryOverRenamedState() {
+        for (ProjectXPluginManifest manifest : manifestMap.values()) {
+            String internalName = manifest.getInternalName();
+            List<String> previous = manifest.getPreviousInternalNames();
+            if (internalName == null || previous == null) {
+                continue;
+            }
+            String key = internalName.toLowerCase(Locale.ROOT);
+            if (configManager.getConfiguration(RuneLiteConfig.GROUP_NAME, key) != null) {
+                continue;
+            }
+            for (String old : previous) {
+                String enabled = configManager.getConfiguration(RuneLiteConfig.GROUP_NAME, old.toLowerCase(Locale.ROOT));
+                if (enabled != null) {
+                    configManager.setConfiguration(RuneLiteConfig.GROUP_NAME, key, enabled);
+                    break;
+                }
+            }
+        }
+    }
+
+    /** The current name of a script the store has renamed, or null if {@code name} is not an old name. */
+    @Nullable
+    public String renamedTo(String name) {
+        if (name == null) {
+            return null;
+        }
+        for (ProjectXPluginManifest manifest : manifestMap.values()) {
+            List<String> previous = manifest.getPreviousInternalNames();
+            if (previous != null && previous.stream().anyMatch(name::equalsIgnoreCase)) {
+                return manifest.getInternalName();
+            }
+        }
+        return null;
     }
 
     @Nullable
@@ -428,6 +518,7 @@ public class ProjectXPluginManager {
                 manifestMap.clear();
                 manifestMap.putAll(next);
                 log.info("Loaded {} plugin manifests.", manifestMap.size());
+                carryOverRenamedState();
                 renameJarsToSimpleNames();
                 eventBus.post(new ExternalPluginsChanged());
             } else {
