@@ -79,9 +79,14 @@ public class Rs2Slayer {
             {
                 return null;
             }
-            taskDBRow = (Integer) ProjectX.getDBTableField(
+            Object row = firstOf(ProjectX.getDBTableField(
                     bossRows.get(0),
-                    DBTableID.SlayerTaskSublist.COL_TASK, 0)[0];
+                    DBTableID.SlayerTaskSublist.COL_TASK, 0));
+            if (!(row instanceof Integer))
+            {
+                return null;
+            }
+            taskDBRow = (Integer) row;
         }
         else
         {
@@ -97,10 +102,17 @@ public class Rs2Slayer {
             taskDBRow = taskRows.get(0);
         }
 
-        return (String) ProjectX.getDBTableField(
+        Object name = firstOf(ProjectX.getDBTableField(
                 taskDBRow,
                 DBTableID.SlayerTask.COL_NAME_UPPERCASE,
-                0)[0];
+                0));
+        return name instanceof String ? (String) name : null;
+    }
+
+    /** The game's task tables come back empty while it logs out or loads; that is "unknown", not an error. */
+    private static Object firstOf(Object[] values)
+    {
+        return values == null || values.length == 0 ? null : values[0];
     }
 
     /**
