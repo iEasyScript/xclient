@@ -12,6 +12,7 @@ import net.runelite.client.plugins.projectx.util.keyboard.Rs2Keyboard;
 import net.runelite.client.util.WorldUtil;
 import net.runelite.http.api.worlds.World;
 import net.runelite.http.api.worlds.WorldRegion;
+import net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil;
 import net.runelite.http.api.worlds.WorldResult;
 import net.runelite.http.api.worlds.WorldType;
 
@@ -152,9 +153,10 @@ public final class LoginManager {
             }
         } else {
             // Fallback to old behavior if no world is selected
-            if (getActiveProfile().isMember() && !isCurrentWorldMembers() ||
-                    !getActiveProfile().isMember() && isCurrentWorldMembers()) {
-                targetWorld = getRandomWorld(getActiveProfile().isMember());
+            // What the game reported, not only the profile's tick box (see Rs2WorldUtil.isMemberAccount).
+            boolean member = Rs2WorldUtil.isMemberAccount();
+            if (member && !isCurrentWorldMembers() || !member && isCurrentWorldMembers()) {
+                targetWorld = getRandomWorld(member);
             } else {
                 targetWorld = ProjectX.getClient().getWorld();
             }

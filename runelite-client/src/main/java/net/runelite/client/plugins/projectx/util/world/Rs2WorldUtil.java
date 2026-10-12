@@ -1,7 +1,9 @@
 package net.runelite.client.plugins.projectx.util.world;
 
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.http.api.worlds.WorldResult;
 import net.runelite.http.api.worlds.World;
 import net.runelite.http.api.worlds.WorldType;
@@ -16,6 +18,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 
@@ -91,12 +94,72 @@ public class Rs2WorldUtil {
             return false;
         }
     }
+    /*
+     * Membership as the game last reported it for the active profile.
+     *
+     * Logged out there is nothing to ask, and the fallback was the profile's "member"
+     * tick box, which is off unless somebody ticked it, so a members account coming back
+     * from a break was sent to a free world. Positive evidence only: the membership-days
+     * varp reads 0 for a moment after login before the server sends it, so a 0 is never
+     * taken to mean free to play.
+     */
+    private static volatile String rememberedMemberProfile;
+    private static volatile long lastMembershipSaveAt;
+    private static final long MEMBERSHIP_SAVE_INTERVAL_MS = 6L * 60 * 60 * 1000;
+
+    /** Records membership while logged in. Client thread; called when the membership varp changes and on login. */
+    public static void rememberMembership() {
+        Client client = ProjectX.getClient();
+        if (client == null || client.getGameState() != GameState.LOGGED_IN) {
+            return;
+        }
+        int days = client.getVarpValue(VarPlayerID.ACCOUNT_CREDIT);
+        // A free account cannot be on a members world, so being on one is proof too.
+        boolean onMembersWorld = client.getWorldType().contains(net.runelite.api.WorldType.MEMBERS);
+        if (days <= 0 && !onMembersWorld) {
+            return;
+        }
+        ConfigProfile profile = LoginManager.getActiveProfile();
+        String name = profile != null ? profile.getName() : null;
+        if (name == null) {
+            return;
+        }
+        if (!name.equals(rememberedMemberProfile)) {
+            log.info("Membership detected for profile {} ({} days left)", name, days);
+        }
+        rememberedMemberProfile = name;
+
+        // Saved to the profile too, so it survives a client restart. Throttled: the
+        // count only changes once a day.
+        long now = System.currentTimeMillis();
+        if (days > 0 && ProjectX.getConfigManager() != null
+                && (profile.getMemberExpireDays() != days || now - lastMembershipSaveAt > MEMBERSHIP_SAVE_INTERVAL_MS)) {
+            lastMembershipSaveAt = now;
+            final int saveDays = days;
+            CompletableFuture.runAsync(() -> {
+                try {
+                    ProjectX.getConfigManager().setMemberExpireDays(profile, saveDays);
+                    ProjectX.getConfigManager().setMemberExpireDaysTimeStemp(profile, now);
+                } catch (Exception e) {
+                    log.debug("Could not save membership to profile: {}", e.getMessage());
+                }
+            });
+        }
+    }
+
     public static boolean isMemberAccount(){
         ConfigProfile activeProfile = LoginManager.getActiveProfile();
          // try to get membership status from cached varplayer data
         if(ProjectX.getClient() != null &&  ProjectX.getClient().getLocalPlayer() != null){
-            boolean isPlayerMember =  Rs2Player.isMember();                            
+            boolean isPlayerMember =  Rs2Player.isMember()
+                    || ProjectX.getClient().getWorldType().contains(net.runelite.api.WorldType.MEMBERS);
             return isPlayerMember;
+        }
+
+        // seen as a member this session
+        if (activeProfile != null && activeProfile.getName() != null
+                && activeProfile.getName().equals(rememberedMemberProfile)) {
+            return true;
         }
         
         try {
@@ -998,8 +1061,21 @@ public class Rs2WorldUtil {
      * @param avoidOvercrowdedWorlds Whether to avoid worlds with population > 1800
      * @return Random accessible world ID from the region, or -1 if no suitable world found
      */
-    public static int getRandomAccessibleWorldFromRegion(WorldRegion preferredRegion, 
+    public static int getRandomAccessibleWorldFromRegion(WorldRegion preferredRegion,
                                                          boolean avoidEmptyWorlds, boolean avoidOvercrowdedWorlds,boolean membersOnly) {
+        return randomAccessibleWorld(preferredRegion == null ? null : r -> r == preferredRegion,
+                String.valueOf(preferredRegion), avoidEmptyWorlds, avoidOvercrowdedWorlds, membersOnly);
+    }
+
+    /** As above, for a region preference that may be a group of regions (Europe). */
+    public static int getRandomAccessibleWorldFromRegion(RegionPreference preference,
+                                                         boolean avoidEmptyWorlds, boolean avoidOvercrowdedWorlds, boolean membersOnly) {
+        return randomAccessibleWorld(preference == null ? null : preference.regionFilter(),
+                String.valueOf(preference), avoidEmptyWorlds, avoidOvercrowdedWorlds, membersOnly);
+    }
+
+    private static int randomAccessibleWorld(Predicate<WorldRegion> inRegion, String preferredRegion,
+                                             boolean avoidEmptyWorlds, boolean avoidOvercrowdedWorlds, boolean membersOnly) {
         try {
             WorldResult worldResult = ProjectX.getWorldService().getWorlds();
             if (worldResult == null) {
@@ -1014,7 +1090,7 @@ public class Rs2WorldUtil {
             List<World> accessibleWorlds = worldResult.getWorlds().stream()
                     .filter(world -> (membersOnlyLocal && world.getTypes().contains(WorldType.MEMBERS) == true) || !membersOnlyLocal  ) // respect membership if required
                     .filter(world -> isWorldAccessible(world, isPlayerMember, isInSeasonalWorld))
-                    .filter(world -> preferredRegion == null || world.getRegion() == preferredRegion)
+                    .filter(world -> inRegion == null || inRegion.test(world.getRegion()))
                     .filter(world -> applyPopulationFilters(world, avoidEmptyWorlds, avoidOvercrowdedWorlds))
                     .collect(Collectors.toList());
             
@@ -1060,8 +1136,21 @@ public class Rs2WorldUtil {
      * @param avoidOvercrowdedWorlds Whether to avoid worlds with population > 1800
      * @return Best accessible world ID, or -1 if no suitable world found
      */
-    public static int getBestAccessibleWorldForLogin(boolean preferPing, WorldRegion preferredRegion, 
+    public static int getBestAccessibleWorldForLogin(boolean preferPing, WorldRegion preferredRegion,
                                                     boolean avoidEmptyWorlds, boolean avoidOvercrowdedWorlds, boolean membersOnly) {
+        return bestAccessibleWorld(preferPing, preferredRegion == null ? null : r -> r == preferredRegion,
+                avoidEmptyWorlds, avoidOvercrowdedWorlds, membersOnly);
+    }
+
+    /** As above, for a region preference that may be a group of regions (Europe). */
+    public static int getBestAccessibleWorldForLogin(boolean preferPing, RegionPreference preference,
+                                                    boolean avoidEmptyWorlds, boolean avoidOvercrowdedWorlds, boolean membersOnly) {
+        return bestAccessibleWorld(preferPing, preference == null ? null : preference.regionFilter(),
+                avoidEmptyWorlds, avoidOvercrowdedWorlds, membersOnly);
+    }
+
+    private static int bestAccessibleWorld(boolean preferPing, Predicate<WorldRegion> inRegion,
+                                           boolean avoidEmptyWorlds, boolean avoidOvercrowdedWorlds, boolean membersOnly) {
         try {
             WorldResult worldResult = ProjectX.getWorldService().getWorlds();
             if (worldResult == null) {
@@ -1086,7 +1175,7 @@ public class Rs2WorldUtil {
             
             // separate regional and non-regional worlds
             List<World> regionalWorlds = accessibleWorlds.stream()
-                    .filter(world -> preferredRegion != null && world.getRegion() == preferredRegion)
+                    .filter(world -> inRegion != null && inRegion.test(world.getRegion()))
                     .collect(Collectors.toList());
             
             List<World> candidateWorlds = !regionalWorlds.isEmpty() ? regionalWorlds : accessibleWorlds;

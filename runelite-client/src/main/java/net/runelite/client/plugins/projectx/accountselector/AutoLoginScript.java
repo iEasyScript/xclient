@@ -282,7 +282,7 @@ public class AutoLoginScript extends Script {
 
                     case RANDOM_WORLD:
                         targetWorld = Rs2WorldUtil.getRandomAccessibleWorldFromRegion(
-                                config.regionPreference().getWorldRegion(),
+                                config.regionPreference(),
                                 config.avoidEmptyWorlds(),
                                 config.avoidOvercrowdedWorlds(), membersOnly);
                         break;
@@ -290,7 +290,7 @@ public class AutoLoginScript extends Script {
                     case BEST_POPULATION:
                         targetWorld = Rs2WorldUtil.getBestAccessibleWorldForLogin(
                                 false,
-                                config.regionPreference().getWorldRegion(),
+                                config.regionPreference(),
                                 config.avoidEmptyWorlds(),
                                 config.avoidOvercrowdedWorlds(),
                                 membersOnly);
@@ -299,7 +299,7 @@ public class AutoLoginScript extends Script {
                     case BEST_PING:
                         targetWorld = Rs2WorldUtil.getBestAccessibleWorldForLogin(
                                 true,
-                                config.regionPreference().getWorldRegion(),
+                                config.regionPreference(),
                                 config.avoidEmptyWorlds(),
                                 config.avoidOvercrowdedWorlds(),
                                 membersOnly
@@ -308,7 +308,7 @@ public class AutoLoginScript extends Script {
 
                     case REGIONAL_RANDOM:
                         targetWorld = Rs2WorldUtil.getRandomAccessibleWorldFromRegion(
-                                config.regionPreference().getWorldRegion(),
+                                config.regionPreference(),
                                 config.avoidEmptyWorlds(),
                                 config.avoidOvercrowdedWorlds(),
                                 membersOnly

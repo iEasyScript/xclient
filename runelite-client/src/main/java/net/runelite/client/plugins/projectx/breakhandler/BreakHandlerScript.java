@@ -358,9 +358,12 @@ public class BreakHandlerScript extends Script {
         PluginPauseEvent.setPaused(true);
         Rs2Walker.clearWalkingRoute("break-handler:initiating-break");
 
-        // Remember the world we were in before the break
-        preBreakWorld = ProjectX.getClientThread().runOnClientThreadOptional(
-                () -> ProjectX.getClient().getWorld()).orElse(0);
+        // Remember the world we were in before the break, and whether the account is a
+        // member while the game can still say so: logged out, nothing can.
+        preBreakWorld = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            Rs2WorldUtil.rememberMembership();
+            return ProjectX.getClient().getWorld();
+        }).orElse(-1);
 
         // Determine next state based on break type
         setBreakDuration();
@@ -512,13 +515,20 @@ public class BreakHandlerScript extends Script {
                             log.warn("Last world {} is not accessible, falling back to world selection mode", preBreakWorld);
                         }
                     }
-        
-                    // no specific world selection - use default login
+                    if (targetWorld == -1) {
+                        // Pick one that fits the account and the region rather than leaving it to
+                        // whatever world the login screen happens to have selected.
+                        targetWorld = Rs2WorldUtil.getRandomAccessibleWorldFromRegion(
+                            config.regionPreference(),
+                            config.avoidEmptyWorlds(),
+                            config.avoidOvercrowdedWorlds(),
+                            membersOnly);
+                    }
                     break;
                     
                 case RANDOM_WORLD:
                     targetWorld = Rs2WorldUtil.getRandomAccessibleWorldFromRegion(
-                        config.regionPreference().getWorldRegion(),
+                        config.regionPreference(),
                         config.avoidEmptyWorlds(),
                         config.avoidOvercrowdedWorlds(),
                         membersOnly);
@@ -527,7 +537,7 @@ public class BreakHandlerScript extends Script {
                 case BEST_POPULATION:
                     targetWorld = Rs2WorldUtil.getBestAccessibleWorldForLogin(
                         false,
-                        config.regionPreference().getWorldRegion(),
+                        config.regionPreference(),
                         config.avoidEmptyWorlds(),
                         config.avoidOvercrowdedWorlds(),
                         membersOnly
@@ -537,7 +547,7 @@ public class BreakHandlerScript extends Script {
                 case BEST_PING:
                     targetWorld = Rs2WorldUtil.getBestAccessibleWorldForLogin(
                         true,
-                        config.regionPreference().getWorldRegion(),
+                        config.regionPreference(),
                         config.avoidEmptyWorlds(),
                         config.avoidOvercrowdedWorlds(),
                         membersOnly
@@ -546,7 +556,7 @@ public class BreakHandlerScript extends Script {
                     
                 case REGIONAL_RANDOM:
                     targetWorld = Rs2WorldUtil.getRandomAccessibleWorldFromRegion(
-                        config.regionPreference().getWorldRegion(),
+                        config.regionPreference(),
                         config.avoidEmptyWorlds(),
                         config.avoidOvercrowdedWorlds(),
                         membersOnly

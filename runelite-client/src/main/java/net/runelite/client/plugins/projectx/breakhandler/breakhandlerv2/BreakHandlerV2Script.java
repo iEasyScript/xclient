@@ -11,6 +11,7 @@ import net.runelite.client.plugins.projectx.util.math.Rs2Random;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import net.runelite.client.plugins.projectx.util.security.LoginManager;
 import net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil;
+import net.runelite.client.plugins.projectx.util.world.RegionPreference;
 import net.runelite.client.ui.ClientUI;
 import net.runelite.http.api.worlds.WorldRegion;
 import net.runelite.client.plugins.Plugin;
@@ -217,7 +218,10 @@ public class BreakHandlerV2Script extends Script {
 
         // Store current world before break
         if (ProjectX.isLoggedIn()) {
-            preBreakWorld = ProjectX.getClient().getWorld();
+            preBreakWorld = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+                Rs2WorldUtil.rememberMembership();
+                return ProjectX.getClient().getWorld();
+            }).orElse(-1);
         }
 
         // Force logout if outside play schedule OR if logoutOnBreak is enabled
@@ -588,11 +592,11 @@ public class BreakHandlerV2Script extends Script {
 			return currentWorld > 0 ? currentWorld : -1; // -1 skips setWorld(), leaving client selection unchanged
 		}
 
-		boolean membersOnly = config.respectMemberStatus() &&
-		                      activeProfile != null &&
-		                      activeProfile.isMember();
+		// Membership as the game reported it, falling back to the profile's tick box only
+		// when the game has never said (Rs2WorldUtil.isMemberAccount).
+		boolean membersOnly = config.respectMemberStatus() && Rs2WorldUtil.isMemberAccount();
 
-		WorldRegion region = config.regionPreference().getWorldRegion();
+		RegionPreference region = config.regionPreference();
 		Integer preferredWorld = resolveProfilePreferredWorld(region);
 
 		int targetWorld = -1;
@@ -661,7 +665,7 @@ public class BreakHandlerV2Script extends Script {
 		return targetWorld;
 	}
 
-	private Integer resolveProfilePreferredWorld(WorldRegion region) {
+	private Integer resolveProfilePreferredWorld(RegionPreference region) {
 		if (activeProfile == null || activeProfile.getSelectedWorld() == null) {
 			return null;
 		}
@@ -670,7 +674,7 @@ public class BreakHandlerV2Script extends Script {
 
 		// -1 = random members world, -2 = random F2P world
 		if (selectedWorld == -1) {
-			if (!config.respectMemberStatus() || activeProfile.isMember()) {
+			if (!config.respectMemberStatus() || Rs2WorldUtil.isMemberAccount()) {
 				return Rs2WorldUtil.getRandomAccessibleWorldFromRegion(
 					region,
 					config.avoidEmptyWorlds(),

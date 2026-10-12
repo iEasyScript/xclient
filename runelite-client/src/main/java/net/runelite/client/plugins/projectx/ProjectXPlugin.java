@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
 import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.RuneLiteProperties;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
@@ -29,6 +30,7 @@ import net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.projectx.util.inventory.Rs2RunePouch;
 import net.runelite.client.plugins.projectx.util.overlay.GembagOverlay;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
+import net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil;
 import net.runelite.client.plugins.projectx.util.reflection.Rs2Reflection;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
 import net.runelite.client.plugins.projectx.util.leaguetransport.Rs2LeaguesTransport;
@@ -362,6 +364,7 @@ public class ProjectXPlugin extends Plugin
 		
 	   if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
 	   {
+		   Rs2WorldUtil.rememberMembership();
 		   // Region-based login detection logic
 		   final Client client = ProjectX.getClient();
 		   if (client != null) {
@@ -422,6 +425,10 @@ public class ProjectXPlugin extends Plugin
 		Rs2Player.handlePotionTimers(event);
 		Rs2Player.handleTeleblockTimer(event);
 		Rs2RunePouch.onVarbitChanged(event);
+		if (event.getVarpId() == VarPlayerID.ACCOUNT_CREDIT)
+		{
+			Rs2WorldUtil.rememberMembership();
+		}
 	}
 
 	@Subscribe
