@@ -952,14 +952,14 @@ net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#canAccessWorld(int)
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#findBestAccessibleWorld(boolean, WorldRegion, Set): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getAccessibleWorldsByPing(int, List): List  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getAccessibleWorldsByPopulation(int): List  ->  net.runelite.api.Client#getWorldType(): EnumSet
-net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getBestAccessibleWorldForLogin(boolean, WorldRegion, boolean, boolean, boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#bestAccessibleWorld(boolean, Predicate, boolean, boolean, boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getBestPingWorld(): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getMostPopulatedAccessibleWorld(): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getMostPopulatedWorldExclude(List): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getMostPopulatedWorldFromList(int[]): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getMostPopulatedWorldFromListWithPing(int[], boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getRandomAccessibleWorld(boolean, boolean, boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
-net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getRandomAccessibleWorldFromRegion(WorldRegion, boolean, boolean, boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#randomAccessibleWorld(Predicate, String, boolean, boolean, boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getWorldStatistics(): Map  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#isMemberAccount(): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
-net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#lambda$hopWorld$8(): boolean  ->  net.runelite.api.Client#getGameState(): GameState
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#lambda$hopWorld$10(): boolean  ->  net.runelite.api.Client#getGameState(): GameState

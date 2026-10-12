@@ -107,16 +107,23 @@ public class Rs2WorldUtil {
     private static volatile long lastMembershipSaveAt;
     private static final long MEMBERSHIP_SAVE_INTERVAL_MS = 6L * 60 * 60 * 1000;
 
-    /** Records membership while logged in. Client thread; called when the membership varp changes and on login. */
+    /** Records membership while logged in. Called when the membership varp changes, on login and before a break. */
     public static void rememberMembership() {
-        Client client = ProjectX.getClient();
-        if (client == null || client.getGameState() != GameState.LOGGED_IN) {
+        // [membership days, 1 if on a members world]; runs inline when already on the client thread
+        int[] seen = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            Client client = ProjectX.getClient();
+            if (client == null || client.getGameState() != GameState.LOGGED_IN) {
+                return null;
+            }
+            // A free account cannot be on a members world, so being on one is proof too.
+            boolean onMembersWorld = client.getWorldType().contains(net.runelite.api.WorldType.MEMBERS);
+            return new int[]{client.getVarpValue(VarPlayerID.ACCOUNT_CREDIT), onMembersWorld ? 1 : 0};
+        }).orElse(null);
+        if (seen == null) {
             return;
         }
-        int days = client.getVarpValue(VarPlayerID.ACCOUNT_CREDIT);
-        // A free account cannot be on a members world, so being on one is proof too.
-        boolean onMembersWorld = client.getWorldType().contains(net.runelite.api.WorldType.MEMBERS);
-        if (days <= 0 && !onMembersWorld) {
+        int days = seen[0];
+        if (days <= 0 && seen[1] == 0) {
             return;
         }
         ConfigProfile profile = LoginManager.getActiveProfile();
@@ -147,18 +154,20 @@ public class Rs2WorldUtil {
         }
     }
 
+    private static boolean rememberedAsMember(ConfigProfile profile) {
+        return profile != null && profile.getName() != null && profile.getName().equals(rememberedMemberProfile);
+    }
+
     public static boolean isMemberAccount(){
         ConfigProfile activeProfile = LoginManager.getActiveProfile();
          // try to get membership status from cached varplayer data
         if(ProjectX.getClient() != null &&  ProjectX.getClient().getLocalPlayer() != null){
-            boolean isPlayerMember =  Rs2Player.isMember()
-                    || ProjectX.getClient().getWorldType().contains(net.runelite.api.WorldType.MEMBERS);
-            return isPlayerMember;
+            // The varp, or what rememberMembership saw (it also counts a members world,
+            // which settles the moment after login when the varp still reads 0).
+            return Rs2Player.isMember() || rememberedAsMember(activeProfile);
         }
 
-        // seen as a member this session
-        if (activeProfile != null && activeProfile.getName() != null
-                && activeProfile.getName().equals(rememberedMemberProfile)) {
+        if (rememberedAsMember(activeProfile)) {
             return true;
         }
         
