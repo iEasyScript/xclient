@@ -110,11 +110,12 @@ public class Rs2Combat {
         int currentSpecEnergy = ProjectX.getClientThread().runOnClientThreadOptional(
                 () -> ProjectX.getClient().getVarpValue(VarPlayer.SPECIAL_ATTACK_PERCENT)
         ).orElse(0);
-        if (Rs2Widget.isHidden(10485795)) return false;
+        // The orb's button by name: the 10485795 (160:35) this used was moved by the 2026-10-07 update.
+        if (Rs2Widget.isHidden(InterfaceID.Orbs.SPECBUTTON)) return false;
         if (currentSpecEnergy < specialAttackEnergyRequired) return false;
         if (state == getSpecState()) return true;
 
-        ProjectX.getMouse().click(Rs2Widget.getWidget(10485795).getBounds());
+        ProjectX.getMouse().click(Rs2Widget.getWidget(InterfaceID.Orbs.SPECBUTTON).getBounds());
 
         log("Used special attack");
 

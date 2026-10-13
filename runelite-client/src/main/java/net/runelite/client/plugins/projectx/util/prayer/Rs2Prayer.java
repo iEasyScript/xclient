@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.MenuAction;
 import net.runelite.api.Skill;
 import net.runelite.api.annotations.Component;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.plugins.projectx.ProjectX;
@@ -28,8 +29,14 @@ public class Rs2Prayer {
     private static final int QUICK_PRAYER_SELECT_COMPONENT_ID = 5046276;
     @Component
     private static final int QUICK_PRAYER_DONE_BUTTON_COMPONENT_ID = 5046277;
+    /*
+     * The quick-prayer orb's button. Was the number 10485779 (160:19), which the 2026-10-07 game
+     * update turned into the orb's backing graphic when it inserted a component at the top of the
+     * orbs interface, so every quick-prayer click since then did nothing. Named rather than
+     * numbered, it moves with the game data the next time.
+     */
     @Component
-    private static final int QUICK_PRAYER_ORB_COMPONENT_ID = 10485779;
+    private static final int QUICK_PRAYER_ORB_COMPONENT_ID = InterfaceID.Orbs.PRAYERBUTTON;
 
 	/**
 	 * Toggles a prayer on or off. If the prayer is already in the desired state, no action is taken.
