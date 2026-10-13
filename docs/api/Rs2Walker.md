@@ -5,6 +5,9 @@
 ## Overview
 The `Rs2Walker` class is the primary utility for handling player movement and pathfinding. It supports walking to specific coordinates, handling obstacles, using transports (teleports, ships, etc.), and interacting with the minimap.
 
+**On a boat** (client 1.0.49+), `walkTo` sails to a destination at sea and goes ashore before
+walking to one on land. See [Rs2BoatNavigator](Rs2BoatNavigator.md).
+
 ## Methods
 
 ### `canReach`

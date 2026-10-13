@@ -1547,12 +1547,16 @@ public class Rs2GameObject {
             return result.stream();
         }
 
-        int sceneSize = Constants.SCENE_SIZE;
-
-        for (int x = 0; x < sceneSize; x++) {
-            for (int y = 0; y < sceneSize; y++) {
-                for (int h = 0; h <= z; h++) {
-                    Tile tile = tiles[h][x][y];
+        // The scene's own size, not SCENE_SIZE: on a boat the player's world view is the boat,
+        // a few tiles across, and indexing it as a full 104-tile scene threw on every walk.
+        for (int h = 0; h <= z && h < tiles.length; h++) {
+            Tile[][] plane = tiles[h];
+            if (plane == null) continue;
+            for (int x = 0; x < plane.length; x++) {
+                Tile[] column = plane[x];
+                if (column == null) continue;
+                for (int y = 0; y < column.length; y++) {
+                    Tile tile = column[y];
                     if (tile == null) continue;
 
                     Collection<? extends T> objs = extractor.apply(tile);

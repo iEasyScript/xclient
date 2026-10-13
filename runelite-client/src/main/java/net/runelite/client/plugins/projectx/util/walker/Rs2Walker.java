@@ -45,6 +45,7 @@ import net.runelite.client.plugins.projectx.util.misc.Rs2UiHelper;
 import net.runelite.client.plugins.projectx.util.npc.Rs2Npc;
 import net.runelite.client.plugins.projectx.util.npc.Rs2NpcModel;
 import net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel;
+import net.runelite.client.plugins.projectx.api.boat.Rs2BoatNavigator;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import net.runelite.client.plugins.projectx.util.player.Rs2Pvp;
 import net.runelite.client.plugins.projectx.util.leaguetransport.Rs2LeaguesTransport;
@@ -725,6 +726,49 @@ public class Rs2Walker {
     public static boolean isWalkableInCollisionMap(WorldPoint tile) {
         PathfinderConfig config = Rs2PathApi.getPathfinderConfig();
         return hasWalkableTileWithin(config != null ? config.getMap() : null, tile, 0);
+    }
+
+    /**
+     * A walk that starts on a boat. Nobody can walk off a boat into the sea, and the walker's
+     * collision map has no idea the boat is there, so: a destination at sea is sailed to, and one
+     * on land is reached by going ashore first (sailing to the nearest port if need be) and then
+     * walking as usual.
+     *
+     * @return the outcome when the walk was dealt with here; null to carry on walking
+     */
+    private static WalkerState walkFromBoat(WorldPoint target, int distance) {
+        if (!Rs2BoatNavigator.isMainWorld(target) || !Rs2BoatNavigator.isAboard()) {
+            return null;
+        }
+        PathfinderConfig pathConfig = Rs2PathApi.getPathfinderConfig();
+        if (target.getPlane() == 0 && !isLand(pathConfig != null ? pathConfig.getMap() : null, target)) {
+            log.info("[Walker] on a boat and {} is at sea: sailing there", target);
+            return Rs2BoatNavigator.sailTo(target, distance);
+        }
+        log.info("[Walker] on a boat and {} is on land: going ashore first", target);
+        WalkerState ashore = Rs2BoatNavigator.goAshore(target);
+        return ashore == WalkerState.ARRIVED ? null : ashore;
+    }
+
+    /**
+     * True when there is a tile a player can stand on at or next to {@code target}. Unlike
+     * {@link #hasWalkableTileWithin}, a region the map does not cover counts as sea, which is
+     * what most of the open ocean is.
+     */
+    private static boolean isLand(CollisionMap map, WorldPoint target) {
+        if (map == null) {
+            return false;
+        }
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                int x = target.getX() + dx;
+                int y = target.getY() + dy;
+                if (map.hasRegion(x, y) && !map.isBlocked(x, y, target.getPlane())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     static boolean hasWalkableTileWithin(CollisionMap map, WorldPoint target, int distance) {
@@ -1433,6 +1477,10 @@ public class Rs2Walker {
             log.warn("Please do not call the walker from the main thread");
             return WalkerState.EXIT;
         }
+        WalkerState fromBoat = walkFromBoat(target, distance);
+        if (fromBoat != null) {
+            return fromBoat;
+        }
         if (!walkerLock.tryLock()) {
             log.warn("[Walker] concurrent walk request detected, waiting for in-flight walk (held by {}); new target={}",
                     Thread.currentThread().getName(), target);
@@ -1477,6 +1525,11 @@ public class Rs2Walker {
         {
             log.warn("Please do not call the walker from the main thread");
             return WalkerState.EXIT;
+        }
+        WalkerState fromBoat = walkFromBoat(target, distance);
+        if (fromBoat != null)
+        {
+            return fromBoat;
         }
         if (lockWaitMs < 0)
         {

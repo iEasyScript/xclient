@@ -21,6 +21,7 @@
       * [Rs2Pvp](api/apidocs/net/runelite/client/plugins/projectx/util/player/Rs2Pvp.html)
       * [Rs2Prayer](api/Rs2Prayer.md) (incl. 1-tick flicking)
       * [Direct input](api/DirectInput.md)
+      * [Rs2BoatNavigator](api/Rs2BoatNavigator.md) (sailing)
       * [Rs2Reflection](api/apidocs/net/runelite/client/plugins/projectx/util/prayer/Rs2Reflection.html)
       * [Rs2Settings](api/apidocs/net/runelite/client/plugins/projectx/util/settings/Rs2Settings.html)
       * [Rs2Tab](api/apidocs/net/runelite/client/plugins/projectx/util/tabs/Rs2Settings.html)
