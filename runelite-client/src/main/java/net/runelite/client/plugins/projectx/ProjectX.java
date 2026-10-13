@@ -626,7 +626,58 @@ public class ProjectX {
         return stopPlugin(getPlugin(className));
     }
 
+    /*
+     * Direct input, per script thread: actions go to the game as menu actions, with no mouse
+     * movement and no click events. Opt-in per script (a script turns it on for its own loop),
+     * so nothing else running at the same time changes how it clicks.
+     *
+     * The trade-off is the reason it is opt-in: the game sees actions with no mouse behind them,
+     * which a mouse-driven player never produces.
+     */
+    private static final ThreadLocal<Boolean> DIRECT_INPUT = ThreadLocal.withInitial(() -> false);
+
+    /** Turns direct input on or off for the calling thread; scripts set it each loop and clear it after. */
+    public static void setDirectInput(boolean on) {
+        if (on) {
+            DIRECT_INPUT.set(true);
+        } else {
+            DIRECT_INPUT.remove();
+        }
+    }
+
+    public static boolean isDirectInput() {
+        return DIRECT_INPUT.get();
+    }
+
+    /**
+     * Sends the entry straight to the game and waits until the client has taken it, so a "Use"
+     * on an item is selected before the next action reads it. False when it cannot be sent
+     * this way and the caller should fall back to the mouse.
+     */
+    private static boolean invokeDirect(NewMenuEntry entry) {
+        // Walking entries carry screen coordinates for the mouse, and other world views (boats)
+        // need a world view the plain menuAction cannot carry.
+        if (entry.getType() == null || entry.getType() == MenuAction.WALK
+                || entry.getWorldViewId() != net.runelite.api.WorldView.TOPLEVEL) {
+            return false;
+        }
+        boolean sent = getClientThread().runOnClientThreadOptional(() -> {
+            getClient().menuAction(entry.getParam0(), entry.getParam1(), entry.getType(),
+                    entry.getIdentifier(), entry.getItemId(),
+                    entry.getOption() == null ? "" : entry.getOption(),
+                    entry.getTarget() == null ? "" : entry.getTarget());
+            return true;
+        }).orElse(false);
+        if (sent && !getClient().isClientThread()) {
+            sleep(Rs2Random.logNormalBounded(40, 90));
+        }
+        return sent;
+    }
+
     public static void doInvoke(NewMenuEntry entry, Rectangle rectangle) {
+        if (isDirectInput() && invokeDirect(entry)) {
+            return;
+        }
         try {
             if (Rs2UiHelper.isRectangleWithinCanvas(rectangle)) {
                 click(rectangle, entry);
