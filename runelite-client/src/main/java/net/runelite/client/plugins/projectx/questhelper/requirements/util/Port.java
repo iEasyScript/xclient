@@ -37,7 +37,7 @@ import net.runelite.api.gameval.ObjectID;
 public enum Port
 {
 	PORT_SARIM(0, "Port Sarim", ObjectID.SAILING_DOCKING_BUOY_PORT_SARIM, new WorldPoint(3048, 3186, 0), new Zone(new WorldPoint(3045, 3183, 0), new WorldPoint(3061, 3208, 0)), new WorldPoint(3051, 3193, 0), new WorldPoint(3028, 3194, 0), ObjectID.PORT_TASK_BOARD_PORT_SARIM, new WorldPoint(3030, 3197, 0))
-	, PANDEMONIUM(1, "the Pandemonium", ObjectID.SAILING_DOCKING_BUOY_THE_PANDEMONIUM, new WorldPoint(3069, 2981, 0), new Zone(new WorldPoint(3065, 2974, 0), new WorldPoint(3084, 2998, 0)), new WorldPoint(3070, 2987, 0), new WorldPoint(3061,2985, 0), ObjectID.PORT_TASK_BOARD_PANDEMONIUM, new WorldPoint(3058, 2958, 0))
+	, PANDEMONIUM(1, "the Pandemonium", ObjectID.SAILING_DOCKING_BUOY_THE_PANDEMONIUM, new WorldPoint(3069, 2981, 0), new Zone(new WorldPoint(3065, 2974, 0), new WorldPoint(3084, 2998, 0)), new WorldPoint(3070, 2987, 0), new WorldPoint(3061,2985, 0), ObjectID.PORT_TASK_BOARD_PANDEMONIUM, new WorldPoint(3058, 2985, 0))
 //	, LANDS_END(2, "Land's End", ObjectID.SAILING_DOCKING_BUOY_LANDS_END, null, null, null, null, ObjectID.PORT_TASK_BOARD_LANDS_END, null)
 	, MUSA_POINT(3, "Musa Point", ObjectID.SAILING_DOCKING_BUOY_MUSA_POINT, new WorldPoint(2961, 3152, 0), new Zone(new WorldPoint(2974, 3156, 0), new WorldPoint(2956, 3144, 0)), new WorldPoint(2961, 3146, 0), new WorldPoint(2952, 3150, 0), ObjectID.PORT_TASK_BOARD_MUSA_POINT, new WorldPoint(2956, 3144, 0))
 //	, HOSIDIUS(4, "Hosidius", ObjectID.SAILING_DOCKING_BUOY_HOSIDIUS, null, null, null, null, -1, null)
