@@ -650,6 +650,33 @@ public class ProjectX {
     }
 
     /**
+     * Runs {@code action} with direct input on for this thread, then puts it back as it was --
+     * even if the action throws. The way to use direct input without having to remember to
+     * clear it:
+     * <pre>{@code ProjectX.withDirectInput(() -> Rs2Inventory.interact("Bones", "Bury"));}</pre>
+     */
+    public static void withDirectInput(Runnable action) {
+        boolean before = isDirectInput();
+        setDirectInput(true);
+        try {
+            action.run();
+        } finally {
+            setDirectInput(before);
+        }
+    }
+
+    /** As {@link #withDirectInput(Runnable)}, returning the action's result. */
+    public static <T> T withDirectInput(java.util.function.Supplier<T> action) {
+        boolean before = isDirectInput();
+        setDirectInput(true);
+        try {
+            return action.get();
+        } finally {
+            setDirectInput(before);
+        }
+    }
+
+    /**
      * Sends the entry straight to the game and waits until the client has taken it, so a "Use"
      * on an item is selected before the next action reads it. False when it cannot be sent
      * this way and the caller should fall back to the mouse.

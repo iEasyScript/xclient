@@ -221,6 +221,42 @@ public class Rs2Prayer {
     }
 
 	/**
+	 * One tick of 1-tick flicking with quick prayers: off and straight back on (just on, if they
+	 * are off), both clicks sent at once and not waited on. Done every game tick, the prayers are
+	 * up for every tick and never drain.
+	 *
+	 * <p>Call it once per tick at the start of the tick -- from an {@code onGameTick} subscriber,
+	 * which runs on the client thread -- and inside {@link ProjectX#withDirectInput(Runnable)}, so
+	 * both clicks reach the game on the same tick. Through the mouse they can straddle two ticks.
+	 *
+	 * @return false if there are no quick prayers set up or no prayer points left
+	 */
+	public static boolean flickQuickPrayer() {
+		if (isOutOfPrayer() || !hasAnyQuickPrayers()) return false;
+		if (isQuickPrayerEnabled()) {
+			invokeQuickPrayer(false);
+		}
+		invokeQuickPrayer(false);
+		return true;
+	}
+
+	/**
+	 * One tick of 1-tick flicking with a single prayer: off and straight back on (just on, if it
+	 * is off). Switching to a protection prayer while another is up swaps them. Same calling
+	 * rules as {@link #flickQuickPrayer()}.
+	 *
+	 * @return false if there are no prayer points left
+	 */
+	public static boolean flick(Rs2PrayerEnum prayer) {
+		if (isOutOfPrayer()) return false;
+		if (isPrayerActive(prayer)) {
+			invokePrayer(prayer, false);
+		}
+		invokePrayer(prayer, false);
+		return true;
+	}
+
+	/**
 	 * Toggles quick prayers on or off
 	 * Does nothing if the player is out of prayer points or has no quick prayers configured.
 	 */

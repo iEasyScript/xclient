@@ -30,7 +30,43 @@ The `Rs2Prayer` class offers functionalities to manage and interact with prayer 
 - **Returns**: `boolean` - True if the player has no prayer points left.
 - **Description**: Checks if the player is out of prayer points.
 
+### `flickQuickPrayer()`
+- **Returns**: `boolean` - False if no quick prayers are set up or there are no prayer points left.
+- **Description**: One tick of 1-tick flicking with quick prayers: off and straight back on (just
+  on, if they are off), both clicks sent at once. Client 1.0.47+. See [1-tick flicking](#1-tick-flicking).
+
+### `flick(Rs2PrayerEnum prayer)`
+- **Parameters**:
+    - `prayer`: `Rs2PrayerEnum` - The prayer to flick, e.g. `PROTECT_MELEE`.
+- **Returns**: `boolean` - False if there are no prayer points left.
+- **Description**: One tick of 1-tick flicking with a single prayer. Flicking a different
+  protection prayer from the one that is up swaps them. Client 1.0.47+.
+
 ## Usage Examples
+
+### 1-tick flicking
+A prayer turned off and back on within the same game tick is up for that tick and does not
+drain. Do it every tick and the prayer is always up for free. Two rules:
+
+1. **Once per tick, at the start of it.** Call from an `onGameTick` subscriber.
+2. **With [direct input](DirectInput.md),** so both clicks reach the game on the same tick.
+   Through the mouse they can straddle two ticks, and the prayer drops or drains.
+
+```java
+@Subscribe
+public void onGameTick(GameTick tick) {
+    if (!underAttack()) {
+        return;
+    }
+    // Quick prayers if any are set up, otherwise the protection prayer for the attacker
+    ProjectX.withDirectInput(() -> {
+        if (!Rs2Prayer.flickQuickPrayer()) {
+            Rs2Prayer.flick(Rs2PrayerEnum.PROTECT_MELEE);
+        }
+    });
+}
+```
+Turn the prayer off once the fight is over: `Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_MELEE, false)`.
 
 ### Toggling a Prayer
 ```java

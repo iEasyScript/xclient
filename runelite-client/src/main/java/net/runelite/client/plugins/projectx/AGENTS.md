@@ -21,6 +21,8 @@ Config UI uses the custom `ProjectXConfigPanel` (`plugins/projectx/ui`), not Run
 
 Check `docs/entity-guides/README.md` before modifying anything under `util/` — each entity type has documented footguns.
 
+**Direct input** (client 1.0.46+): `ProjectX.withDirectInput(() -> ...)` sends the clicks inside it straight to the game with no mouse movement — for actions that must not wait on the mouse, such as prayer flicking (`Rs2Prayer.flickQuickPrayer()` / `flick(prayer)`, client 1.0.47+, called once per tick from `onGameTick`). Per thread, restored afterwards. Easier to detect than a mouse click: offer it as a setting. See `docs/api/DirectInput.md`.
+
 ## Scripts
 - Extend `Script` (or `StateMachineScript<S>` for 3+ phase scripts — see `statemachine/AGENTS.md`).
 - Implement `run(TConfig)`; return `true` to signal successful start.
