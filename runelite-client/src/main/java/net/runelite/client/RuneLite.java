@@ -640,6 +640,64 @@ public class RuneLite
 		}
 	}
 
+	/** Held open for the life of the process: its lock keeps other clients out of this one's cache folder. */
+	private static java.nio.channels.FileChannel okHttpCacheLock;
+
+	/**
+	 * The OkHttp disk cache for this client, in a folder no other running client is using.
+	 *
+	 * OkHttp's cache supports one process per folder, and every client on the machine
+	 * used ~/.runelite/cache/okhttp. Two starting together (several accounts launched at
+	 * once, or an old client still open after an update) could each try to replace a
+	 * cache entry the other had open. Windows refuses, the read that triggered it fails,
+	 * and start-up died with "failed to delete ...\cache\okhttp\...".
+	 *
+	 * Each client now claims okhttp, okhttp-2, okhttp-3 ... with a lock file the operating
+	 * system releases when the process ends, crashes included. With every slot taken it
+	 * runs without a disk cache rather than share one.
+	 */
+	private static Cache okHttpCacheForThisProcess()
+	{
+		for (int slot = 1; slot <= 8; slot++)
+		{
+			String name = slot == 1 ? "okhttp" : "okhttp-" + slot;
+			java.nio.channels.FileChannel channel = null;
+			try
+			{
+				CACHE_DIR.mkdirs();
+				channel = java.nio.channels.FileChannel.open(new File(CACHE_DIR, name + ".lock").toPath(),
+					java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.WRITE);
+				if (channel.tryLock() == null)
+				{
+					channel.close();
+					continue;
+				}
+				okHttpCacheLock = channel;
+				if (slot > 1)
+				{
+					log.info("Another client is using the shared HTTP cache; using {} instead", name);
+				}
+				return new Cache(new File(CACHE_DIR, name), MAX_OKHTTP_CACHE_SIZE);
+			}
+			catch (IOException | java.nio.channels.OverlappingFileLockException e)
+			{
+				// Held by this same process (a second client built in tests) or not lockable: try the next.
+				if (channel != null)
+				{
+					try
+					{
+						channel.close();
+					}
+					catch (IOException ignored)
+					{
+					}
+				}
+			}
+		}
+		log.warn("No free HTTP cache folder; running without a disk cache");
+		return null;
+	}
+
 	@VisibleForTesting
 	static OkHttpClient buildHttpClient(boolean insecureSkipTlsVerification)
 	{
@@ -664,8 +722,8 @@ public class RuneLite
 					.build();
 				return chain.proceed(userAgentRequest);
 			})
-			// Setup cache
-			.cache(new Cache(new File(CACHE_DIR, "okhttp"), MAX_OKHTTP_CACHE_SIZE))
+			// Setup cache: a folder of this client's own, see okHttpCacheForThisProcess
+			.cache(okHttpCacheForThisProcess())
 			.addNetworkInterceptor(chain ->
 			{
 				// This has to be a network interceptor so it gets hit before the cache tries to store stuff
