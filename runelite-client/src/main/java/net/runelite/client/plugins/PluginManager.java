@@ -424,6 +424,7 @@ public class PluginManager {
             plugin.startUp();
 
             log.debug("Plugin {} is now running", plugin.getClass().getSimpleName());
+            logProjectX(plugin, "Started");
             if (sceneTileManager != null) {
                 final GameEventManager gameEventManager = this.sceneTileManager.get();
                 if (gameEventManager != null) {
@@ -464,12 +465,27 @@ public class PluginManager {
             plugin.shutDown();
 
             log.debug("Plugin {} is now stopped", plugin.getClass().getSimpleName());
+            logProjectX(plugin, "Stopped");
             eventBus.post(new PluginChanged(plugin, false));
         } catch (Exception ex) {
             throw new PluginInstantiationException(ex);
         }
 
         return true;
+    }
+
+    /**
+     * Project X scripts start and stop at INFO, so a log sent with a report shows
+     * which script was running when, not just what went wrong.
+     */
+    private static void logProjectX(Plugin plugin, String what) {
+        if (!plugin.getClass().getName().startsWith("net.runelite.client.plugins.projectx.")) {
+            return;
+        }
+        PluginDescriptor descriptor = plugin.getClass().getAnnotation(PluginDescriptor.class);
+        String name = descriptor == null ? plugin.getClass().getSimpleName() : descriptor.name().replaceAll("<[^>]*>", "").trim();
+        String version = descriptor == null ? "" : descriptor.version();
+        log.info("===== {} {} {} ({}) =====", what, name, version, plugin.getClass().getSimpleName());
     }
 
     public boolean isActive(Plugin plugin) {

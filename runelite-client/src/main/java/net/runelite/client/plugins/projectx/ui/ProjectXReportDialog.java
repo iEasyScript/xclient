@@ -10,8 +10,10 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.ProjectXLogBuffer;
+import net.runelite.client.plugins.projectx.ProjectXSessionLog;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXAccount;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXSite;
+import net.runelite.client.util.LinkBrowser;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -34,6 +36,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Window;
+import java.util.Base64;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -41,7 +44,8 @@ import java.util.regex.Pattern;
  * "Report a problem" for one script: the player says what went wrong, and the
  * report goes to the Project X support inbox with the script's name and version,
  * the client version, and -- if they leave the box ticked -- the script's recent
- * log and its settings, with anything secret masked out.
+ * log, every session log from the past day and the script's settings, with
+ * anything secret masked out.
  */
 @Slf4j
 final class ProjectXReportDialog
@@ -53,6 +57,11 @@ final class ProjectXReportDialog
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final int LOG_MINUTES = 30;
     private static final int LOG_LINES = 3000;
+    /** Every session in this window goes with the report, not just the script's recent lines. */
+    private static final int FULL_LOG_HOURS = 24;
+    private static final long FULL_LOG_RAW_MAX = 64L * 1024 * 1024;
+    /** The site takes 12 MB; base64 adds a third. */
+    private static final int FULL_LOG_GZIP_MAX = 8 * 1024 * 1024;
 
     /** Settings whose values must never leave the machine. */
     private static final Pattern SECRET_KEY = Pattern.compile("(?i)(password|passwd|token|secret|pin|webhook|apikey|api_key|auth|cookie|session)");
@@ -94,17 +103,26 @@ final class ProjectXReportDialog
         noteScroll.setPreferredSize(new Dimension(380, 140));
         body.add(noteScroll);
 
-        JCheckBox include = new JCheckBox("Include the last " + LOG_MINUTES + " minutes of this script's log and its settings");
+        JCheckBox include = new JCheckBox("Include the client's logs from the last " + FULL_LOG_HOURS + " hours and this script's settings");
         include.setSelected(true);
         include.setAlignmentX(Component.LEFT_ALIGNMENT);
-        include.setToolTipText("Helps us find the problem much faster. Passwords, tokens and webhooks are masked.");
+        include.setToolTipText("Every session, even ones you've closed or restarted since, so we see the script that went wrong."
+            + " Helps us find the problem much faster. Passwords, tokens and webhooks are masked.");
         body.add(include);
 
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel buttons = new JPanel(new BorderLayout());
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton folder = new JButton("Open log folder");
+        folder.setToolTipText("The client's log files, one per session, kept for two weeks.");
+        folder.addActionListener(e -> LinkBrowser.open(ProjectXSessionLog.DIR.getAbsolutePath()));
+        left.add(folder);
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton cancel = new JButton("Cancel");
         JButton send = new JButton("Send report");
-        buttons.add(cancel);
-        buttons.add(send);
+        right.add(cancel);
+        right.add(send);
+        buttons.add(left, BorderLayout.WEST);
+        buttons.add(right, BorderLayout.EAST);
 
         cancel.addActionListener(e -> dialog.dispose());
         send.addActionListener(e ->
@@ -124,7 +142,8 @@ final class ProjectXReportDialog
             {
                 String result = submit(text, internalName, scriptName, version,
                     withDetails ? scrub(ProjectXLogBuffer.recent(packagePrefix, LOG_MINUTES, LOG_LINES)) : null,
-                    withDetails ? settings(configDescriptor) : null);
+                    withDetails ? settings(configDescriptor) : null,
+                    withDetails ? fullLog() : null);
                 SwingUtilities.invokeLater(() ->
                 {
                     if (result == null)
@@ -155,7 +174,8 @@ final class ProjectXReportDialog
     }
 
     /** Sends the report. Returns null when it was accepted, otherwise what to tell the player. */
-    private static String submit(String note, String internalName, String scriptName, String version, String logText, String settings)
+    private static String submit(String note, String internalName, String scriptName, String version, String logText, String settings,
+                                 ProjectXSessionLog.Bundle fullLog)
     {
         String token = ProjectXAccount.token();
         if (token == null)
@@ -175,6 +195,12 @@ final class ProjectXReportDialog
         if (settings != null && !settings.isEmpty())
         {
             json.addProperty("settings", settings);
+        }
+        if (fullLog != null && fullLog.files > 0)
+        {
+            json.addProperty("fullLogGzip", Base64.getEncoder().encodeToString(fullLog.gzip));
+            json.addProperty("fullLogFiles", fullLog.files);
+            json.addProperty("fullLogBytes", fullLog.bytes);
         }
 
         Request request = new Request.Builder()
@@ -227,6 +253,31 @@ final class ProjectXReportDialog
                 .append('\n');
         }
         return out.toString();
+    }
+
+    /**
+     * Every session file from the past day, gzipped, secrets masked. Halved until it
+     * fits what the site takes; null when there is nothing to send or it can't be read,
+     * which never stops the report itself going.
+     */
+    private static ProjectXSessionLog.Bundle fullLog()
+    {
+        try
+        {
+            for (long max = FULL_LOG_RAW_MAX; max >= FULL_LOG_RAW_MAX / 16; max /= 2)
+            {
+                ProjectXSessionLog.Bundle bundle = ProjectXSessionLog.bundle(FULL_LOG_HOURS, max, ProjectXReportDialog::scrub);
+                if (bundle.gzip.length <= FULL_LOG_GZIP_MAX)
+                {
+                    return bundle;
+                }
+            }
+        }
+        catch (Exception | OutOfMemoryError e)
+        {
+            log.warn("Full log not attached to the report: {}", e.toString());
+        }
+        return null;
     }
 
     private static String scrub(String logText)

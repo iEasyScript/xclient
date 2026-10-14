@@ -216,6 +216,8 @@ public class RuneLite
 	public static void main(String[] args) throws Exception {
         validateJavaVersion();
         Locale.setDefault(Locale.ENGLISH);
+		// Before anything logs, so this launch's file has all of it.
+		net.runelite.client.plugins.projectx.ProjectXSessionLog.install();
 
 		final OptionParser parser = new OptionParser(false);
         parser.accepts("clean-jagex-launcher", "Enable jagex launcher"); // will remove the credentials.properties file in .runelite folder

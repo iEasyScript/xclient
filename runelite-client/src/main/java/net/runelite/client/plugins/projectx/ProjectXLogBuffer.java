@@ -19,8 +19,9 @@ import java.util.List;
 
 /**
  * The client's recent log, kept in memory so "Report a problem" can send what a
- * script was doing just before it went wrong. Nothing is written anywhere or sent
- * unless the player sends a report and leaves "include the log" ticked.
+ * script was doing just before it went wrong, filtered to that script. Nothing is
+ * sent unless the player sends a report and leaves "include the log" ticked. The
+ * whole log, kept on disk across sessions, is {@link ProjectXSessionLog}.
  */
 public final class ProjectXLogBuffer extends AppenderBase<ILoggingEvent>
 {
