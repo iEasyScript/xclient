@@ -50,6 +50,20 @@ public class ProjectXSiteTest
     }
 
     @Test
+    public void anOverrideCannotSendTheTokenToAnotherHost()
+    {
+        // The site gets the account token and serves the jars the client runs.
+        System.setProperty("projectx.siteUrl", "https://example.com");
+        assertEquals("xclient.dev", ProjectXSite.baseUrl().host());
+
+        System.setProperty("projectx.siteUrl", "http://xclient.dev");
+        assertEquals("https", ProjectXSite.baseUrl().scheme());
+
+        System.setProperty("projectx.siteUrl", "http://127.0.0.1:3000");
+        assertEquals("127.0.0.1", ProjectXSite.baseUrl().host());
+    }
+
+    @Test
     public void jarsOnlyComeOverHttpsOrFromThisMachine()
     {
         assertTrue(ProjectXSite.isAllowedDownload(HttpUrl.get("https://xclient.dev/a.jar")));

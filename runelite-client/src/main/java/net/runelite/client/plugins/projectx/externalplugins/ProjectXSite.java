@@ -14,7 +14,8 @@ import java.util.Objects;
  * entitlement authority, so everything that talks to "our servers" starts here.
  *
  * <p>Resolved in order: {@code -Dprojectx.siteUrl}, {@code PROJECTX_SITE_URL},
- * the "Site URL" setting in the Project X config, then the default below.
+ * the "Site URL" setting in the Project X config, then the default below. An
+ * override is only honoured for production over HTTPS or a site on this machine.
  *
  * <p>The default is production. Point a development client at a local site with
  * {@code -Dprojectx.siteUrl=http://localhost:3000/} rather than by editing this.
@@ -49,11 +50,18 @@ public final class ProjectXSite
         }
 
         HttpUrl url = Strings.isNullOrEmpty(configured) ? null : HttpUrl.parse(configured);
+        if (url != null && !isAllowedSite(url))
+        {
+            // The site receives the user's account token and serves the plugin jars
+            // the client runs, so an override can't send either anywhere else.
+            log.warn("Ignoring Project X site URL '{}': only {} or this machine are allowed", url.host(), DEFAULT_SITE_URL);
+            url = null;
+        }
         if (url == null)
         {
             if (!Strings.isNullOrEmpty(configured))
             {
-                log.warn("Ignoring unusable Project X site URL '{}'; falling back to {}", configured, DEFAULT_SITE_URL);
+                log.warn("Ignoring unusable Project X site URL; falling back to {}", DEFAULT_SITE_URL);
             }
             url = HttpUrl.get(DEFAULT_SITE_URL);
         }
@@ -190,6 +198,22 @@ public final class ProjectXSite
             && url.port() == base.port();
     }
 
+    /** Production over HTTPS, or a site on this machine for development. */
+    static boolean isAllowedSite(HttpUrl url)
+    {
+        HttpUrl production = HttpUrl.get(PRODUCTION_SITE_URL);
+        if (url.isHttps() && url.host().equalsIgnoreCase(production.host()) && url.port() == production.port())
+        {
+            return true;
+        }
+        return isLoopback(url.host());
+    }
+
+    private static boolean isLoopback(String host)
+    {
+        return host.equals("localhost") || host.startsWith("127.") || host.equals("::1");
+    }
+
     /**
      * Plugin jars are executable code, so they only come over HTTPS -- except from
      * this machine, which is how the site runs until it is hosted.
@@ -200,11 +224,6 @@ public final class ProjectXSite
         {
             return false;
         }
-        if (url.isHttps())
-        {
-            return true;
-        }
-        String host = url.host();
-        return host.equals("localhost") || host.equals("127.0.0.1") || host.equals("::1");
+        return url.isHttps() || isLoopback(url.host());
     }
 }

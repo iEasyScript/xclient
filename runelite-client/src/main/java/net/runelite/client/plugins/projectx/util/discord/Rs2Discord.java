@@ -47,6 +47,11 @@ public class Rs2Discord {
                 });
 
         if (webHookUrl == null) return false;
+        // The URL is the credential: over plain http anyone on the path can post as it.
+        if (webHookUrl.startsWith("http://")) {
+            ProjectX.log("Discord webhook not sent: the URL must start with https://");
+            return false;
+        }
 
         // Create the payload
         DiscordPayload payload = new DiscordPayload(bodyMessage, embeds);
@@ -86,20 +91,24 @@ public class Rs2Discord {
 
             try (Response response = httpClient.newCall(request).execute()) {
                 if (!response.isSuccessful()) {
-                    ProjectX.log("Failed to send Discord notification. Error Code: " + response.code() 
-                            + " - URL marked as invalid: " + webHookUrl);
+                    ProjectX.log("Failed to send Discord notification to " + describe(webHookUrl)
+                            + ". Error Code: " + response.code());
                 }
                 return response.isSuccessful();
             }
         } catch (IllegalArgumentException e) {
-            ProjectX.log("Invalid Discord webhook URL format - URL marked as invalid: " + webHookUrl 
-                    + " - Error: " + e.getMessage());
+            ProjectX.log("Invalid Discord webhook URL (" + describe(webHookUrl) + "): " + e.getMessage());
             return false;
         } catch (IOException e) {
-            ProjectX.log("Error while sending Discord notification to URL: " + webHookUrl 
-                    + " - Error: " + e.getMessage());
+            ProjectX.log("Error while sending Discord notification to " + describe(webHookUrl) + ": " + e.getMessage());
             return false;
         }
+    }
+
+    /** Scheme and host only: the path of a webhook URL is its secret token. */
+    private static String describe(String url) {
+        HttpUrl parsed = HttpUrl.parse(url);
+        return parsed == null ? "an unparseable URL" : parsed.scheme() + "://" + parsed.host();
     }
 
     /**

@@ -2611,7 +2611,9 @@ public class Rs2Bank {
 
         final String[] DIGIT_INSTRUCTIONS = {"FIRST digit", "SECOND digit", "THIRD digit", "FOURTH digit"};
         if (pin == null || pin.length() != DIGIT_INSTRUCTIONS.length || !pin.matches("\\d+")) {
-            ProjectX.log("Unable to enter bankpin with value " + pin);
+            // Never the value itself: a mistyped PIN is still most of the real one.
+            ProjectX.log("Unable to enter bank PIN: it must be exactly 4 digits ("
+                    + (pin == null ? "none set" : pin.length() + " characters") + ")");
             return false;
         }
 

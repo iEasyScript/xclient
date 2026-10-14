@@ -251,7 +251,7 @@ public class RuneLite
         parser.accepts("disable-walker-update", "Disable updates for the static walker");
 		parser.accepts("profile", "Configuration profile to use").withRequiredArg();
 		parser.accepts("noupdate", "Skips the launcher update");
-		parser.accepts("clean-randomdat", "Clean random dat file");
+		parser.accepts("clean-randomdat", "No longer supported; ignored");
 
         final ArgumentAcceptingOptionSpec<String> proxyInfo = parser.accepts("proxy", "Use a specified proxy. Format: scheme://user:pass@host:port")
                 .withRequiredArg().ofType(String.class);
@@ -288,31 +288,11 @@ public class RuneLite
             logger.setLevel(Level.DEBUG);
         }
 
+		// --clean-randomdat used to delete the game's random.dat and leave an empty
+		// read-only one. The game's own files are not ours to tamper with; the flag is
+		// still accepted so existing shortcuts start, and does nothing.
 		if (options.has("clean-randomdat")) {
-			File randomDat = new File(System.getProperty("user.home"), "random.dat");
-
-			// If random.dat exists, remove it
-			if (randomDat.exists()) {
-				if (!randomDat.delete()) {
-					System.err.println("Failed to delete random.dat");
-				}
-			}
-
-			// Create a new random.dat file
-			try {
-				if (randomDat.createNewFile()) {
-					// Attempt to mark the file read‐only
-					boolean readOnlySuccess = randomDat.setReadOnly();
-					if (!readOnlySuccess) {
-						System.err.println("Failed to set random.dat to read‐only");
-					}
-				} else {
-					System.err.println("Failed to create new random.dat file");
-				}
-			} catch (IOException e) {
-				System.err.println("Error creating random.dat: " + e.getMessage());
-				e.printStackTrace();
-			}
+			log.warn("--clean-randomdat is no longer supported and was ignored");
 		}
 
 		ProxyConfiguration.setupProxy(options, proxyInfo);
@@ -325,7 +305,15 @@ public class RuneLite
             }
         });
 
-		final OkHttpClient okHttpClient = buildHttpClient(options.has("insecure-skip-tls-verification"));
+		// Skipping TLS checks trusts any certificate for every request, the Project X
+		// token and plugin jars included. It is for a developer's own test setup, so it
+		// takes --developer-mode as well, and a launcher-started client never has it.
+		final boolean askedToSkipTls = options.has("insecure-skip-tls-verification") || RuneLiteProperties.isInsecureSkipTlsVerification();
+		final boolean skipTls = askedToSkipTls && options.has("developer-mode") && RuneLiteProperties.getLauncherVersion() == null;
+		if (askedToSkipTls && !skipTls) {
+			log.warn("TLS verification can only be skipped in developer mode; it stays on");
+		}
+		final OkHttpClient okHttpClient = buildHttpClient(skipTls);
 		RuneLiteAPI.CLIENT = okHttpClient;
 
 		SplashScreen.init();
@@ -742,7 +730,7 @@ public class RuneLite
 
 		try
 		{
-			if (insecureSkipTlsVerification || RuneLiteProperties.isInsecureSkipTlsVerification())
+			if (insecureSkipTlsVerification)
 			{
 				setupInsecureTrustManager(builder);
 			}

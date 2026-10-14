@@ -126,7 +126,6 @@ public final class LoginManager {
             log.warn("No active profile available for login");
             return false;
         }
-        System.out.println(getActiveProfile());
         Client client = ProjectX.getClient();
         if (client == null) {
             log.warn("Cannot login - client is not initialised");
@@ -486,7 +485,7 @@ public final class LoginManager {
             rsWorld.setAddress(world.getAddress());
             rsWorld.setId(world.getId());
             rsWorld.setPlayerCount(world.getPlayers());
-            rsWorld.setLocation(world.getLocation());
+            rsWorld.setLocation(world.getRegion().getId());
             rsWorld.setTypes(WorldUtil.toWorldTypes(world.getTypes()));
             ProjectX.getClient().changeWorld(rsWorld);
         } catch (Exception ex) {

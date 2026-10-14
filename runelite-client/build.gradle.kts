@@ -399,9 +399,19 @@ val shadowJar = tasks.register<Jar>("shadowJar") {
         // actually subclass the sealed class; manifest covers reflection access.
         attributes["Add-Opens"] = "java.desktop/com.apple.eawt java.desktop/com.apple.eawt.event"
         attributes["Add-Exports"] = "java.desktop/com.apple.eawt java.desktop/com.apple.eawt.event"
+        attributes["Implementation-Title"] = "Project X"
+        attributes["Implementation-Version"] = projectxVersionProvider.get()
+        attributes["Implementation-Vendor"] = "Project X (xclient.dev), based on RuneLite " + project.version
     }
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    // RuneLite's BSD-2 notice must travel with the binary. The shaded jar keeps only
+    // the first META-INF/LICENSE among its dependencies, so it ships under its own name.
+    from(rootProject.file("LICENSE")) {
+        into("META-INF")
+        rename { "LICENSE-RuneLite-BSD-2.txt" }
+    }
 
     from(sourceSets.main.get().output)
     from(configurations.runtimeClasspath.map { it.map { if (it.isDirectory) it else zipTree(it) } })
@@ -469,7 +479,11 @@ tasks.processResources {
     }
 
     val projectxVersion = projectxVersionProvider.get()
-    val projectxCommit = providers.gradleProperty("projectx.commit.sha").getOrElse(commit.toString().trim())
+    // gradle.properties carries "nogit" as a placeholder, which used to win over the
+    // real commit in every local build; only CI's -Pprojectx.commit.sha set one.
+    val projectxCommit = providers.gradleProperty("projectx.commit.sha").orNull
+        ?.takeIf { it.isNotBlank() && it != "nogit" }
+        ?: commit.toString().trim()
     val projectxPluginApiVersion = projectxPluginApiVersionProvider.get()
 
     // Ensure task reruns when injected values change

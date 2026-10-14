@@ -156,7 +156,9 @@ public class RuneLiteDebug {
         parser.accepts("jav_config", "jav_config url")
                 .withRequiredArg()
                 .defaultsTo(RuneLiteProperties.getJavConfig());
-        parser.accepts("disable-telemetry", "Disable telemetry");
+        // Off unless asked for, as in RuneLite.main; --disable-telemetry still parses.
+        parser.accepts("enable-telemetry", "Send session and error telemetry");
+        parser.accepts("disable-telemetry", "Disable telemetry (the default)");
         parser.accepts("disable-walker-update", "Disable updates for the static walker");
         parser.accepts("profile", "Configuration profile to use").withRequiredArg();
         parser.accepts("noupdate", "Skips the launcher update");
@@ -250,12 +252,12 @@ public class RuneLiteDebug {
 
             log.info("RuneLite {} (launcher version {}) starting up, args: {}",
                     RuneLiteProperties.getVersion(), MoreObjects.firstNonNull(RuneLiteProperties.getLauncherVersion(), "unknown"),
-                    args.length == 0 ? "none" : String.join(" ", args));
+                    args.length == 0 ? "none" : RuneLite.redactArgs(Arrays.asList(args)));
 
             final RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
             // This includes arguments from _JAVA_OPTIONS, which are parsed after command line flags and applied to
-            // the global VM args
-            log.info("Java VM arguments: {}", String.join(" ", runtime.getInputArguments()));
+            // the global VM args. Redacted like RuneLite.main: proxy passwords and tokens stay out of the log.
+            log.info("Java VM arguments: {}", RuneLite.redactArgs(runtime.getInputArguments()));
 
             final long start = System.currentTimeMillis();
             injector = Guice.createInjector(new RuneLiteModule(
@@ -264,7 +266,7 @@ public class RuneLiteDebug {
                     runtimeConfigLoader,
                     developerMode,
                     options.has("safe-mode"),
-                    options.has("disable-telemetry"),
+                    !options.has("enable-telemetry"),
                     options.has("disable-walker-update"),
                     options.valueOf(sessionfile),
                     (String) options.valueOf("profile"),
