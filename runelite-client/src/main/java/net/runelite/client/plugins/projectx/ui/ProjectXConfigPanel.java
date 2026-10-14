@@ -39,6 +39,7 @@ import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.projectx.AlwaysOnPlugins;
+import net.runelite.client.plugins.projectx.ProjectXConfig;
 import net.runelite.client.plugins.projectx.ProjectXConfigManager;
 import net.runelite.client.plugins.projectx.breakhandler.breakhandlerv2.BreakHandlerV2Config;
 import net.runelite.client.plugins.projectx.breakhandler.breakhandlerv2.PluginStopHelper;
@@ -46,6 +47,7 @@ import net.runelite.client.plugins.projectx.breakhandler.breakhandlerv2.PluginSt
 import net.runelite.client.plugins.projectx.inventorysetups.InventorySetup;
 import net.runelite.client.plugins.projectx.inventorysetups.MInventorySetupsPlugin;
 import net.runelite.client.plugins.projectx.mouserecorder.MouseMacroRecorderPlugin;
+import net.runelite.client.plugins.projectx.util.reliability.ReliabilitySettings;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
 import net.runelite.client.ui.FontManager;
@@ -829,6 +831,11 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
     private JButton createActionButton(ConfigDescriptor cd, ConfigItemDescriptor cid) {
         JButton button = new JButton(cid.getItem().name());
         button.addActionListener(e -> {
+            if (ProjectXConfig.configGroup.equals(cd.getGroup().value())
+                    && ProjectXConfig.keyReliabilityResetDefaults.equals(cid.getItem().keyName())) {
+                resetReliabilitySettings(button);
+                return;
+            }
             ConfigButton next = new ConfigButton(UUID.randomUUID().toString());
             configManager.setConfiguration(cd.getGroup().value(), cid.getItem().keyName(), next);
             if (MouseMacroRecorderPlugin.CONFIG_GROUP.equals(cd.getGroup().value())
@@ -837,6 +844,18 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
             }
         });
         return button;
+    }
+
+    /** Puts only the "Script reliability" settings back to their defaults, then redraws them. */
+    private void resetReliabilitySettings(Component parent) {
+        final int result = JOptionPane.showOptionDialog(parent,
+                "Put the script reliability settings back to their defaults?",
+                "Are you sure?", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE,
+                null, new String[]{"Yes", "No"}, "No");
+        if (result == JOptionPane.YES_OPTION) {
+            ReliabilitySettings.resetToDefaults(configManager);
+            rebuild();
+        }
     }
 
     private void changeConfiguration(Component component, ConfigDescriptor cd, ConfigItemDescriptor cid) {

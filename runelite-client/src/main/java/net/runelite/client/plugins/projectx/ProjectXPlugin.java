@@ -32,6 +32,7 @@ import net.runelite.client.plugins.projectx.util.overlay.GembagOverlay;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil;
 import net.runelite.client.plugins.projectx.util.reflection.Rs2Reflection;
+import net.runelite.client.plugins.projectx.util.reliability.ReliabilitySettings;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
 import net.runelite.client.plugins.projectx.util.leaguetransport.Rs2LeaguesTransport;
 import net.runelite.client.plugins.projectx.util.leaguetransport.SeasonalTransportHandlers;
@@ -186,6 +187,7 @@ public class ProjectXPlugin extends Plugin
 		ProjectX.pauseAllScripts.set(false);
 		ProjectX.enableAutoRunOn = projectxConfig.enableAutoRunOn();
 		ProjectX.useStaminaPotsIfNeeded = projectxConfig.useStaminaPotsIfNeeded();
+		ReliabilitySettings.update(ReliabilitySettings.fromConfig(projectxConfig));
 		ProjectX.getBlockingEventManager().start();
 
 		ProjectXPluginListPanel pluginListPanel = pluginListPanelProvider.get();
@@ -544,6 +546,14 @@ public class ProjectXPlugin extends Plugin
 					break;
 				case ProjectXConfig.keyUseStaminaPotsIfNeeded:
 					ProjectX.useStaminaPotsIfNeeded = projectxConfig.useStaminaPotsIfNeeded();
+					break;
+				case ProjectXConfig.keyReliabilityEnabled:
+				case ProjectXConfig.keyReliabilityMaxRetries:
+				case ProjectXConfig.keyReliabilityMaxConsecutiveFailures:
+				case ProjectXConfig.keyReliabilityNoProgressTimeout:
+				case ProjectXConfig.keyReliabilityDetailedLogging:
+					// Running scripts read the new values on their next step.
+					ReliabilitySettings.update(ReliabilitySettings.fromConfig(projectxConfig));
 					break;
 				case ProjectXConfig.keyEnableGameChatLogging:
 				case ProjectXConfig.keyGameChatLogPattern:

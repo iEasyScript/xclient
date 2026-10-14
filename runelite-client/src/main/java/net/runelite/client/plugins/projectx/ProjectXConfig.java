@@ -4,9 +4,13 @@ import ch.qos.logback.classic.Level;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.runelite.client.config.Config;
+import net.runelite.client.config.ConfigButton;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Range;
+import net.runelite.client.config.Units;
+import net.runelite.client.plugins.projectx.util.reliability.ReliabilitySettings;
 
 @ConfigGroup(ProjectXConfig.configGroup)
 public interface ProjectXConfig extends Config
@@ -250,6 +254,112 @@ public interface ProjectXConfig extends Config
 	default boolean showCacheInfo() {
 		return false;
 	}
+
+	@ConfigSection(
+		name = "Script reliability",
+		description = "How scripts recover when something goes wrong: retrying a failed action, "
+			+ "recovering, and stopping safely instead of hanging or carrying on in a broken state. "
+			+ "Applies to scripts that use it; changes take effect straight away.",
+		position = 5,
+		closedByDefault = true
+	)
+	String reliabilitySection = "reliabilitySection";
+
+	String keyReliabilityEnabled = "reliabilityEnabled";
+	@ConfigItem(
+		keyName = keyReliabilityEnabled,
+		name = "Enable script reliability",
+		description = "Let scripts retry failed actions, recover, and stop safely when they are stuck. "
+			+ "When off, each action is tried once and nothing is stopped automatically.",
+		position = 0,
+		section = reliabilitySection
+	)
+	default boolean reliabilityEnabled()
+	{
+		return ReliabilitySettings.DEFAULT_ENABLED;
+	}
+
+	String keyReliabilityMaxRetries = "reliabilityMaxRetries";
+	@Range(min = ReliabilitySettings.MIN_RETRIES, max = ReliabilitySettings.MAX_RETRIES)
+	@ConfigItem(
+		keyName = keyReliabilityMaxRetries,
+		name = "Retries per action",
+		description = "How many more times a script tries an action that did not work, waiting a little longer each time (0 to 10).",
+		position = 1,
+		section = reliabilitySection
+	)
+	default int reliabilityMaxRetries()
+	{
+		return ReliabilitySettings.DEFAULT_RETRIES;
+	}
+
+	String keyReliabilityMaxConsecutiveFailures = "reliabilityMaxConsecutiveFailures";
+	@Range(min = ReliabilitySettings.MIN_CONSECUTIVE_FAILURES, max = ReliabilitySettings.MAX_CONSECUTIVE_FAILURES)
+	@ConfigItem(
+		keyName = keyReliabilityMaxConsecutiveFailures,
+		name = "Failures before stopping",
+		description = "Stop the script safely after this many failed steps in a row, "
+			+ "or when the same step fails this many times without working once (1 to 50).",
+		position = 2,
+		section = reliabilitySection
+	)
+	default int reliabilityMaxConsecutiveFailures()
+	{
+		return ReliabilitySettings.DEFAULT_CONSECUTIVE_FAILURES;
+	}
+
+	String keyReliabilityNoProgressTimeout = "reliabilityNoProgressTimeout";
+	@Range(min = ReliabilitySettings.MIN_NO_PROGRESS_SECONDS, max = ReliabilitySettings.MAX_NO_PROGRESS_SECONDS)
+	@Units(Units.SECONDS)
+	@ConfigItem(
+		keyName = keyReliabilityNoProgressTimeout,
+		name = "No-progress timeout",
+		description = "If a script makes no progress for this long it tries to recover once, "
+			+ "then stops safely if another timeout passes. Time logged out, paused or on a break "
+			+ "does not count (15 to 1800 seconds).",
+		position = 3,
+		section = reliabilitySection
+	)
+	default int reliabilityNoProgressTimeout()
+	{
+		return ReliabilitySettings.DEFAULT_NO_PROGRESS_SECONDS;
+	}
+
+	String keyReliabilityDetailedLogging = "reliabilityDetailedLogging";
+	@ConfigItem(
+		keyName = keyReliabilityDetailedLogging,
+		name = "Detailed diagnostic logging",
+		description = "Write every attempt, retry and checkpoint to the session log, for problem reports. "
+			+ "Failures, recoveries and stops are always logged.",
+		position = 4,
+		section = reliabilitySection
+	)
+	default boolean reliabilityDetailedLogging()
+	{
+		return ReliabilitySettings.DEFAULT_DETAILED_LOGGING;
+	}
+
+	String keyReliabilityResetDefaults = "reliabilityResetDefaults";
+	@ConfigItem(
+		keyName = keyReliabilityResetDefaults,
+		name = "Reset reliability settings",
+		description = "Put the script reliability settings back to their defaults. Other settings are not changed.",
+		position = 5,
+		section = reliabilitySection
+	)
+	default ConfigButton reliabilityResetDefaults()
+	{
+		return new ConfigButton();
+	}
+
+	/** The stored values of the reliability section, which "Reset reliability settings" clears. */
+	String[] RELIABILITY_KEYS = {
+		keyReliabilityEnabled,
+		keyReliabilityMaxRetries,
+		keyReliabilityMaxConsecutiveFailures,
+		keyReliabilityNoProgressTimeout,
+		keyReliabilityDetailedLogging
+	};
 
 	String keyDisableTelemetry = "disableTelemetry";
 	@ConfigItem(

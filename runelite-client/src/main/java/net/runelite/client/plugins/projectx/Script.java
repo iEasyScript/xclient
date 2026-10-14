@@ -10,6 +10,7 @@ import net.runelite.client.plugins.projectx.util.antiban.AntibanPlugin;
 import net.runelite.client.plugins.projectx.util.antiban.SessionFatigue;
 import net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
+import net.runelite.client.plugins.projectx.util.reliability.ScriptReliability;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
 import org.jetbrains.annotations.NotNull;
 
@@ -49,6 +50,35 @@ public abstract class Script extends Global implements IScript {
     @Getter
     protected static WorldPoint initialPlayerLocation;
 
+    /** Created the first time a script asks for it; scripts that never do are unaffected. */
+    private volatile ScriptReliability reliability;
+
+    /**
+     * This script's reliability service: guarded steps with retries, recovery, checkpoints,
+     * no-progress detection and safe stops, following the player's "Script reliability"
+     * settings. A safe stop shows the player why and then calls {@link #shutdown()}.
+     * See {@link ScriptReliability} for how to use it.
+     */
+    protected final ScriptReliability reliability() {
+        ScriptReliability r = reliability;
+        if (r == null) {
+            synchronized (this) {
+                r = reliability;
+                if (r == null) {
+                    r = ScriptReliability.builder(getClass().getSimpleName())
+                        .scriptActive(() -> mainScheduledFuture == null || !mainScheduledFuture.isDone())
+                        .onSafeStop(message -> {
+                            ProjectX.showMessage(message);
+                            shutdown();
+                        })
+                        .build();
+                    reliability = r;
+                }
+            }
+        }
+        return r;
+    }
+
     /**
      * Cancel scheduled tasks, clear shared state, and reset helpers.
      * Safe to call multiple times; no-ops if already shut down.
@@ -70,6 +100,10 @@ public abstract class Script extends Global implements IScript {
         }
         if (scheduledFuture != null && !scheduledFuture.isDone()) {
             scheduledFuture.cancel(true);
+        }
+        ScriptReliability r = reliability;
+        if (r != null) {
+            r.reset();
         }
     }
 
