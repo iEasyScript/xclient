@@ -238,7 +238,8 @@ public class PohPanel extends PluginPanel {
         Map<WorldPoint, Set<Transport>> pohTransports = new HashMap<>();
         WorldPoint exitPortal = instance.tilePanel.getTile();
         if (exitPortal == null) {
-            ProjectX.log("Failed to load exit portal config");
+            // No house set up in the Web Walker panel: the usual case, and asked on
+            // every transport refresh, so nothing to log.
             return allTransports;
         }
 

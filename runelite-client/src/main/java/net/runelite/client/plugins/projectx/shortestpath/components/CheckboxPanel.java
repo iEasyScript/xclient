@@ -97,13 +97,10 @@ public class CheckboxPanel extends JPanel {
         ProjectX.getConfigManager().setConfiguration(CONFIG_GROUP, key, value);
     }
 
+    /** Unset is the normal case for anyone who never ticked the box: off, and nothing to log. */
     private boolean getBool(String key) {
-        try {
-            return ProjectX.getConfigManager().getConfiguration(CONFIG_GROUP, key, Boolean.class);
-        } catch (NullPointerException e) {
-            ProjectX.log("Failed to poh checkbox config for " + key);
-            return false;
-        }
+        if (ProjectX.getConfigManager() == null) return false;
+        return Boolean.TRUE.equals(ProjectX.getConfigManager().getConfiguration(CONFIG_GROUP, key, Boolean.class));
     }
 
     private void saveConfigs() {
