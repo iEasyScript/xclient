@@ -7,6 +7,7 @@ import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.ProjectXConfig;
 import okhttp3.HttpUrl;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -212,6 +213,19 @@ public final class ProjectXSite
     private static boolean isLoopback(String host)
     {
         return host.equals("localhost") || host.startsWith("127.") || host.equals("::1");
+    }
+
+    /**
+     * Cents of an X Token as the site shows them: "3 X", "2.85 X". Balances and
+     * prices are kept in cents so a percentage off is exact.
+     */
+    public static String formatX(int cents)
+    {
+        if (cents % 100 == 0)
+        {
+            return String.format(Locale.US, "%,d X", cents / 100);
+        }
+        return String.format(Locale.US, "%,.2f X", cents / 100.0);
     }
 
     /**

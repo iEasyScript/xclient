@@ -255,8 +255,8 @@ public class ProjectXHomePanel extends PluginPanel
             return;
         }
         signedIn.setText("Signed in as " + identity.displayName());
-        Integer tokens = identity.tokenBalance();
-        balance.setText(tokens == null ? "—" : tokens + " X");
+        Integer cents = identity.balanceCents();
+        balance.setText(cents == null ? "—" : ProjectXSite.formatX(cents));
     }
 
     /** One installed store script, as the list shows it. */

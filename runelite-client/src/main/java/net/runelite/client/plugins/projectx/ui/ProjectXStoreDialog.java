@@ -115,7 +115,8 @@ final class ProjectXStoreDialog
         boolean comped = bool(s, "comped");
         boolean broken = bool(s, "broken");
         boolean available = bool(s, "available");
-        int balance = s.get("balance").getAsInt();
+        // In cents; a site from before cents only sent whole tokens.
+        int balance = s.has("balanceCents") ? s.get("balanceCents").getAsInt() : s.get("balance").getAsInt() * 100;
         String ownedUntil = str(s, "ownedUntil");
         JsonObject trial = s.getAsJsonObject("trial");
         String trialKind = str(trial, "kind");
@@ -138,7 +139,7 @@ final class ProjectXStoreDialog
         {
             body.add(label("Free trial requested: your hour starts as soon as the client picks it up."));
         }
-        body.add(label("Your balance: <b>" + balance + " X Tokens</b>" + (comped ? " (admin: free)" : "")));
+        body.add(label("Your balance: <b>" + ProjectXSite.formatX(balance) + "</b>" + (comped ? " (admin: free)" : "")));
 
         JPanel buttons = new JPanel(new GridLayout(0, 1, 0, 4));
         buttons.setOpaque(false);
@@ -159,13 +160,13 @@ final class ProjectXStoreDialog
                 JsonObject p = el.getAsJsonObject();
                 String tier = str(p, "tier");
                 String tierLabel = str(p, "label");
-                int tokens = p.get("tokens").getAsInt();
+                int price = p.has("cents") ? p.get("cents").getAsInt() : p.get("tokens").getAsInt() * 100;
                 String verb = ownedUntil == null ? "Buy " : "Add ";
-                JButton b = button(verb + tierLabel + " for " + tokens + " X", () ->
+                JButton b = button(verb + tierLabel + " for " + ProjectXSite.formatX(price), () ->
                 {
-                    int cost = comped ? 0 : tokens;
-                    String question = "<html>" + verb + "<b>" + esc(tierLabel) + "</b> of " + esc(name) + " for <b>" + cost + " X Tokens</b>?"
-                        + "<br>You have " + balance + "; you'll have " + (balance - cost) + " left."
+                    int cost = comped ? 0 : price;
+                    String question = "<html>" + verb + "<b>" + esc(tierLabel) + "</b> of " + esc(name) + " for <b>" + ProjectXSite.formatX(cost) + "</b>?"
+                        + "<br>You have " + ProjectXSite.formatX(balance) + "; you'll have " + ProjectXSite.formatX(balance - cost) + " left."
                         + "<br>It doesn't renew on its own. All sales are final.</html>";
                     if (JOptionPane.showConfirmDialog(dialog, question, "Confirm purchase", JOptionPane.OK_CANCEL_OPTION,
                         JOptionPane.QUESTION_MESSAGE) == JOptionPane.OK_OPTION)
@@ -173,7 +174,7 @@ final class ProjectXStoreDialog
                         act(dialog, body, internalName, "buy", tier, "Bought " + tierLabel + ". It's ready to start.");
                     }
                 });
-                b.setEnabled(comped || balance >= tokens);
+                b.setEnabled(comped || balance >= price);
                 if (!b.isEnabled())
                 {
                     b.setToolTipText("Not enough X Tokens: top up first.");

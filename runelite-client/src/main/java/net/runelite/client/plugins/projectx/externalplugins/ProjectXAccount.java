@@ -388,13 +388,21 @@ public class ProjectXAccount
         @SerializedName("role")
         private String role;
 
+        /** Whole X Tokens, rounded down. Kept for sites from before cents. */
         @SerializedName("tokenBalance")
         private Integer tokenBalance;
 
-        /** Spendable X Tokens, or null if the site did not say. */
-        public Integer tokenBalance()
+        @SerializedName("balanceCents")
+        private Integer balanceCents;
+
+        /** Spendable X Tokens in cents, or null if the site did not say. */
+        public Integer balanceCents()
         {
-            return tokenBalance;
+            if (balanceCents != null)
+            {
+                return balanceCents;
+            }
+            return tokenBalance == null ? null : tokenBalance * 100;
         }
 
         public String id()
