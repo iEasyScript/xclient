@@ -203,13 +203,17 @@ public enum Rs2Spells implements Spell {
             Runes.COSMIC, 1,
             Runes.EARTH, 10
     ), Rs2Spellbook.MODERN),
+    // Lvl-5 and Lvl-6 were missing their earth runes, so a water (or fire) staff
+    // alone looked enough and the cast then failed (OSRS wiki, Lvl-5/6 Enchant).
     ENCHANT_DRAGONSTONE_JEWELLERY(MagicAction.ENCHANT_DRAGONSTONE_JEWELLERY, Map.of(
             Runes.COSMIC, 1,
-            Runes.WATER, 15
+            Runes.WATER, 15,
+            Runes.EARTH, 15
     ), Rs2Spellbook.MODERN),
     ENCHANT_ONYX_JEWELLERY(MagicAction.ENCHANT_ONYX_JEWELLERY, Map.of(
             Runes.COSMIC, 1,
-            Runes.FIRE, 20
+            Runes.FIRE, 20,
+            Runes.EARTH, 20
     ), Rs2Spellbook.MODERN),
     ENCHANT_ZENYTE_JEWELLERY(MagicAction.ENCHANT_ZENYTE_JEWELLERY, Map.of(
             Runes.COSMIC, 1,
