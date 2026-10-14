@@ -396,7 +396,7 @@ public class ProjectX {
             rsWorld.setAddress(newWorld.getAddress());
             rsWorld.setId(newWorld.getId());
             rsWorld.setPlayerCount(newWorld.getPlayers());
-            rsWorld.setLocation(newWorld.getLocation());
+            rsWorld.setLocation(newWorld.getRegion().getId());
             rsWorld.setTypes(WorldUtil.toWorldTypes(newWorld.getTypes()));
 
             ProjectX.getClient().openWorldHopper();

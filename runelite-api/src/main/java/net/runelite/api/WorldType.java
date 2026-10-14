@@ -64,6 +64,10 @@ public enum WorldType
 	 */
 	HIGH_RISK(1 << 10),
 	/**
+	 * Hardcore main
+	 */
+	HARDCORE_MAIN(1 << 11),
+	/**
 	 * Last man standing world type.
 	 */
 	LAST_MAN_STANDING(1 << 14),
