@@ -1088,7 +1088,12 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
     private void onMenuOptionClicked(MenuEntry entry) {
         if (entry.getOption().equals(SET) && entry.getTarget().equals(TARGET)) {
             WorldPoint worldPoint = getSelectedWorldPoint();
-            shortestPathScript.setTriggerWalker(worldPoint);
+            if (config.walkToTarget()) {
+                shortestPathScript.setTriggerWalker(worldPoint);
+            } else {
+                // "Walk to target I set" is off: show the route, leave the walking to the player.
+                setTarget(worldPoint);
+            }
         }
         if (entry.getOption().equals(SET) && entry.getTarget().equals(TEST)) {
             //For debugging you can use setTarget, it will calculate path without walking
@@ -1102,6 +1107,7 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
 
         if (entry.getOption().equals(CLEAR) && entry.getTarget().equals(PATH)) {
 			shortestPathScript.setTriggerWalker(null);
+			setTarget(null); // a drawn-only route has no walk to cancel
         }
     }
 

@@ -40,7 +40,14 @@ public enum Rs2Staff {
     MYSTIC_MUD_STAFF(ItemID.MYSTIC_MUD_STAFF, List.of(Runes.WATER, Runes.EARTH)),
     MYSTIC_SMOKE_STAFF(ItemID.MYSTIC_SMOKE_BATTLESTAFF, List.of(Runes.AIR, Runes.FIRE)),
     MYSTIC_STEAM_STAFF(ItemID.MYSTIC_STEAM_BATTLESTAFF, List.of(Runes.WATER, Runes.FIRE)),
-    TWINFLAME_STAFF(ItemID.TWINFLAME_STAFF, List.of(Runes.FIRE, Runes.WATER));
+    TWINFLAME_STAFF(ItemID.TWINFLAME_STAFF, List.of(Runes.FIRE, Runes.WATER)),
+    // Ornament-kit versions are separate items; without them a player wielding
+    // "Lava battlestaff (or)" was treated as having no staff at all.
+    LAVA_BATTLESTAFF_OR(ItemID.LAVA_BATTLESTAFF_PRETTY, List.of(Runes.FIRE, Runes.EARTH)),
+    MYSTIC_LAVA_STAFF_OR(ItemID.MYSTIC_LAVA_STAFF_PRETTY, List.of(Runes.FIRE, Runes.EARTH)),
+    STEAM_BATTLESTAFF_OR(ItemID.STEAM_BATTLESTAFF_PRETTY, List.of(Runes.WATER, Runes.FIRE)),
+    MYSTIC_STEAM_STAFF_OR(ItemID.MYSTIC_STEAM_BATTLESTAFF_PRETTY, List.of(Runes.WATER, Runes.FIRE)),
+    KODAI_WAND(ItemID.KODAI_WAND, List.of(Runes.WATER));
 
     private final int itemID;
     private final List<Runes> runes;

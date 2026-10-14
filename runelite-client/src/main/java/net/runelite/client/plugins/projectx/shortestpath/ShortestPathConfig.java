@@ -121,6 +121,19 @@ public interface ShortestPathConfig extends Config {
     String sectionSettings = "sectionSettings";
 
     @ConfigItem(
+            keyName = "walkToTarget",
+            name = "Walk to target I set",
+            description = "When on, choosing \"Set Target\" on the world map or a tile walks you there.<br>" +
+                    "When off, it only draws the route for you to follow yourself.<br>" +
+                    "Scripts walk as normal either way.",
+            position = -1,
+            section = sectionSettings
+    )
+    default boolean walkToTarget() {
+        return true;
+    }
+
+    @ConfigItem(
             keyName = "avoidWilderness",
             name = "Avoid wilderness",
             description = "Whether the wilderness should be avoided if possible<br>" +
