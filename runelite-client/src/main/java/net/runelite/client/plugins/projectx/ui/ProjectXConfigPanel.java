@@ -114,6 +114,8 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
     private final ProjectXPluginToggleButton pluginToggle;
 
     private ProjectXPluginConfigurationDescriptor pluginConfig = null;
+    /** Set while the toggle is put back after a start that didn't happen (yet), so that isn't a stop. */
+    private boolean revertingToggle;
     // add near other fields
     private final JTextField searchField = new JTextField();
     private final Map<JPanel, String> itemIndex = new HashMap<>();     // item panel -> lowercased name
@@ -258,8 +260,16 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
             applyAlwaysOnLock();
             pluginToggle.addItemListener(i ->
             {
+                if (revertingToggle) {
+                    return;
+                }
                 if (pluginToggle.isSelected()) {
-                    pluginList.startPlugin(pluginConfig.getPlugin());
+                    // Declined, or the pre-start check will start it: show it as off until it does.
+                    if (!pluginList.startPlugin(pluginConfig.getPlugin())) {
+                        revertingToggle = true;
+                        pluginToggle.setSelected(false);
+                        revertingToggle = false;
+                    }
                 } else {
                     pluginList.stopPlugin(pluginConfig.getPlugin());
                 }

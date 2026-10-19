@@ -288,11 +288,16 @@ public class ProjectXPluginListPanel extends ProjectXPluginPanel {
     }
 
     /**
-     * Starts a plugin, after asking first if the store has marked it as not working.
+     * Starts a plugin, after asking first if the store has marked it as not working, and
+     * after the pre-start requirements check (see {@link ProjectXRequirementsDialog}).
      *
-     * @return false if the player chose not to start it
+     * @return false if the player chose not to start it, or the requirements check will
+     * start it once it has finished
      */
     boolean startPlugin(Plugin plugin) {
+        if (pluginManager.isPluginActive(plugin)) {
+            return true; // already running, e.g. a toggle redrawn after the start
+        }
         ProjectXPluginManifest manifest = projectxPluginManager.getManifestMap().get(plugin.getClass().getSimpleName());
         if (manifest != null && manifest.isBroken() && SwingUtilities.isEventDispatchThread()) {
             String note = manifest.getHealthNote();
@@ -308,6 +313,14 @@ public class ProjectXPluginListPanel extends ProjectXPluginPanel {
             }
         }
 
+        if (ProjectXRequirementsDialog.deferStart(this, plugin, pluginManager, () -> finishStart(plugin))) {
+            return false;
+        }
+        finishStart(plugin);
+        return true;
+    }
+
+    private void finishStart(Plugin plugin) {
         projectxPluginManager.getOutdatedPluginUpdate(plugin)
                 .ifPresent(this::showOutdatedPluginNotification);
 
@@ -318,7 +331,6 @@ public class ProjectXPluginListPanel extends ProjectXPluginPanel {
         } catch (PluginInstantiationException ex) {
             log.warn("Error when starting plugin {}", plugin.getClass().getSimpleName(), ex);
         }
-        return true;
     }
 
     /** For list items that need the store manifest, e.g. to offer Trial or buy. */

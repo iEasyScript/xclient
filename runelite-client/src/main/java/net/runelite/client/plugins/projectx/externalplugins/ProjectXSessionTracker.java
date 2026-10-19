@@ -1,6 +1,7 @@
 package net.runelite.client.plugins.projectx.externalplugins;
 
 import com.google.gson.JsonObject;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -97,6 +98,24 @@ public class ProjectXSessionTracker
         }
     }
 
+    /**
+     * Posted on the event bus once a tracked run has ended and been reported, on
+     * whichever thread ended it. For listeners such as personal alerts; posting it
+     * changes nothing about the report. {@code reason} is the message the script
+     * showed just before stopping itself, or null.
+     */
+    @Value
+    public static class RunEnded
+    {
+        String scriptName;
+        String internalName;
+        long startedAt;
+        long endedAt;
+        End end;
+        String reason;
+        boolean died;
+    }
+
     private static final class Mark
     {
         final End end;
@@ -190,6 +209,21 @@ public class ProjectXSessionTracker
                 return;
             }
         }, SELF_STOP_CHECK_MS, TimeUnit.MILLISECONDS);
+    }
+
+    /** The names of the store scripts running now; empty when none is, or before the tracker has started. */
+    public static java.util.List<String> activeRunNames()
+    {
+        ProjectXSessionTracker t = instance;
+        java.util.List<String> names = new java.util.ArrayList<>();
+        if (t != null)
+        {
+            for (Run run : t.runs.values())
+            {
+                names.add(run.name);
+            }
+        }
+        return names;
     }
 
     // ---- events
@@ -369,11 +403,22 @@ public class ProjectXSessionTracker
         json.addProperty("endReason", end.name());
         json.addProperty("died", run.died);
         json.add("xpGained", xp);
+        String stopMessage = null;
         if (end == End.SELF_STOP && lastMessage != null && endedAt - lastMessageAt < MESSAGE_WINDOW_MS)
         {
+            stopMessage = lastMessage;
             json.addProperty("stopMessage", lastMessage);
         }
         log.debug("Session ended: {} after {}s ({})", run.name, (endedAt - run.startedAt) / 1000, end);
+        try
+        {
+            eventBus.post(new RunEnded(run.name, run.internalName, run.startedAt, endedAt, end, stopMessage, run.died));
+        }
+        catch (RuntimeException e)
+        {
+            // A listener must never stop the run being reported.
+            log.debug("Run-ended listeners failed: {}", e.toString());
+        }
         executor.execute(() ->
         {
             try
