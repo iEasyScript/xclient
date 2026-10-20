@@ -1663,12 +1663,13 @@ public class Rs2Player {
      * @return {@code true} if the player's idle time exceeds or equals the adjusted timeout, {@code false} otherwise.
      */
     public static boolean checkIdleLogout(long randomDelay) {
-        long idleClientTicks = Long.min(
-                ProjectX.getClient().getMouseIdleTicks(),
-                ProjectX.getClient().getKeyboardIdleTicks()
-        );
-
-        return idleClientTicks >= ProjectX.getClient().getIdleTimeout() - randomDelay;
+        return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            long idleClientTicks = Long.min(
+                    ProjectX.getClient().getMouseIdleTicks(),
+                    ProjectX.getClient().getKeyboardIdleTicks()
+            );
+            return idleClientTicks >= ProjectX.getClient().getIdleTimeout() - randomDelay;
+        }).orElse(false);
     }
 
     /**

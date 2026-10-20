@@ -539,7 +539,6 @@ net.runelite.client.plugins.projectx.util.npc.Rs2NpcModel#getTransformedComposit
 net.runelite.client.plugins.projectx.util.player.Rs2Player#IsInInstance(): boolean  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
 net.runelite.client.plugins.projectx.util.player.Rs2Player#IsInInstance(): boolean  ->  net.runelite.api.Scene#isInstance(): boolean
 net.runelite.client.plugins.projectx.util.player.Rs2Player#IsInInstance(): boolean  ->  net.runelite.api.WorldView#getScene(): Scene
-net.runelite.client.plugins.projectx.util.player.Rs2Player#checkIdleLogout(long): boolean  ->  net.runelite.api.Client#getKeyboardIdleTicks(): int
 net.runelite.client.plugins.projectx.util.player.Rs2Player#distanceTo(WorldPoint): int  ->  net.runelite.api.Client#getTopLevelWorldView(): WorldView
 net.runelite.client.plugins.projectx.util.player.Rs2Player#distanceTo(WorldPoint): int  ->  net.runelite.api.Scene#isInstance(): boolean
 net.runelite.client.plugins.projectx.util.player.Rs2Player#distanceTo(WorldPoint): int  ->  net.runelite.api.WorldView#getScene(): Scene
