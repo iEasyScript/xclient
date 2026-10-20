@@ -1246,20 +1246,20 @@ public class WhileGuthixSleeps extends BasicQuestHelper
 		talkToIdriaAfterPlanting.addSubSteps(goFromF3ToF2WhiteKnight, goFromF2ToF1WhiteKnight, goFromF1ToF0WhiteKnight);
 
 		activeLunars = new ObjectStep(this, ObjectID.ASTRAL_ALTAR, new WorldPoint(2158, 3864, 0),
-			"Activate the lunar spellbook for NPC Contact. Either use the altar on Lunar Isle, your POH altar, or your Magic Cape.", astralRune.quantity(4), cosmicRune.quantity(4), airRune.quantity(8));
+			"Activate the lunar spellbook for Astral Contact (formerly NPC Contact). Either use the altar on Lunar Isle, your POH altar, or your Magic Cape.", astralRune.quantity(4), cosmicRune.quantity(4), airRune.quantity(8));
 
-		contactCyrisus = new DetailedQuestStep(this, "Use NPC Contact to talk to Cyrisus.", astralRune, cosmicRune, airRune.quantity(2));
+		contactCyrisus = new DetailedQuestStep(this, "Use Astral Contact to talk to Cyrisus.", astralRune, cosmicRune, airRune.quantity(2));
 		contactCyrisus.addSpellHighlight(LunarSpells.NPC_CONTACT);
 		contactCyrisus.addWidgetHighlight(75, 44);
-		contactTurael = new DetailedQuestStep(this, "Use NPC Contact to talk to Turael, or go talk to him in Burthorpe.", astralRune, cosmicRune, airRune.quantity(2));
+		contactTurael = new DetailedQuestStep(this, "Use Astral Contact to talk to Turael, or go talk to him in Burthorpe.", astralRune, cosmicRune, airRune.quantity(2));
 		contactTurael.addSpellHighlight(LunarSpells.NPC_CONTACT);
 		contactTurael.addWidgetHighlight(75, 22);
 		contactTurael.addDialogStep("I need to talk to you about Lucien.");
-		contactMazchna = new DetailedQuestStep(this, "Use NPC Contact to talk to Mazchna, or go talk to him in Canifis.", astralRune, cosmicRune, airRune.quantity(2));
+		contactMazchna = new DetailedQuestStep(this, "Use Astral Contact to talk to Mazchna, or go talk to him in Canifis.", astralRune, cosmicRune, airRune.quantity(2));
 		contactMazchna.addSpellHighlight(LunarSpells.NPC_CONTACT);
 		contactMazchna.addWidgetHighlight(75, 25);
 		contactMazchna.addDialogStep("I need to talk to you about Lucien.");
-		contactDuradel = new DetailedQuestStep(this, "Use NPC Contact to talk to Duradel, or go talk to him in Shilo Village.", astralRune, cosmicRune, airRune.quantity(2));
+		contactDuradel = new DetailedQuestStep(this, "Use Astral Contact to talk to Duradel, or go talk to him in Shilo Village.", astralRune, cosmicRune, airRune.quantity(2));
 		contactDuradel.addSpellHighlight(LunarSpells.NPC_CONTACT);
 		contactDuradel.addWidgetHighlight(75, 37);
 		contactDuradel.addDialogStep("I need to talk to you about Lucien.");

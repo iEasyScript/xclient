@@ -32,7 +32,7 @@ public enum LunarSpells implements Spell
 	GEOMANCY("Geomancy"),
 	CURE_PLANT("Cure Plant"),
 	MONSTER_EXAMINE("Monster Examine"),
-	NPC_CONTACT("NPC Contact"),
+	NPC_CONTACT("Astral Contact"), // Jagex renamed NPC Contact on 2026-07-29
 	CURE_OTHER("Cure Other"),
 	HUMIDIFY("Humidify"),
 	MOONCLAN_TELEPORT("Moonclan Teleport"),
