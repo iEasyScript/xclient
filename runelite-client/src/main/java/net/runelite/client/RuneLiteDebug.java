@@ -43,6 +43,7 @@ import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.ProjectXClientLoader;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXDeveloperGate;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXPluginManager;
 import net.runelite.client.proxy.ProxyChecker;
 import net.runelite.client.ui.ClientUI;
@@ -236,6 +237,7 @@ public class RuneLiteDebug {
             }, "Preloader").start();
 
             final boolean developerMode = options.has("developer-mode") && RuneLiteProperties.getLauncherVersion() == null;
+            ProjectXDeveloperGate.setRuneLiteDeveloperMode(developerMode);
 
             if (developerMode) {
                 boolean assertions = false;
@@ -270,6 +272,7 @@ public class RuneLiteDebug {
                     options.has("disable-walker-update"),
                     options.valueOf(sessionfile),
                     (String) options.valueOf("profile"),
+                    null, // --character: Jagex account switching is wired into RuneLite.start() only
                     options.has(insecureWriteCredentials),
                     options.has("noupdate")
             ));

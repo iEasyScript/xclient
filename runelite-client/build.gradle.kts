@@ -336,6 +336,7 @@ dependencies {
     api(libs.rl.discord)
     api(libs.rl.awt)
     compileOnly(libs.rl.orange)
+    runtimeOnly(libs.rl.jagexauth)
 
     api(libs.slf4j.api)
     api(libs.logback.classic) {

@@ -58,10 +58,23 @@ public final class ProjectXDeveloperGate
     );
 
     /**
+     * Upstream {@code developerPlugin = true} plugins that RuneLite itself only
+     * loads with {@code --developer-mode}. Our PluginManager does not read that
+     * flag (Developer Tools is gated by role above instead), so these are kept
+     * to RuneLite's rule here: hidden unless the client runs in developer mode.
+     */
+    private static final Set<String> RUNELITE_DEVELOPER_MODE_ONLY = ImmutableSet.of(
+        "net.runelite.client.plugins.jagexauth.JagexAuthPlugin"
+    );
+
+    /**
      * Set once during start-up, before plugins are loaded. Null in tests and in
      * any path that never initialised Project X, where nothing is gated.
      */
     private static volatile ProjectXAccount account;
+
+    /** RuneLite's own developer mode, set from the command line at start-up. */
+    private static volatile boolean runeLiteDeveloperMode;
 
     private ProjectXDeveloperGate()
     {
@@ -104,8 +117,19 @@ public final class ProjectXDeveloperGate
         return pluginClass != null && isHidden(pluginClass.getName());
     }
 
+    /** Records whether the client was started with RuneLite's developer mode. */
+    public static void setRuneLiteDeveloperMode(boolean developerMode)
+    {
+        runeLiteDeveloperMode = developerMode;
+    }
+
     public static boolean isHidden(String className)
     {
+        if (className != null && RUNELITE_DEVELOPER_MODE_ONLY.contains(className))
+        {
+            return !runeLiteDeveloperMode;
+        }
+
         if (className == null || !DEVELOPER_ONLY.contains(className))
         {
             return false;

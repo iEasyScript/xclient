@@ -59,6 +59,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.management.ObjectName;
 import javax.net.ssl.SSLContext;
@@ -82,12 +83,16 @@ import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.externalplugins.ProjectXDeveloperGate;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXEntitlements;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXInstances;
 import net.runelite.client.plugins.projectx.externalplugins.ProjectXPluginManager;
 import net.runelite.client.proxy.ProxyChecker;
 import net.runelite.client.proxy.ProxyConfiguration;
 import net.runelite.client.rs.ClientLoader;
+import net.runelite.client.rs.auth.Account;
+import net.runelite.client.rs.auth.JagexAuthService;
+import net.runelite.client.rs.auth.Session;
 import net.runelite.client.ui.ClientUI;
 import net.runelite.client.ui.FatalErrorDialog;
 import net.runelite.client.ui.SplashScreen;
@@ -213,6 +218,14 @@ public class RuneLite
 	@Inject
 	private ScheduledExecutorService scheduledExecutorService;
 
+	@Inject
+	@Named("character")
+	@Nullable
+	private String character;
+
+	@Inject
+	private JagexAuthService jagexAuthService;
+
 	public static void main(String[] args) throws Exception {
         validateJavaVersion();
         Locale.setDefault(Locale.ENGLISH);
@@ -250,6 +263,7 @@ public class RuneLite
 		parser.accepts("disable-telemetry", "Disable telemetry (the default)");
         parser.accepts("disable-walker-update", "Disable updates for the static walker");
 		parser.accepts("profile", "Configuration profile to use").withRequiredArg();
+		parser.accepts("character", "Character name to use").withRequiredArg();
 		parser.accepts("noupdate", "Skips the launcher update");
 		parser.accepts("clean-randomdat", "No longer supported; ignored");
 
@@ -347,6 +361,7 @@ public class RuneLite
 			}, "Preloader").start();
 
 			final boolean developerMode = options.has("developer-mode") && RuneLiteProperties.getLauncherVersion() == null;
+			ProjectXDeveloperGate.setRuneLiteDeveloperMode(developerMode);
 
 			if (developerMode)
 			{
@@ -383,6 +398,7 @@ public class RuneLite
 				options.has("disable-walker-update"),
 				options.valueOf(sessionfile),
 				(String) options.valueOf("profile"),
+				(String) options.valueOf("character"),
 				options.has(insecureWriteCredentials),
 				options.has("noupdate")
 			));
@@ -485,12 +501,12 @@ public class RuneLite
 		setupSystemProps();
 		setupCompilerControl();
 
-		// Start the applet
 		copyJagexCache();
 
 		System.setProperty("jagex.disableBouncyCastle", "true");
 		System.setProperty("jagex.userhome", RUNELITE_DIR.getAbsolutePath());
 
+		// Start the applet
 		client.initialize();
 
 		SplashScreen.stage(.57, null, "Loading configuration");
@@ -571,6 +587,8 @@ public class RuneLite
 		clientUI.show();
 
 		client.unblockStartup();
+
+		setCharacter();
 
 		if (telemetryClient != null)
 		{
@@ -1023,4 +1041,39 @@ public class RuneLite
             return -1; // Invalid version
         }
     }
+
+	private void setCharacter()
+	{
+		if (character == null)
+		{
+			return;
+		}
+
+		jagexAuthService.loadFromStore()
+			.thenRun(() ->
+			{
+				int numChars = 0;
+				for (Session session : jagexAuthService.getSessions())
+				{
+					Account[] accounts = jagexAuthService.getAccounts(session.getSessionId());
+					if (accounts == null)
+					{
+						continue;
+					}
+
+					numChars += accounts.length;
+					for (Account account : accounts)
+					{
+						if (account.getDisplayName().equalsIgnoreCase(character))
+						{
+							log.info("Switching to character {}", account.getDisplayName());
+							jagexAuthService.switchJagexAccount(session.getSessionId(), Long.toString(account.getAccountId()), account.getDisplayName());
+							return;
+						}
+					}
+				}
+
+				log.info("Unable to find character {} ({} sessions and {} characters total)", character, jagexAuthService.getSessions().size(), numChars);
+			});
+	}
 }
