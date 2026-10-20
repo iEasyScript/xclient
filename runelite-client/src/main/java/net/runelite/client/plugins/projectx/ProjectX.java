@@ -163,6 +163,7 @@ public class ProjectX {
     private static TooltipManager tooltipManager;
     private static ScheduledFuture<?> xpSchedulorFuture;
     private static net.runelite.api.World quickHopTargetWorld;
+    private static final int WORLD_SWITCHER_LOAD_TIMEOUT_MS = 5000;
     /**
      * PouchScript is injected in the main ProjectXPlugin as it's being used in multiple scripts
      */
@@ -366,7 +367,8 @@ public class ProjectX {
             log.error("Can't hop world, already trying to hop");
             return false;
         }
-        boolean hopIssued = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+        final net.runelite.api.World[] target = new net.runelite.api.World[1];
+        boolean prepared = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
             if (Rs2Combat.inCombat()) {
                 log.error("Player is in combat, cannot hop worlds");
                 return false;
@@ -392,6 +394,7 @@ public class ProjectX {
             if (rsWorld == null) return false;
 
             quickHopTargetWorld = rsWorld;
+            target[0] = rsWorld;
             rsWorld.setActivity(newWorld.getActivity());
             rsWorld.setAddress(newWorld.getAddress());
             rsWorld.setId(newWorld.getId());
@@ -399,12 +402,21 @@ public class ProjectX {
             rsWorld.setLocation(newWorld.getRegion().getId());
             rsWorld.setTypes(WorldUtil.toWorldTypes(newWorld.getTypes()));
 
-            ProjectX.getClient().openWorldHopper();
-            ProjectX.getClient().hopToWorld(rsWorld);
-            quickHopTargetWorld = null;
             return true;
         }).orElse(false);
-        if (!hopIssued) {
+        if (target[0] != null) {
+            boolean hopIssued;
+            try {
+                hopIssued = prepared && hopViaWorldSwitcher(target[0], WORLD_SWITCHER_LOAD_TIMEOUT_MS);
+            } finally {
+                quickHopTargetWorld = null;
+            }
+            if (prepared && !hopIssued) {
+                log.warn("World switcher did not load in time, could not hop to world {}", worldNumber);
+                return false;
+            }
+        }
+        if (!prepared) {
             log.error("Failed to hop to world {}", worldNumber);
             return false;
         }
@@ -413,7 +425,6 @@ public class ProjectX {
         // wait inside it is a no-op and the success check fires before the server has
         // even processed the request. That's the source of "Failed to hop" spam.
         if (ProjectX.getClient().getWorld() != worldNumber) {
-            sleep(600);
             sleepUntil(() -> ProjectX.isHopping()
                             || ProjectX.getClient().getWorld() == worldNumber
                             || Rs2Widget.getWidget(193, 0) != null, 5000);
@@ -442,6 +453,30 @@ public class ProjectX {
             log.error("Failed to hop to world {}", worldNumber);
         }
         return success;
+    }
+
+    static boolean hopViaWorldSwitcher(net.runelite.api.World rsWorld, int loadTimeoutMs) {
+        if (!isWorldSwitcherLoaded()) {
+            ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+                ProjectX.getClient().openWorldHopper();
+                return true;
+            });
+            if (!sleepUntil(ProjectX::isWorldSwitcherLoaded, loadTimeoutMs)) {
+                return false;
+            }
+        }
+        return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            if (ProjectX.getClient().getWidget(InterfaceID.Worldswitcher.BUTTONS) == null) {
+                return false;
+            }
+            ProjectX.getClient().hopToWorld(rsWorld);
+            return true;
+        }).orElse(false);
+    }
+
+    private static boolean isWorldSwitcherLoaded() {
+        return ProjectX.getClientThread().runOnClientThreadOptional(
+                () -> ProjectX.getClient().getWidget(InterfaceID.Worldswitcher.BUTTONS) != null).orElse(false);
     }
 
     /**
