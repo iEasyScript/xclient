@@ -22,7 +22,7 @@ import java.util.function.BooleanSupplier;
 @Slf4j
 public class RemoteDispatcher
 {
-    /** Exactly the words the Bots page shows. */
+    /** Exactly the words the Control Panel shows. */
     static final String CONTROL_OFF = "remote control is off in this client";
     private static final int REMEMBERED_IDS = 200;
 

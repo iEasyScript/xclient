@@ -43,7 +43,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Website control: the Bots page on the website shows this client live and can
+ * Website control: the Control Panel on the website shows this client live and can
  * start and stop its scripts. Only the account this client is signed in to sees
  * it there.
  *
@@ -59,8 +59,8 @@ import java.util.concurrent.Executors;
  */
 @PluginDescriptor(
     name = "Website control",
-    description = "See this client on the website's Bots page, and start and stop its scripts from there",
-    tags = {"projectx", "remote", "website", "dashboard", "control", "bots"},
+    description = "See this client on the website's Control Panel, and start and stop its scripts from there",
+    tags = {"projectx", "remote", "website", "control panel", "control", "bots"},
     enabledByDefault = true,
     alwaysOn = true
 )

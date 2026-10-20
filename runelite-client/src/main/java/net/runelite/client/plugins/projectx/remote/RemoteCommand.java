@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * One thing the Bots page asked this client to do, as read from a heartbeat
+ * One thing the Control Panel asked this client to do, as read from a heartbeat
  * answer. A fixed set of actions, each naming at most a script or a plan: there
  * is nothing here that could carry code or a path.
  */

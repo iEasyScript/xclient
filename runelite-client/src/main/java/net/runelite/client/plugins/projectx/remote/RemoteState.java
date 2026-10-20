@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * The live state this client sends the Bots page in each heartbeat, built from
+ * The live state this client sends the Control Panel in each heartbeat, built from
  * plain inputs so it can be tested without a game.
  *
  * <p>Deliberately small: what is running and how it is going, never where the

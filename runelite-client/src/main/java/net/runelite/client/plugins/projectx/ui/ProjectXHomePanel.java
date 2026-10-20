@@ -113,7 +113,7 @@ public class ProjectXHomePanel extends PluginPanel
             }
         }));
         actions.add(button("Store", false, () -> browse(ProjectXSite.store())));
-        actions.add(button("Dashboard", false, () -> browse(ProjectXSite.dashboard())));
+        actions.add(button("Control Panel", false, () -> browse(ProjectXSite.controlPanel())));
         actions.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
         add(left(actions));
         add(gap(8));

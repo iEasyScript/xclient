@@ -19,7 +19,7 @@ public interface RemoteConfig extends Config
     @ConfigItem(
         keyName = KEY_CONTROL,
         name = "Allow control from the website",
-        description = "Let the Bots page on the website start and stop scripts, the queue and breaks, log out and close this client."
+        description = "Let the Control Panel on the website start and stop scripts, the queue and breaks, log out and close this client."
             + " Only you can see this client there.",
         position = 0
     )
@@ -31,7 +31,7 @@ public interface RemoteConfig extends Config
     @ConfigItem(
         keyName = KEY_MONITORING,
         name = "Show live details on the website",
-        description = "Send what this client is doing to the Bots page: logged in or not, world, total level, HP and prayer,"
+        description = "Send what this client is doing to the Control Panel: logged in or not, world, total level, HP and prayer,"
             + " the scripts running and their experience, breaks and the queue. Never your password or location.",
         position = 1
     )
@@ -43,7 +43,7 @@ public interface RemoteConfig extends Config
     @ConfigItem(
         keyName = KEY_SHARE_NAME,
         name = "Include in-game name",
-        description = "Show your in-game name on the Bots page, so you can tell accounts apart",
+        description = "Show your in-game name on the Control Panel, so you can tell accounts apart",
         position = 2
     )
     default boolean shareName()

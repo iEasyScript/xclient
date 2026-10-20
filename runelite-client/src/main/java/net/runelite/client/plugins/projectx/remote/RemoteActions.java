@@ -27,7 +27,7 @@ public interface RemoteActions
 
     String logout() throws Refused;
 
-    /** A command that could not be carried out, and why, for the Bots page. */
+    /** A command that could not be carried out, and why, for the Control Panel. */
     class Refused extends Exception
     {
         public Refused(String message)

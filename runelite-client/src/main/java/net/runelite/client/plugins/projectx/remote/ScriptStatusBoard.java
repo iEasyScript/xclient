@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The status line each script's on-screen panel last showed, by panel title, so
- * the Bots page can show the same words. Filled in by
+ * the Control Panel can show the same words. Filled in by
  * {@link net.runelite.client.plugins.projectx.util.overlay.ScriptPanel#status}
  * as the panel is drawn; read from the heartbeat thread.
  */

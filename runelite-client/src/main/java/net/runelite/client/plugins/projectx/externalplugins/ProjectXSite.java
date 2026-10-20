@@ -156,10 +156,16 @@ public final class ProjectXSite
         return baseUrl().newBuilder().encodedPath("/" + GAME + "/store").build();
     }
 
-    /** The player's OSRS dashboard: runs, run time and experience. */
-    public static HttpUrl dashboard()
+    /** The player's run history: runs, run time and experience. */
+    public static HttpUrl history()
     {
-        return shared("dashboard");
+        return shared("history");
+    }
+
+    /** The Control Panel: this account's running clients, live, with their controls. */
+    public static HttpUrl controlPanel()
+    {
+        return baseUrl().newBuilder().encodedPath("/control-panel").build();
     }
 
     /** Buying X Tokens, with the way back leading to the OSRS store. */
