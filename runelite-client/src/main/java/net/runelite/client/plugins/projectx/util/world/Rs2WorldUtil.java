@@ -461,7 +461,7 @@ public class Rs2WorldUtil {
                 
                 log.info("Attempting world hop {} to world {}", attemptsPerWorld, world);
                ;                
-                sleepUntil(() -> ProjectX.hopToWorld(world), 6000);
+                ProjectX.hopToWorld(world);
                 sleepUntil(() -> !ProjectX.isHopping(), 6000);
                 if (ProjectX.isHopping()) {
                     ProjectX.status = "Failed to hop to world " + world + " (attempt " + attemptsPerWorld + ")";

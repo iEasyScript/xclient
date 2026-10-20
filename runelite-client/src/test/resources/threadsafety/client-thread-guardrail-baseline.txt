@@ -962,4 +962,4 @@ net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getRandomAccessible
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#randomAccessibleWorld(Predicate, String, boolean, boolean, boolean): int  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#getWorldStatistics(): Map  ->  net.runelite.api.Client#getWorldType(): EnumSet
 net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#isMemberAccount(): boolean  ->  net.runelite.api.Client#getLocalPlayer(): Player
-net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#lambda$hopWorld$10(): boolean  ->  net.runelite.api.Client#getGameState(): GameState
+net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil#lambda$hopWorld$9(): boolean  ->  net.runelite.api.Client#getGameState(): GameState
