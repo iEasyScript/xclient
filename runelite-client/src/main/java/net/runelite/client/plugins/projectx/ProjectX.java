@@ -407,7 +407,9 @@ public class ProjectX {
             rsWorld.setAddress(newWorld.getAddress());
             rsWorld.setId(newWorld.getId());
             rsWorld.setPlayerCount(newWorld.getPlayers());
-            rsWorld.setLocation(newWorld.getRegion().getId());
+            if (newWorld.getRegion() != null) {
+                rsWorld.setLocation(newWorld.getRegion().getId());
+            }
             rsWorld.setTypes(WorldUtil.toWorldTypes(newWorld.getTypes()));
 
             return true;

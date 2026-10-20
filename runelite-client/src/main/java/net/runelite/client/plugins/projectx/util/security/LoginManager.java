@@ -485,7 +485,9 @@ public final class LoginManager {
             rsWorld.setAddress(world.getAddress());
             rsWorld.setId(world.getId());
             rsWorld.setPlayerCount(world.getPlayers());
-            rsWorld.setLocation(world.getRegion().getId());
+            if (world.getRegion() != null) {
+                rsWorld.setLocation(world.getRegion().getId());
+            }
             rsWorld.setTypes(WorldUtil.toWorldTypes(world.getTypes()));
             ProjectX.getClient().changeWorld(rsWorld);
         } catch (Exception ex) {
