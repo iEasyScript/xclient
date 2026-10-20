@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -87,7 +88,7 @@ public class ProjectXWorldHopTest {
         assertTrue(ProjectX.hopViaWorldSwitcher(target, 3000));
 
         InOrder order = inOrder(client);
-        order.verify(client).openWorldHopper();
+        order.verify(client, atLeastOnce()).openWorldHopper();
         order.verify(client).hopToWorld(target);
         assertNotEquals(openCall.get(), hopCall.get());
     }
@@ -106,7 +107,7 @@ public class ProjectXWorldHopTest {
     public void doesNotHopWhenSwitcherNeverLoads() {
         assertFalse(ProjectX.hopViaWorldSwitcher(target, 300));
 
-        verify(client).openWorldHopper();
+        verify(client, atLeastOnce()).openWorldHopper();
         verify(client, never()).hopToWorld(any());
         assertEquals(-1, hopCall.get());
     }

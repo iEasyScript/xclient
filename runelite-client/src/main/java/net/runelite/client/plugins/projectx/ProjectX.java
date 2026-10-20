@@ -164,6 +164,7 @@ public class ProjectX {
     private static ScheduledFuture<?> xpSchedulorFuture;
     private static net.runelite.api.World quickHopTargetWorld;
     private static final int WORLD_SWITCHER_LOAD_TIMEOUT_MS = 5000;
+    private static final int WORLD_SWITCHER_REOPEN_INTERVAL_MS = 600;
     /**
      * PouchScript is injected in the main ProjectXPlugin as it's being used in multiple scripts
      */
@@ -456,14 +457,9 @@ public class ProjectX {
     }
 
     static boolean hopViaWorldSwitcher(net.runelite.api.World rsWorld, int loadTimeoutMs) {
-        if (!isWorldSwitcherLoaded()) {
-            ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-                ProjectX.getClient().openWorldHopper();
-                return true;
-            });
-            if (!sleepUntil(ProjectX::isWorldSwitcherLoaded, loadTimeoutMs)) {
-                return false;
-            }
+        if (!isWorldSwitcherLoaded()
+                && !sleepUntil(ProjectX::isWorldSwitcherLoaded, ProjectX::openWorldSwitcher, loadTimeoutMs, WORLD_SWITCHER_REOPEN_INTERVAL_MS)) {
+            return false;
         }
         return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
             if (ProjectX.getClient().getWidget(InterfaceID.Worldswitcher.BUTTONS) == null) {
@@ -472,6 +468,13 @@ public class ProjectX {
             ProjectX.getClient().hopToWorld(rsWorld);
             return true;
         }).orElse(false);
+    }
+
+    private static void openWorldSwitcher() {
+        ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            ProjectX.getClient().openWorldHopper();
+            return true;
+        });
     }
 
     private static boolean isWorldSwitcherLoaded() {
