@@ -27,12 +27,14 @@ package net.runelite.client.plugins.skillcalculator.skills;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import net.runelite.api.SpriteID;
+import net.runelite.api.annotations.Component;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.projectx.util.magic.Rs2Spellbook;
 import net.runelite.client.plugins.projectx.util.widget.Rs2Widget;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Getter
@@ -139,7 +141,8 @@ public enum MagicAction implements SkillAction
 	KHARYRLL_TELEPORT("Kharyrll Teleport", 66, 76, SpriteID.SPELL_KHARYRLL_TELEPORT, true, Rs2Spellbook.ANCIENT),
 	VILE_VIGOUR("Vile Vigour", 66, 76, SpriteID.SPELL_VILE_VIGOUR, true, Rs2Spellbook.ARCEUUS),
 	VULNERABILITY("Vulnerability", 66, 76, SpriteID.SPELL_VULNERABILITY, true, Rs2Spellbook.MODERN),
-	NPC_CONTACT("Npc Contact", 67, 63, SpriteID.SPELL_NPC_CONTACT, true, Rs2Spellbook.LUNAR),
+	// Jagex renamed NPC Contact to Astral Contact on 2026-07-29; the constant keeps its old name for scripts.
+	NPC_CONTACT("Astral Contact", 67, 63, SpriteID.SPELL_NPC_CONTACT, true, Rs2Spellbook.LUNAR),
 	BLOOD_BURST("Blood Burst", 68, 39, SpriteID.SPELL_BLOOD_BURST, true, Rs2Spellbook.ANCIENT),
 	CURE_OTHER("Cure Other", 68, 65, SpriteID.SPELL_CURE_OTHER, true, Rs2Spellbook.LUNAR),
 	HUMIDIFY("Humidify", 68, 65, SpriteID.SPELL_HUMIDIFY, true, Rs2Spellbook.LUNAR),
@@ -234,9 +237,20 @@ public enum MagicAction implements SkillAction
 
 	private static final MagicAction[] MAGIC_ACTIONS = MagicAction.values();
 	public static MagicAction fromString(String name) {
+		if (name == null) return null;
+		String wanted = name.toLowerCase();
 		return Arrays.stream(MAGIC_ACTIONS)
-				.filter(magicAction -> magicAction.getName().toLowerCase().contains(name.toLowerCase()))
+				.filter(magicAction -> magicAction.getName().toLowerCase().contains(wanted)
+						|| (magicAction.getFormerName() != null && magicAction.getFormerName().toLowerCase().contains(wanted)))
 				.findFirst().orElse(null);
+	}
+
+	/**
+	 * The name the game used to show for this spell, or {@code null}. Lets {@link #fromString} still
+	 * resolve names written before a rename.
+	 */
+	public String getFormerName() {
+		return this == NPC_CONTACT ? "NPC Contact" : null;
 	}
 
 	private final String name;
@@ -258,11 +272,43 @@ public enum MagicAction implements SkillAction
 		return isMembers();
 	}
 
-	public int getWidgetId() {
-		return Rs2Widget.findWidget(name, Arrays.stream(Rs2Widget.getWidget(218, 0).getStaticChildren()).collect(Collectors.toList())).getId();
+	/**
+	 * The spellbook component for this spell from gameval, or -1 if it is only found by name.
+	 * Prefer this over the name: the name is display text the game can change (NPC Contact became Astral Contact).
+	 */
+	@Component
+	int getSpellComponent() {
+		switch (this) {
+			case NPC_CONTACT:
+				return InterfaceID.MagicSpellbook.NPC_CONTACT;
+			default:
+				return -1;
+		}
 	}
 
+	/** The spell's widget in the spellbook, or {@code null} if it can't be found. */
+	public Widget findSpellWidget() {
+		int component = getSpellComponent();
+		if (component != -1) {
+			Widget widget = Rs2Widget.getWidget(component);
+			if (widget != null) return widget;
+		}
+		Widget spellbook = Rs2Widget.getWidget(218, 0);
+		if (spellbook == null) return null;
+		Widget[] children = spellbook.getStaticChildren();
+		if (children == null) return null;
+		return Rs2Widget.findWidget(name, Arrays.asList(children));
+	}
+
+	/** The spell's widget id, or -1 if the spell can't be found in the spellbook. */
+	public int getWidgetId() {
+		Widget widget = findSpellWidget();
+		return widget == null ? -1 : widget.getId();
+	}
+
+	/** The spell widget's actions, or {@code null} if the spell can't be found in the spellbook. */
 	public String[] getActions() {
-		return Rs2Widget.findWidget(name, Arrays.stream(Rs2Widget.getWidget(218, 0).getStaticChildren()).collect(Collectors.toList())).getActions();
+		Widget widget = findSpellWidget();
+		return widget == null ? null : widget.getActions();
 	}
 }

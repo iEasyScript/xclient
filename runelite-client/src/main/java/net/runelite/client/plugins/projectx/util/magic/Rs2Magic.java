@@ -28,7 +28,6 @@ import net.runelite.client.plugins.projectx.util.settings.Rs2SpellBookSettings;
 import net.runelite.client.plugins.projectx.util.tabs.Rs2Tab;
 import net.runelite.client.plugins.projectx.util.widget.Rs2Widget;
 import net.runelite.client.plugins.skillcalculator.skills.MagicAction;
-import org.apache.commons.lang3.NotImplementedException;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -129,9 +128,7 @@ public class Rs2Magic {
             sleepUntil(() -> Rs2Tab.getCurrentTab() == InterfaceTab.MAGIC);
         }
         
-        Widget spellbookWidget = Rs2Widget.getWidget(218, 3);
-        if (spellbookWidget == null) return false;
-        Widget widget = Rs2Widget.findWidget(magicSpell.getName(), List.of(spellbookWidget));
+        Widget widget = magicSpell.findSpellWidget();
         if (widget == null) return false;
         return widget.getSpriteId() == magicSpell.getSprite();
     }
@@ -153,6 +150,7 @@ public class Rs2Magic {
     }
 
     public static boolean cast(MagicAction magicSpell, String option, int identifier) {
+        if (magicSpell == null) return false;
         MenuAction menuAction;
         Rs2Tab.switchToMagicTab();
         ProjectX.status = "Casting " + magicSpell.getName();
@@ -161,27 +159,37 @@ public class Rs2Magic {
             log("Unable to cast " + magicSpell.getName());
             return false;
         }
+        final Widget spellWidget = magicSpell.findSpellWidget();
+        if (spellWidget == null) {
+            log("Unable to cast " + magicSpell.getName() + ": the spell was not found in the spellbook");
+            return false;
+        }
+        final String[] actions = ProjectX.getClientThread().runOnClientThreadOptional(() -> spellWidget.getActions()).orElse(null);
+        final int widgetId = ProjectX.getClientThread().runOnClientThreadOptional(() -> spellWidget.getId()).orElse(-1);
         if (magicSpell.getName().toLowerCase().contains("teleport") ||
                 magicSpell.getName().toLowerCase().contains("bones to") ||
-                (magicSpell.getActions() != null && Arrays.stream(magicSpell.getActions()).anyMatch(x -> x != null && x.equalsIgnoreCase("cast")))) {
+                (actions != null && Arrays.stream(actions).anyMatch(x -> x != null && x.equalsIgnoreCase("cast")))) {
             menuAction = MenuAction.CC_OP;
         } else {
             menuAction = MenuAction.WIDGET_TARGET;
         }
 
-        if (magicSpell.getWidgetId() == -1)
-            throw new NotImplementedException("This spell has not been configured yet in the MagicAction.java class");
+        final Rectangle bounds = spellWidget.getBounds();
+        if (bounds == null || widgetId == -1) {
+            log("Unable to cast " + magicSpell.getName() + ": the spell widget has no bounds");
+            return false;
+        }
 
         ProjectX.doInvoke(new NewMenuEntry()
                 .option(option)
                 .param0(-1)
-                .param1(magicSpell.getWidgetId())
+                .param1(widgetId)
                 .opcode(menuAction.getId())
                 .identifier(identifier)
                 .itemId(-1)
                 .target(magicSpell.getName())
                 ,
-                new Rectangle(Rs2Widget.getWidget(magicSpell.getWidgetId()).getBounds()));
+                new Rectangle(bounds));
         //Rs2Reflection.invokeMenu(-1, magicSpell.getWidgetId(), menuAction.getId(), 1, -1, "Cast", "<col=00ff00>" + magicSpell.getName() + "</col>", -1, -1);
         return true;
     }
@@ -191,12 +199,15 @@ public class Rs2Magic {
 	}
 
     public static boolean quickCast(MagicAction magicSpell) {
+        if (magicSpell == null) return false;
         ProjectX.status = "Casting " + magicSpell.getName();
 
         if(quickCanCast(magicSpell)) {
-            Widget widget = Rs2Widget.findWidget(magicSpell.getName());
-            ProjectX.click(widget.getBounds());
-            return true;
+            Widget widget = magicSpell.findSpellWidget();
+            if (widget != null && widget.getBounds() != null) {
+                ProjectX.click(widget.getBounds());
+                return true;
+            }
         }
         log("Unable to cast " + magicSpell.getName());
         return false;
@@ -301,7 +312,7 @@ public class Rs2Magic {
     }
 
     private static void alch(MagicAction magicSpell, Rs2ItemModel item, int sleepMin, int sleepMax) {
-        final Widget spellWidget = Rs2Widget.getWidget(magicSpell.getWidgetId());
+        final Widget spellWidget = magicSpell.findSpellWidget();
         if (spellWidget == null) return;
 
         final Point point = new Point((int) spellWidget.getBounds().getCenterX(), (int) spellWidget.getBounds().getCenterY());
@@ -348,7 +359,10 @@ public class Rs2Magic {
         final Rectangle chooseCharacterBounds = chooseCharacterWidget.getBounds();
         if (!Rs2UiHelper.isRectangleWithinRectangle(chooseCharacterBounds, npcBounds)) {
             ProjectX.log("NPC widget is not fully visible inside the choose character widget, scrolling...");
-            Global.sleepUntil(() -> Rs2UiHelper.isRectangleWithinRectangle(chooseCharacterBounds, Rs2Widget.findWidget(npcName).getBounds()), () -> {
+            Global.sleepUntil(() -> {
+                Widget current = Rs2Widget.findWidget(npcName);
+                return current != null && Rs2UiHelper.isRectangleWithinRectangle(chooseCharacterBounds, current.getBounds());
+            }, () -> {
                 boolean isBelow = npcBounds.y > chooseCharacterBounds.y;
                 if (isBelow) ProjectX.getMouse().scrollDown(Rs2UiHelper.getClickingPoint(chooseCharacterWidget.getBounds(),true));
                 else ProjectX.getMouse().scrollUp(Rs2UiHelper.getClickingPoint(chooseCharacterWidget.getBounds(),true));
@@ -413,8 +427,12 @@ public class Rs2Magic {
     }
     
     public static Rs2Spells getRs2Spell(String spellName){
+        if (spellName == null) return null;
+        final String wanted = spellName.toLowerCase();
         return Arrays.stream(Rs2Spells.values())
-                .filter(spell -> spell.getName().toLowerCase().contains(spellName.toLowerCase()))
+                .filter(spell -> spell.getName().toLowerCase().contains(wanted)
+                        || (spell.getMagicAction() != null && spell.getMagicAction().getFormerName() != null
+                            && spell.getMagicAction().getFormerName().toLowerCase().contains(wanted)))
                 .findFirst().orElse(null);
     }
     
