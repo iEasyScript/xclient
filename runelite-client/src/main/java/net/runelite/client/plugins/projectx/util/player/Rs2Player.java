@@ -914,9 +914,10 @@ public class Rs2Player {
      * @return The combat level of the local player.
      */
     public static int getCombatLevel() {
-        return ProjectX.getClientThread().runOnClientThreadOptional(() ->
-                ProjectX.getClient().getLocalPlayer().getCombatLevel()
-        ).orElse(0);
+        return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            Player localPlayer = ProjectX.getClient().getLocalPlayer();
+            return localPlayer == null ? null : localPlayer.getCombatLevel();
+        }).orElse(0);
     }
 
     /**
@@ -937,7 +938,10 @@ public class Rs2Player {
      * @return The local player wrapped in an {@link Rs2PlayerModel}.
      */
     public static Rs2PlayerModel getLocalPlayer() {
-        return getPlayers(player -> player.getId() == ProjectX.getClient().getLocalPlayer().getId(), true).findFirst().orElse(null);
+        return getPlayers(player -> {
+            Player localPlayer = ProjectX.getClient().getLocalPlayer();
+            return localPlayer != null && player.getId() == localPlayer.getId();
+        }, true).findFirst().orElse(null);
     }
 
     /**
@@ -1000,11 +1004,13 @@ public class Rs2Player {
 	 */
 	public static WorldPoint getWorldLocation_Internal(){
 		return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+			Player player = ProjectX.getClient().getLocalPlayer();
+			if (player == null) return null;
 			if (ProjectX.getClient().getTopLevelWorldView().getScene().isInstance()) {
-				LocalPoint l = LocalPoint.fromWorld(ProjectX.getClient().getTopLevelWorldView(), ProjectX.getClient().getLocalPlayer().getWorldLocation());
+				LocalPoint l = LocalPoint.fromWorld(ProjectX.getClient().getTopLevelWorldView(), player.getWorldLocation());
 				return WorldPoint.fromLocalInstance(ProjectX.getClient(), l);
 			}
-			return ProjectX.getClient().getLocalPlayer().getWorldLocation();
+			return player.getWorldLocation();
 		}).orElse(null);
 	}
 
@@ -1164,7 +1170,8 @@ public class Rs2Player {
      * @return The {@link LocalPoint} representing the player's current position.
      */
     public static LocalPoint getLocalLocation() {
-        return ProjectX.getClient().getLocalPlayer().getLocalLocation();
+        Player localPlayer = ProjectX.getClient().getLocalPlayer();
+        return localPlayer == null ? null : localPlayer.getLocalLocation();
     }
 
     /**
@@ -1527,9 +1534,10 @@ public class Rs2Player {
      * @return The pose animation ID of the player.
      */
     public static int getPoseAnimation() {
-        return ProjectX.getClientThread().runOnClientThreadOptional(() ->
-                ProjectX.getClient().getLocalPlayer().getPoseAnimation()
-        ).orElse(-1);
+        return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            Player localPlayer = ProjectX.getClient().getLocalPlayer();
+            return localPlayer == null ? null : localPlayer.getPoseAnimation();
+        }).orElse(-1);
     }
 
     /**
@@ -1727,7 +1735,8 @@ public class Rs2Player {
      * @return The graphic ID of the local player.
      */
     public static int getGraphicId() {
-        return ProjectX.getClient().getLocalPlayer().getGraphic();
+        Player localPlayer = ProjectX.getClient().getLocalPlayer();
+        return localPlayer == null ? -1 : localPlayer.getGraphic();
     }
 
     /**
@@ -1740,7 +1749,8 @@ public class Rs2Player {
      * @return {@code true} if the local player has the specified spot animation, {@code false} otherwise.
      */
     public static boolean hasSpotAnimation(int graphicId) {
-        return ProjectX.getClient().getLocalPlayer().hasSpotAnim(graphicId);
+        Player localPlayer = ProjectX.getClient().getLocalPlayer();
+        return localPlayer != null && localPlayer.hasSpotAnim(graphicId);
     }
 
     /**
