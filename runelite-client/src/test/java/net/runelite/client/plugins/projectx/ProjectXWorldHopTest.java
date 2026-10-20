@@ -5,6 +5,8 @@ import net.runelite.api.World;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.plugins.projectx.util.bank.Rs2Bank;
+import net.runelite.client.plugins.projectx.util.combat.Rs2Combat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -101,6 +103,22 @@ public class ProjectXWorldHopTest {
 
         verify(client, never()).openWorldHopper();
         verify(client).hopToWorld(target);
+    }
+
+    @Test
+    public void blockedHopIsRefusedBeforePreparingTheHop() {
+        projectx.when(ProjectX::isLoggedIn).thenReturn(true);
+        when(client.getWorld()).thenReturn(301);
+        try (MockedStatic<Rs2Combat> combat = Mockito.mockStatic(Rs2Combat.class);
+             MockedStatic<Rs2Bank> bank = Mockito.mockStatic(Rs2Bank.class)) {
+            combat.when(Rs2Combat::inCombat).thenReturn(false);
+            bank.when(Rs2Bank::isOpen).thenReturn(true);
+
+            assertFalse(ProjectX.hopToWorld(302));
+        }
+
+        projectx.verify(ProjectX::getWorldService, never());
+        verify(client, never()).hopToWorld(any());
     }
 
     @Test

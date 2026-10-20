@@ -368,14 +368,18 @@ public class ProjectX {
             log.error("Can't hop world, already trying to hop");
             return false;
         }
-        final net.runelite.api.World[] target = new net.runelite.api.World[1];
-        boolean prepared = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-            if (Rs2Combat.inCombat()) {
-                log.error("Player is in combat, cannot hop worlds");
+        if (ProjectX.getClient().getWorld() != worldNumber) {
+            String blocker = ProjectX.getClientThread().runOnClientThreadOptional(ProjectX::hopBlocker).orElse(null);
+            if (blocker != null) {
+                log.error(blocker);
                 return false;
             }
-            if (Rs2Bank.isOpen() || Rs2Shop.isOpen() || Rs2Dialogue.isInDialogue()) {
-                log.error("Blocking widget open (bank/shop/dialogue), cannot hop worlds");
+        }
+        final net.runelite.api.World[] target = new net.runelite.api.World[1];
+        boolean prepared = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            String blocker = hopBlocker();
+            if (blocker != null) {
+                log.error(blocker);
                 return false;
             }
             if (quickHopTargetWorld != null || ProjectX.getClient().getGameState() != GameState.LOGGED_IN) {
@@ -454,6 +458,16 @@ public class ProjectX {
             log.error("Failed to hop to world {}", worldNumber);
         }
         return success;
+    }
+
+    private static String hopBlocker() {
+        if (Rs2Combat.inCombat()) {
+            return "Player is in combat, cannot hop worlds";
+        }
+        if (Rs2Bank.isOpen() || Rs2Shop.isOpen() || Rs2Dialogue.isInDialogue()) {
+            return "Blocking widget open (bank/shop/dialogue), cannot hop worlds";
+        }
+        return null;
     }
 
     static boolean hopViaWorldSwitcher(net.runelite.api.World rsWorld, int loadTimeoutMs) {
