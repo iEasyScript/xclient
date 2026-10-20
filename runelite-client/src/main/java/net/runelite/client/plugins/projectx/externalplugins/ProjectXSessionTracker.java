@@ -226,6 +226,51 @@ public class ProjectXSessionTracker
         return names;
     }
 
+    /** A store script running now, for the website's live view. */
+    @Value
+    public static class ActiveRun
+    {
+        String name;
+        String internalName;
+        String version;
+        long startedAt;
+        /** Experience gained per skill since the run started; empty until its starting point is known. */
+        Map<Skill, Integer> xpGained;
+    }
+
+    /** The store scripts running now, with what each has gained so far. Any thread. */
+    public static java.util.List<ActiveRun> activeRuns()
+    {
+        ProjectXSessionTracker t = instance;
+        java.util.List<ActiveRun> out = new java.util.ArrayList<>();
+        if (t == null)
+        {
+            return out;
+        }
+        for (Run run : t.runs.values())
+        {
+            Map<Skill, Integer> gained = new EnumMap<>(Skill.class);
+            try
+            {
+                // The baseline is written once, on the client thread; a copy taken mid-write is just empty.
+                for (Map.Entry<Skill, Integer> e : new EnumMap<>(run.baseline).entrySet())
+                {
+                    Integer now = t.latestXp.get(e.getKey());
+                    if (now != null && now > e.getValue())
+                    {
+                        gained.put(e.getKey(), now - e.getValue());
+                    }
+                }
+            }
+            catch (RuntimeException e)
+            {
+                gained.clear();
+            }
+            out.add(new ActiveRun(run.name, run.internalName, run.version, run.startedAt, gained));
+        }
+        return out;
+    }
+
     // ---- events
 
     @Subscribe

@@ -74,6 +74,54 @@ public class ScriptQueuePlugin extends Plugin
     }
 
     /**
+     * Starts a plan, as the Start queue button would: for website control. Not on
+     * the Swing thread; waits up to five seconds for it.
+     *
+     * @param plan the plan's name, or null or blank for the one showing
+     * @return null once it has started; otherwise why not, in plain words
+     */
+    public static String startPlan(String plan)
+    {
+        return onPanel(p -> p.startFromOutside(plan));
+    }
+
+    /**
+     * Stops the queue, as the Stop queue button would: for website control. Not on
+     * the Swing thread.
+     *
+     * @return null once it has been asked to stop; otherwise why not
+     */
+    public static String stopQueue()
+    {
+        return onPanel(ScriptQueuePanel::stopFromOutside);
+    }
+
+    private static String onPanel(java.util.function.Function<ScriptQueuePanel, String> action)
+    {
+        ScriptQueuePlugin live = instance;
+        ScriptQueuePanel p = live == null ? null : live.panel;
+        if (p == null)
+        {
+            return "the Script Queue is turned off in this client";
+        }
+        java.util.concurrent.FutureTask<String> task = new java.util.concurrent.FutureTask<>(() -> action.apply(p));
+        SwingUtilities.invokeLater(task);
+        try
+        {
+            return task.get(5, java.util.concurrent.TimeUnit.SECONDS);
+        }
+        catch (InterruptedException e)
+        {
+            Thread.currentThread().interrupt();
+            return "interrupted";
+        }
+        catch (java.util.concurrent.ExecutionException | java.util.concurrent.TimeoutException e)
+        {
+            return "the Script Queue didn't answer";
+        }
+    }
+
+    /**
      * Opens the Script Queue tab, for buttons elsewhere (the Project X home tab).
      *
      * @return false if the Script Queue is turned off

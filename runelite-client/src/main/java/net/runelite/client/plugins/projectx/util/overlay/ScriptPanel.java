@@ -112,6 +112,8 @@ public final class ScriptPanel {
 	/** One line under the title saying what the script is doing. Null or blank shows "Idle". */
 	public ScriptPanel status(String status) {
 		this.status = status;
+		// The Bots page on the website shows the same line.
+		net.runelite.client.plugins.projectx.remote.ScriptStatusBoard.note(title, status);
 		return this;
 	}
 

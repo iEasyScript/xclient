@@ -1016,6 +1016,47 @@ class ScriptQueuePanel extends PluginPanel
         rebuildList();
     }
 
+    /**
+     * Start queue, from outside the panel (website control). Swing thread.
+     *
+     * @param planName the plan to switch to first, or null or blank for the one showing
+     * @return null once it is running; otherwise why not
+     */
+    String startFromOutside(String planName)
+    {
+        if (runner != null)
+        {
+            return "the queue is already running";
+        }
+        if (planName != null && !planName.trim().isEmpty())
+        {
+            QueuePlan found = ScriptQueueStore.find(plans, planName.trim());
+            if (found == null)
+            {
+                return "there's no plan called " + planName.trim() + " in this client";
+            }
+            switchTo(found.getName());
+            fillPlanBox();
+        }
+        if (plan.steps().isEmpty())
+        {
+            return "the plan " + plan.getName() + " has no steps";
+        }
+        toggle();
+        return runner != null ? null : "the queue didn't start";
+    }
+
+    /** Stop queue, from outside the panel (website control). Swing thread. */
+    String stopFromOutside()
+    {
+        if (runner == null)
+        {
+            return "the queue isn't running";
+        }
+        toggle();
+        return null;
+    }
+
     void shutdown()
     {
         if (runner != null)

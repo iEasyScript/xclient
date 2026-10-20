@@ -41,6 +41,33 @@ public class ProjectXInstances
 {
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     private static final long HEARTBEAT_SECONDS = 30;
+    /**
+     * How often the heartbeat comes while website control or live details are on
+     * (see {@link Extension}), so the Bots page is never more than a few seconds
+     * behind. Without them it still only goes every {@link #HEARTBEAT_SECONDS}.
+     */
+    private static final long LIVE_HEARTBEAT_SECONDS = 12;
+
+    /**
+     * Something that rides along on the claim and the heartbeat: website control,
+     * in {@code projectx/remote}. It adds fields to what is sent and reads the
+     * site's answer. Both run on the heartbeat thread and must not wait on the
+     * client thread or the Swing thread.
+     */
+    public interface Extension
+    {
+        /** Adds this client's fields to a claim or heartbeat body. */
+        void addTo(JsonObject body);
+
+        /** The site's answer to a claim or heartbeat that kept the slot. */
+        void answered(JsonObject answer);
+
+        /** Whether to heartbeat every {@link #LIVE_HEARTBEAT_SECONDS} rather than every {@link #HEARTBEAT_SECONDS}. */
+        boolean wantsLiveHeartbeat();
+    }
+
+    private volatile Extension extension;
+    private volatile long lastBeatMillis;
 
     /**
      * The one refusal a client must obey.
@@ -105,6 +132,7 @@ public class ProjectXInstances
         body.addProperty("action", "claim");
         body.addProperty("sessionId", sessionId);
         body.addProperty("label", machineName());
+        extend(body);
 
         try (Response response = post(body, token))
         {
@@ -129,7 +157,8 @@ public class ProjectXInstances
             }
 
             log.info("Instance slot claimed ({})", sessionId);
-            heartbeat = executor.scheduleWithFixedDelay(this::beat, HEARTBEAT_SECONDS, HEARTBEAT_SECONDS, TimeUnit.SECONDS);
+            answered(payload(response));
+            heartbeat = executor.scheduleWithFixedDelay(this::beat, LIVE_HEARTBEAT_SECONDS, LIVE_HEARTBEAT_SECONDS, TimeUnit.SECONDS);
             return true;
         }
         catch (IOException e)
@@ -171,8 +200,46 @@ public class ProjectXInstances
         }
     }
 
+    /**
+     * Installs (or with null, removes) what rides along on the heartbeat. Its
+     * fields go with the next beat; there is one at a time.
+     */
+    public void setExtension(Extension extension)
+    {
+        this.extension = extension;
+    }
+
+    /**
+     * A heartbeat in a moment rather than at the next tick, so the answer to a
+     * command reaches the website without waiting out the interval. Does nothing
+     * before the slot is claimed or after the client was stopped.
+     */
+    public void beatSoon()
+    {
+        ScheduledFuture<?> beating = heartbeat;
+        if (beating == null || beating.isCancelled())
+        {
+            return;
+        }
+        executor.schedule(() -> beat(true), 1, TimeUnit.SECONDS);
+    }
+
     private void beat()
     {
+        beat(false);
+    }
+
+    private void beat(boolean now)
+    {
+        // The schedule ticks at the live rate; without website control, every
+        // other beat or two is skipped so the site sees the old, slower rate.
+        Extension ext = extension;
+        boolean live = ext != null && ext.wantsLiveHeartbeat();
+        if (!now && !live && System.currentTimeMillis() - lastBeatMillis < TimeUnit.SECONDS.toMillis(HEARTBEAT_SECONDS - 2))
+        {
+            return;
+        }
+
         String token = token();
         if (Strings.isNullOrEmpty(token))
         {
@@ -182,9 +249,16 @@ public class ProjectXInstances
         JsonObject body = new JsonObject();
         body.addProperty("action", "heartbeat");
         body.addProperty("sessionId", sessionId);
+        extend(body);
+        lastBeatMillis = System.currentTimeMillis();
 
         try (Response response = post(body, token))
         {
+            if (response.isSuccessful())
+            {
+                answered(payload(response));
+                return;
+            }
             if (response.code() != 409)
             {
                 return;
@@ -229,6 +303,41 @@ public class ProjectXInstances
         }
 
         clientUi.get().requestShutdown();
+    }
+
+    /** The extension's fields, if there is one. Its failure never costs the slot. */
+    private void extend(JsonObject body)
+    {
+        Extension ext = extension;
+        if (ext == null)
+        {
+            return;
+        }
+        try
+        {
+            ext.addTo(body);
+        }
+        catch (RuntimeException e)
+        {
+            log.debug("Heartbeat extension failed to add its fields: {}", e.toString());
+        }
+    }
+
+    private void answered(JsonObject answer)
+    {
+        Extension ext = extension;
+        if (ext == null || answer == null)
+        {
+            return;
+        }
+        try
+        {
+            ext.answered(answer);
+        }
+        catch (RuntimeException e)
+        {
+            log.debug("Heartbeat extension failed to read the answer: {}", e.toString());
+        }
     }
 
     private Response post(JsonObject body, String token) throws IOException
