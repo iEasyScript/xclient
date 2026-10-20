@@ -2,11 +2,16 @@ package net.runelite.client.plugins.projectx;
 
 import net.runelite.api.Client;
 import net.runelite.api.World;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.game.WorldService;
 import net.runelite.client.plugins.projectx.util.bank.Rs2Bank;
 import net.runelite.client.plugins.projectx.util.combat.Rs2Combat;
+import net.runelite.client.plugins.projectx.util.player.Rs2Player;
+import net.runelite.http.api.worlds.WorldResult;
+import net.runelite.http.api.worlds.WorldType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,6 +19,7 @@ import org.mockito.InOrder;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
+import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -70,7 +76,100 @@ public class ProjectXWorldHopTest {
 
     @After
     public void tearDown() {
+        ProjectX.cantHopWorld = false;
         projectx.close();
+    }
+
+    private static final WorldPoint REFUSED_AT = new WorldPoint(3221, 3218, 0);
+
+    private void stubWorlds() {
+        net.runelite.http.api.worlds.World f2p = mock(net.runelite.http.api.worlds.World.class);
+        when(f2p.getTypes()).thenReturn(EnumSet.noneOf(WorldType.class));
+        net.runelite.http.api.worlds.World members = mock(net.runelite.http.api.worlds.World.class);
+        when(members.getTypes()).thenReturn(EnumSet.of(WorldType.MEMBERS));
+        WorldResult result = mock(WorldResult.class);
+        when(result.findWorld(308)).thenReturn(f2p);
+        when(result.findWorld(302)).thenReturn(members);
+        WorldService worldService = mock(WorldService.class);
+        when(worldService.getWorlds()).thenReturn(result);
+        projectx.when(ProjectX::getWorldService).thenReturn(worldService);
+    }
+
+    @Test
+    public void membersAreaRefusalBlocksNonMembersHopFromTheSameTile() {
+        stubWorlds();
+        projectx.when(ProjectX::isLoggedIn).thenReturn(true);
+        when(client.getWorld()).thenReturn(301);
+        ProjectX.markNonMembersHopRefused(REFUSED_AT);
+        try (MockedStatic<Rs2Player> player = Mockito.mockStatic(Rs2Player.class);
+             MockedStatic<Rs2Combat> combat = Mockito.mockStatic(Rs2Combat.class)) {
+            player.when(Rs2Player::getWorldLocation).thenReturn(REFUSED_AT);
+
+            assertFalse(ProjectX.hopToWorld(308));
+
+            combat.verify(Rs2Combat::inCombat, never());
+        }
+        assertTrue(ProjectX.cantHopWorld);
+        verify(client, never()).hopToWorld(any());
+    }
+
+    @Test
+    public void membersAreaRefusalDoesNotBlockMembersWorlds() {
+        stubWorlds();
+        ProjectX.markNonMembersHopRefused(REFUSED_AT);
+        try (MockedStatic<Rs2Player> player = Mockito.mockStatic(Rs2Player.class)) {
+            player.when(Rs2Player::getWorldLocation).thenReturn(REFUSED_AT);
+
+            assertFalse(ProjectX.isNonMembersHopRefused(302));
+            assertTrue(ProjectX.isNonMembersHopRefused(308));
+        }
+    }
+
+    @Test
+    public void membersAreaRefusalClearsOnceThePlayerHasMoved() {
+        stubWorlds();
+        ProjectX.markNonMembersHopRefused(REFUSED_AT);
+        try (MockedStatic<Rs2Player> player = Mockito.mockStatic(Rs2Player.class)) {
+            player.when(Rs2Player::getWorldLocation).thenReturn(REFUSED_AT.dx(1));
+
+            assertFalse(ProjectX.isNonMembersHopRefused(308));
+            assertFalse(ProjectX.cantHopWorld);
+
+            player.when(Rs2Player::getWorldLocation).thenReturn(REFUSED_AT);
+            assertFalse(ProjectX.isNonMembersHopRefused(308));
+        }
+    }
+
+    @Test
+    public void flagWithoutARefusalLocationDoesNotBlockHops() {
+        stubWorlds();
+        ProjectX.markNonMembersHopRefused(null);
+        try (MockedStatic<Rs2Player> player = Mockito.mockStatic(Rs2Player.class)) {
+            player.when(Rs2Player::getWorldLocation).thenReturn(REFUSED_AT);
+
+            assertFalse(ProjectX.isNonMembersHopRefused(308));
+            assertFalse(ProjectX.cantHopWorld);
+        }
+    }
+
+    @Test
+    public void staleRefusalDoesNotStopLaterHopAttempts() {
+        stubWorlds();
+        projectx.when(ProjectX::isLoggedIn).thenReturn(true);
+        when(client.getWorld()).thenReturn(301);
+        ProjectX.markNonMembersHopRefused(REFUSED_AT);
+        try (MockedStatic<Rs2Player> player = Mockito.mockStatic(Rs2Player.class);
+             MockedStatic<Rs2Combat> combat = Mockito.mockStatic(Rs2Combat.class);
+             MockedStatic<Rs2Bank> bank = Mockito.mockStatic(Rs2Bank.class)) {
+            player.when(Rs2Player::getWorldLocation).thenReturn(new WorldPoint(3165, 3487, 0));
+            combat.when(Rs2Combat::inCombat).thenReturn(false);
+            bank.when(Rs2Bank::isOpen).thenReturn(true);
+
+            assertFalse(ProjectX.hopToWorld(308));
+
+            combat.verify(Rs2Combat::inCombat, atLeastOnce());
+        }
+        assertFalse(ProjectX.cantHopWorld);
     }
 
     @Test
