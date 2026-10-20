@@ -460,7 +460,7 @@ public class Rs2WorldUtil {
                 
                 
                 log.info("Attempting world hop {} to world {}", attemptsPerWorld, world);
-               ;                
+                sleepUntil(ProjectX::isLoggedIn, 6000);
                 ProjectX.hopToWorld(world);
                 sleepUntil(() -> !ProjectX.isHopping(), 6000);
                 if (ProjectX.isHopping()) {
