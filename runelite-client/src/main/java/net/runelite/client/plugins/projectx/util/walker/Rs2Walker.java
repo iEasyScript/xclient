@@ -3258,11 +3258,11 @@ public class Rs2Walker {
                         }
                     }
 
-                    if (Rs2Tile.isTileReachable(finalTile) && Rs2Player.getWorldLocation().distanceTo(finalTile) >= finishTh) {
+                    WorldPoint finalPlayerLoc = Rs2Player.getWorldLocation();
+                    if (finalPlayerLoc != null && Rs2Tile.isTileReachable(finalTile) && finalPlayerLoc.distanceTo(finalTile) >= finishTh) {
                         final WorldPoint canvasClickWp = finalTile;
-                        WorldPoint finalPlayerLoc = Rs2Player.getWorldLocation();
                         boolean finalClick;
-                        if (rawPath != null && !rawPath.isEmpty() && finalPlayerLoc != null) {
+                        if (rawPath != null && !rawPath.isEmpty()) {
                             int rawAnchorIndex = rawAnchorIndexForPathPosition(rawPath, path, finalPlayerLoc);
                             finalClick = clickRouteBackedShortWalk(rawPath, canvasClickWp, finalPlayerLoc,
                                     NORMAL_MINIMAP_REACH_EUCLIDEAN - 1, rawAnchorIndex);
@@ -3286,9 +3286,10 @@ public class Rs2Walker {
                     && Rs2Player.isMoving()) {
                 exitReason = "route-move-in-flight";
             }
-            WorldPoint pathLastForFinish = path.get(path.size() - 1);
-            int finishThreshold = tightFinishThreshold(target, pathLastForFinish, distance);
-            int finalDist = Rs2Player.getWorldLocation().distanceTo(target);
+            int finishThreshold = tightFinishThreshold(target, path.get(path.size() - 1), distance);
+            WorldPoint finishPlayerLoc = Rs2Player.getWorldLocation();
+            if (finishPlayerLoc == null) { return WalkerState.MOVING; }
+            int finalDist = finishPlayerLoc.distanceTo(target);
             if (finalDist <= finishThreshold) {
                 setTarget(null, "rs2walker:processWalk:arrived-within-distance");
                 return WalkerState.ARRIVED;
@@ -3396,7 +3397,7 @@ public class Rs2Walker {
                 walkerDiag("continue outer tail nextIdx=%d exitReason=%s finalDist=%d partialPath=%s",
                         processWalkTail + 1,
                         exitReason,
-                        Rs2Player.getWorldLocation().distanceTo(target),
+                        finalDist,
                         partialPath);
                 continue;
             }
