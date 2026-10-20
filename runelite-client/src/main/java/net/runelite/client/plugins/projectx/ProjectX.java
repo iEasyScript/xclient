@@ -164,7 +164,13 @@ public class ProjectX {
     @Inject
     private static TooltipManager tooltipManager;
     private static ScheduledFuture<?> xpSchedulorFuture;
-    private static net.runelite.api.World quickHopTargetWorld;
+    /**
+     * Set while one hopToWorld call is preparing and issuing its hop, so a second caller is refused
+     * instead of racing it. Always cleared in a finally block, so an exception can't leave it set.
+     */
+    private static final AtomicBoolean quickHopInProgress = new AtomicBoolean(false);
+    /** World numbers already reported to the user as invalid, so the notification fires once per world. */
+    private static final Set<Integer> notifiedInvalidWorlds = ConcurrentHashMap.newKeySet();
     private static final int WORLD_SWITCHER_LOAD_TIMEOUT_MS = 5000;
     private static final int WORLD_SWITCHER_REOPEN_INTERVAL_MS = 600;
     /**
@@ -363,71 +369,44 @@ public class ProjectX {
         if (!ProjectX.isLoggedIn()) {
             return false;
         }
+        // Already there: that is success, whatever else is going on (combat, bank, dialogue).
+        if (ProjectX.getClient().getWorld() == worldNumber) {
+            return true;
+        }
         if (ProjectX.isHopping()) {
             log.error("Already hopping world");
             return true;
         }
-        if (ProjectX.getClient().getWorld() != worldNumber) {
-            if (isNonMembersHopRefused(worldNumber)) {
-                log.error("Can't hop to non-members world {} from a members-only area", worldNumber);
-                return false;
-            }
-            String blocker = ProjectX.getClientThread().runOnClientThreadOptional(ProjectX::hopBlocker).orElse(null);
-            if (blocker != null) {
-                log.error(blocker);
-                return false;
-            }
+        if (isNonMembersHopRefused(worldNumber)) {
+            log.error("Can't hop to non-members world {} from a members-only area", worldNumber);
+            return false;
         }
-        final net.runelite.api.World[] target = new net.runelite.api.World[1];
-        boolean prepared = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-            String blocker = hopBlocker();
-            if (blocker != null) {
-                log.error(blocker);
-                return false;
-            }
-            if (quickHopTargetWorld != null || ProjectX.getClient().getGameState() != GameState.LOGGED_IN) {
-                log.error("Quick hop target world is not null or game state is not logged in");
-                return false;
-            }
-            if (ProjectX.getClient().getWorld() == worldNumber) {
-                return true;
-            }
-            World newWorld = ProjectX.getWorldService().getWorlds().findWorld(worldNumber);
-            if (newWorld == null) {
-                ProjectX.getNotifier().notify("Invalid World");
-                System.out.println("Tried to hop to an invalid world");
-                return false;
-            }
-            final net.runelite.api.World rsWorld = ProjectX.getClient().createWorld();
-            if (rsWorld == null) return false;
-
-            quickHopTargetWorld = rsWorld;
-            target[0] = rsWorld;
-            rsWorld.setActivity(newWorld.getActivity());
-            rsWorld.setAddress(newWorld.getAddress());
-            rsWorld.setId(newWorld.getId());
-            rsWorld.setPlayerCount(newWorld.getPlayers());
-            if (newWorld.getRegion() != null) {
-                rsWorld.setLocation(newWorld.getRegion().getId());
-            }
-            rsWorld.setTypes(WorldUtil.toWorldTypes(newWorld.getTypes()));
-
-            return true;
-        }).orElse(false);
-        if (target[0] != null) {
-            boolean hopIssued;
-            try {
-                hopIssued = prepared && hopViaWorldSwitcher(target[0], WORLD_SWITCHER_LOAD_TIMEOUT_MS);
-            } finally {
-                quickHopTargetWorld = null;
-            }
-            if (prepared && !hopIssued) {
-                log.warn("World switcher did not load in time, could not hop to world {}", worldNumber);
-                return false;
-            }
+        String blocker = ProjectX.getClientThread().runOnClientThreadOptional(ProjectX::hopBlocker).orElse(null);
+        if (blocker != null) {
+            log.error(blocker);
+            return false;
         }
-        if (!prepared) {
-            log.error("Failed to hop to world {}", worldNumber);
+        net.runelite.http.api.worlds.WorldResult worlds = getWorldList();
+        if (worlds == null) {
+            log.warn("World list is not loaded yet, cannot hop to world {}", worldNumber);
+            return false;
+        }
+        World newWorld = worlds.findWorld(worldNumber);
+        if (newWorld == null) {
+            reportInvalidWorld(worldNumber);
+            return false;
+        }
+        if (!quickHopInProgress.compareAndSet(false, true)) {
+            log.error("Another world hop is already in progress, not hopping to world {}", worldNumber);
+            return false;
+        }
+        boolean hopIssued;
+        try {
+            hopIssued = issueQuickHop(worldNumber, newWorld);
+        } finally {
+            quickHopInProgress.set(false);
+        }
+        if (!hopIssued) {
             return false;
         }
         // Wait off the client thread so sleeps actually block. The lambda above runs on
@@ -480,8 +459,7 @@ public class ProjectX {
             cantHopWorldLocation = null;
             return false;
         }
-        WorldService service = getWorldService();
-        net.runelite.http.api.worlds.WorldResult worlds = service == null ? null : service.getWorlds();
+        net.runelite.http.api.worlds.WorldResult worlds = getWorldList();
         World world = worlds == null ? null : worlds.findWorld(worldNumber);
         return world != null && !world.getTypes().contains(net.runelite.http.api.worlds.WorldType.MEMBERS);
     }
@@ -494,6 +472,67 @@ public class ProjectX {
             return "Blocking widget open (bank/shop/dialogue), cannot hop worlds";
         }
         return null;
+    }
+
+    /**
+     * Builds the target world on the client thread, then hops through the world switcher.
+     * Returns {@code true} once the hop has been sent to the client.
+     */
+    private static boolean issueQuickHop(int worldNumber, World newWorld) {
+        final net.runelite.api.World rsWorld = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            String blocker = hopBlocker();
+            if (blocker != null) {
+                log.error(blocker);
+                return null;
+            }
+            if (ProjectX.getClient().getGameState() != GameState.LOGGED_IN) {
+                log.error("Game state is not logged in, cannot hop worlds");
+                return null;
+            }
+            final net.runelite.api.World world = ProjectX.getClient().createWorld();
+            if (world == null) {
+                return null;
+            }
+            world.setActivity(newWorld.getActivity());
+            world.setAddress(newWorld.getAddress());
+            world.setId(newWorld.getId());
+            world.setPlayerCount(newWorld.getPlayers());
+            if (newWorld.getRegion() != null) {
+                world.setLocation(newWorld.getRegion().getId());
+            }
+            world.setTypes(WorldUtil.toWorldTypes(newWorld.getTypes()));
+            return world;
+        }).orElse(null);
+        if (rsWorld == null) {
+            log.error("Failed to hop to world {}", worldNumber);
+            return false;
+        }
+        if (!hopViaWorldSwitcher(rsWorld, WORLD_SWITCHER_LOAD_TIMEOUT_MS)) {
+            log.warn("World switcher did not load in time, could not hop to world {}", worldNumber);
+            return false;
+        }
+        return true;
+    }
+
+    /** True while a hopToWorld call is preparing or issuing a hop. */
+    static boolean isQuickHopInProgress() {
+        return quickHopInProgress.get();
+    }
+
+    /** The cached world list, or {@code null} if the world service or its list isn't available yet. */
+    private static net.runelite.http.api.worlds.WorldResult getWorldList() {
+        WorldService service = getWorldService();
+        return service == null ? null : service.getWorlds();
+    }
+
+    private static void reportInvalidWorld(int worldNumber) {
+        log.warn("Tried to hop to an invalid world {}", worldNumber);
+        if (notifiedInvalidWorlds.add(worldNumber)) {
+            Notifier notifier = getNotifier();
+            if (notifier != null) {
+                notifier.notify("Invalid World " + worldNumber);
+            }
+        }
     }
 
     static boolean hopViaWorldSwitcher(net.runelite.api.World rsWorld, int loadTimeoutMs) {
