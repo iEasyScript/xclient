@@ -1064,7 +1064,7 @@ public class RuneLite
 					numChars += accounts.length;
 					for (Account account : accounts)
 					{
-						if (account.getDisplayName().equalsIgnoreCase(character))
+						if (character.equalsIgnoreCase(account.getDisplayName()))
 						{
 							log.info("Switching to character {}", account.getDisplayName());
 							jagexAuthService.switchJagexAccount(session.getSessionId(), Long.toString(account.getAccountId()), account.getDisplayName());

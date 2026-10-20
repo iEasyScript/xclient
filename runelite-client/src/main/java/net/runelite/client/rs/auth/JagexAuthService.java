@@ -137,44 +137,49 @@ public class JagexAuthService
 			throw new RuntimeException("jagexauth not found");
 		}
 
-		Path temp;
-		try (var in = url.openStream())
+		Path temp = Files.createTempFile("runelite_jagexauth", "");
+		try
 		{
-			temp = Files.createTempFile("runelite_jagexauth", "");
-			Files.copy(in, temp, StandardCopyOption.REPLACE_EXISTING);
-		}
-
-		temp.toFile().setExecutable(true);
-
-		Process process = new ProcessBuilder(
-			temp.toAbsolutePath().toString(),
-			"--prompt=login"
-		)
-			.redirectErrorStream(true)
-			.start();
-
-		String idToken = "";
-		try (var in = new BufferedReader(new InputStreamReader(process.getInputStream())))
-		{
-			for (String s; (s = in.readLine()) != null;)
+			try (var in = url.openStream())
 			{
-				s = s.trim();
-				String[] split = s.split(" ");
-				if (split.length > 1 && split[0].equals("id_token:"))
+				Files.copy(in, temp, StandardCopyOption.REPLACE_EXISTING);
+			}
+
+			temp.toFile().setExecutable(true);
+
+			Process process = new ProcessBuilder(
+				temp.toAbsolutePath().toString(),
+				"--prompt=login"
+			)
+				.redirectErrorStream(true)
+				.start();
+
+			String idToken = "";
+			try (var in = new BufferedReader(new InputStreamReader(process.getInputStream())))
+			{
+				for (String s; (s = in.readLine()) != null;)
 				{
-					idToken = split[1];
+					s = s.trim();
+					String[] split = s.split(" ");
+					if (split.length > 1 && split[0].equals("id_token:"))
+					{
+						idToken = split[1];
+					}
 				}
 			}
-		}
 
-		if (idToken.isBlank())
+			if (idToken.isBlank())
+			{
+				throw new RuntimeException("Login did not return an id token");
+			}
+
+			process.waitFor();
+			return idToken;
+		}
+		finally
 		{
-			throw new RuntimeException("Login did not return an id token");
+			Files.deleteIfExists(temp);
 		}
-
-		process.waitFor();
-		Files.delete(temp);
-		return idToken;
 	}
 
 	private void handleJagexAuthCompletion(String idToken) throws IOException
@@ -201,11 +206,10 @@ public class JagexAuthService
 
 	private void loadSession(Session session)
 	{
+		sessions.add(session);
 		try
 		{
-			Account[] characters = authClient.getAccounts(session.getSessionId());
-			sessions.add(session);
-			accounts.put(session.getSessionId(), characters);
+			accounts.put(session.getSessionId(), authClient.getAccounts(session.getSessionId()));
 		}
 		catch (IOException e)
 		{

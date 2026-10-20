@@ -951,7 +951,7 @@ public class LootTrackerPlugin extends Plugin
 
 		final Collection<ItemStack> items = toItemStacks(container);
 
-		if (config.showRaidsLootValue() && (event.equals(THEATRE_OF_BLOOD) || event.equals(CHAMBERS_OF_XERIC) || event.equals(TOMBS_OF_AMASCUT)))
+		if (config.showRaidsLootValue() && (event.equals(THEATRE_OF_BLOOD) || event.equals(CHAMBERS_OF_XERIC) || event.equals(TOMBS_OF_AMASCUT) || event.equals(THE_FRACTURED_ARCHIVE)))
 		{
 			long totalValue = items.stream()
 				.filter(item -> item.getId() > -1)
