@@ -613,11 +613,12 @@ public class PathfinderConfig {
             }
         }
 
-        refreshBoostedLevels = new int[SKILLS.length];
+        int[] boostedLevels = new int[SKILLS.length];
+        refreshBoostedLevels = boostedLevels;
         Map<Integer, Integer> varplayerValues = new HashMap<>();
         ProjectX.getClientThread().runOnClientThreadOptional(() -> {
             for (int i = 0; i < SKILLS.length; i++) {
-                refreshBoostedLevels[i] = client.getBoostedSkillLevel(SKILLS[i]);
+                boostedLevels[i] = client.getBoostedSkillLevel(SKILLS[i]);
             }
             for (int id : varbitIds) {
                 ProjectX.getVarbitValue(id);
@@ -701,9 +702,9 @@ public class PathfinderConfig {
                 .sorted()
                 .toArray();
         int[] sortedSkillOrdinals = requiredSkillOrdinals.stream().mapToInt(Integer::intValue).sorted().toArray();
-        int verificationHash = computeTransportRefreshVerificationHash(refreshBoostedLevels, sortedSkillOrdinals,
+        int verificationHash = computeTransportRefreshVerificationHash(boostedLevels, sortedSkillOrdinals,
                 sortedVarbitConditions, sortedVarplayerConditions, sortedQuestIds);
-        int[] verificationComponents = computeTransportRefreshVerificationComponents(refreshBoostedLevels,
+        int[] verificationComponents = computeTransportRefreshVerificationComponents(boostedLevels,
                 sortedSkillOrdinals, sortedVarbitConditions, sortedVarplayerConditions, sortedQuestIds);
         transportRefreshSnapshots.put(refreshCacheKeyHash, TransportRefreshSnapshot.capture(
                 refreshCacheKeyHash, verificationHash, verificationComponents,
