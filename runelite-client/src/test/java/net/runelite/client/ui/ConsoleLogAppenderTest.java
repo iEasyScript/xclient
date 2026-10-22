@@ -18,6 +18,7 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class ConsoleLogAppenderTest
 {
@@ -27,6 +28,8 @@ public class ConsoleLogAppenderTest
 		+ "</appender>"
 		+ "<root level=\"INFO\"><appender-ref ref=\"STDOUT\"/></root>"
 		+ "</configuration>";
+
+	private static final String NO_STDOUT_CONFIG = "<configuration><root level=\"INFO\"/></configuration>";
 
 	private PrintStream originalOut;
 	private LoggerContext context;
@@ -161,11 +164,51 @@ public class ConsoleLogAppenderTest
 		assertFalse(context.getLogger(Logger.ROOT_LOGGER_NAME).isAttached(appender));
 	}
 
+	@Test
+	public void reconfigurationWithoutStdoutStopsSearchingAfterBoundedLines() throws JoranException
+	{
+		configure();
+		ConsoleLogAppender appender = ConsoleLogAppender.install(context, new ByteArrayOutputStream(), line -> { });
+
+		context.reset();
+		configure(NO_STDOUT_CONFIG);
+		Logger root = context.getLogger(Logger.ROOT_LOGGER_NAME);
+		for (int i = 0; i < ConsoleLogAppender.MAX_REBIND_ATTEMPTS - 1; i++)
+		{
+			root.info("line {}", i);
+		}
+		assertTrue(appender.isRebindPending());
+
+		root.info("last line");
+
+		assertFalse(appender.isRebindPending());
+	}
+
+	@Test
+	public void uninstallRemovesTheResetListener() throws JoranException
+	{
+		StringBuilder console = new StringBuilder();
+		configure();
+		ConsoleLogAppender.install(context, new ByteArrayOutputStream(), console::append).uninstall();
+
+		context.reset();
+		configure();
+		context.getLogger(Logger.ROOT_LOGGER_NAME).info("after uninstall");
+
+		assertTrue(context.getCopyOfListenerList().isEmpty());
+		assertEquals(0, occurrences(console.toString(), "after uninstall"));
+	}
+
 	private void configure() throws JoranException
+	{
+		configure(CONFIG);
+	}
+
+	private void configure(String config) throws JoranException
 	{
 		JoranConfigurator configurator = new JoranConfigurator();
 		configurator.setContext(context);
-		configurator.doConfigure(new ByteArrayInputStream(CONFIG.getBytes(StandardCharsets.UTF_8)));
+		configurator.doConfigure(new ByteArrayInputStream(config.getBytes(StandardCharsets.UTF_8)));
 	}
 
 	private static int occurrences(String text, String needle)

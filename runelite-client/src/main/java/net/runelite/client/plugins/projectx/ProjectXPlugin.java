@@ -47,8 +47,8 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.OverlayMenuEntry;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.ResetResistantAttachment;
 
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
@@ -130,6 +130,7 @@ public class ProjectXPlugin extends Plugin
 	private PouchOverlay pouchOverlay;
 	@Inject
 	private EventBus eventBus;
+	private ResetResistantAttachment gameChatAttachment;
 
 	@Inject
 	private net.runelite.client.plugins.projectx.externalplugins.ProjectXSessionTracker sessionTracker;
@@ -169,14 +170,8 @@ public class ProjectXPlugin extends Plugin
 		gameChatAppender.setPattern(pattern);
 
 		final LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-		gameChatAppender.setContext(context);
-		context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(gameChatAppender);
+		gameChatAttachment = gameChatAppender.install(context, projectxConfig::enableGameChatLogging);
 
-		// Start appender if logging is enabled
-		if (projectxConfig.enableGameChatLogging()) {
-			gameChatAppender.start();
-		}
-		
 		// Initialize the cached configuration in GameChatAppender
 		GameChatAppender.updateConfiguration(
 			projectxConfig.enableGameChatLogging(),
@@ -265,7 +260,7 @@ public class ProjectXPlugin extends Plugin
 		overlayManager.remove(pouchOverlay);
 		clientToolbar.removeNavigation(navButton);
 		clientToolbar.removeNavigation(homeButton);
-		if (gameChatAppender.isStarted()) gameChatAppender.stop();
+		gameChatAttachment.remove();
 		sessionTracker.stop();
 		whatsNew.stop();
 		projectxVersionChecker.shutdown();

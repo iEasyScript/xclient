@@ -1,13 +1,16 @@
 package net.runelite.client.plugins.projectx;
 
 import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.Context;
 import ch.qos.logback.core.filter.Filter;
 import ch.qos.logback.core.spi.FilterReply;
+import java.util.function.BooleanSupplier;
 import net.runelite.api.ChatMessageType;
+import net.runelite.client.util.ResetResistantAttachment;
 
 public class GameChatAppender extends AppenderBase<ILoggingEvent> {
     private final PatternLayout layout = new PatternLayout();
@@ -26,6 +29,15 @@ public class GameChatAppender extends AppenderBase<ILoggingEvent> {
 
     public GameChatAppender() {
         this("[%d{HH:mm:ss}] %msg%ex{0}%n"); // Default simple pattern
+    }
+
+    public ResetResistantAttachment install(LoggerContext context, BooleanSupplier enabled) {
+        setContext(context);
+        Runnable startIfEnabled = () -> {
+            if (enabled.getAsBoolean()) start();
+        };
+        startIfEnabled.run();
+        return ResetResistantAttachment.attach(context, this, startIfEnabled);
     }
 
     @Override

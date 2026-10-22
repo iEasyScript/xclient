@@ -4,12 +4,10 @@
  */
 package net.runelite.client.ui;
 
-import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.classic.spi.LoggerContextListener;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.ConsoleAppender;
@@ -19,13 +17,17 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.function.Consumer;
+import net.runelite.client.util.ResetResistantAttachment;
 
-final class ConsoleLogAppender extends AppenderBase<ILoggingEvent> implements LoggerContextListener
+final class ConsoleLogAppender extends AppenderBase<ILoggingEvent>
 {
+	static final int MAX_REBIND_ATTEMPTS = 1000;
+
 	private final Consumer<String> logConsumer;
 	private final OutputStream stdout;
 	private PatternLayout layout;
-	private volatile boolean rebindPending;
+	private ResetResistantAttachment attachment;
+	private int rebindAttemptsLeft;
 
 	ConsoleLogAppender(Consumer<String> logConsumer)
 	{
@@ -44,17 +46,13 @@ final class ConsoleLogAppender extends AppenderBase<ILoggingEvent> implements Lo
 		appender.setContext(context);
 		bindStdoutAppenders(context, stdout);
 		appender.start();
-		context.addListener(appender);
-		context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(appender);
+		appender.attachment = ResetResistantAttachment.attach(context, appender, appender::restartAfterReset);
 		return appender;
 	}
 
 	void uninstall()
 	{
-		LoggerContext context = (LoggerContext) getContext();
-		context.removeListener(this);
-		context.getLogger(Logger.ROOT_LOGGER_NAME).detachAppender(this);
-		stop();
+		attachment.remove();
 	}
 
 	static boolean bindStdoutAppenders(LoggerContext context, OutputStream stdout)
@@ -78,36 +76,15 @@ final class ConsoleLogAppender extends AppenderBase<ILoggingEvent> implements Lo
 		return bound;
 	}
 
-	@Override
-	public boolean isResetResistant()
+	private synchronized void restartAfterReset()
 	{
-		return true;
-	}
-
-	@Override
-	public void onStart(LoggerContext context)
-	{
-	}
-
-	@Override
-	public void onReset(LoggerContext context)
-	{
-		rebindPending = stdout != null;
+		rebindAttemptsLeft = stdout != null ? MAX_REBIND_ATTEMPTS : 0;
 		start();
-		context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(this);
 	}
 
-	@Override
-	public void onStop(LoggerContext context)
+	synchronized boolean isRebindPending()
 	{
-		rebindPending = false;
-		context.getLogger(Logger.ROOT_LOGGER_NAME).detachAppender(this);
-		stop();
-	}
-
-	@Override
-	public void onLevelChange(Logger logger, Level level)
-	{
+		return rebindAttemptsLeft > 0;
 	}
 
 	@Override
@@ -127,9 +104,9 @@ final class ConsoleLogAppender extends AppenderBase<ILoggingEvent> implements Lo
 		{
 			return;
 		}
-		if (rebindPending && bindStdoutAppenders((LoggerContext) getContext(), stdout))
+		if (rebindAttemptsLeft > 0)
 		{
-			rebindPending = false;
+			rebindAttemptsLeft = bindStdoutAppenders((LoggerContext) getContext(), stdout) ? 0 : rebindAttemptsLeft - 1;
 		}
 		String formatted = layout.doLayout(eventObject);
 		logConsumer.accept(formatted);

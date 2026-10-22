@@ -10,10 +10,12 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.util.ResetResistantAttachment;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -21,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -98,6 +101,41 @@ public class GameChatAppenderTest
 
 		verify(clientThread, never()).invoke(any(Runnable.class));
 		verify(client, never()).addChatMessage(any(), anyString(), anyString(), anyString(), anyBoolean());
+	}
+
+	@Test
+	public void installedAppenderKeepsMirroringToChatAfterLogbackReset()
+	{
+		LoggerContext context = new LoggerContext();
+		GameChatAppender installed = new GameChatAppender();
+		ResetResistantAttachment attachment = installed.install(context, () -> true);
+
+		context.reset();
+		context.getLogger("net.runelite.client.plugins.projectx.walker").warn("walker stalled");
+
+		assertTrue(installed.isStarted());
+		verify(clientThread, times(1)).invoke(any(Runnable.class));
+
+		attachment.remove();
+		context.getLogger("net.runelite.client.plugins.projectx.walker").warn("after remove");
+
+		assertFalse(installed.isStarted());
+		verify(clientThread, times(1)).invoke(any(Runnable.class));
+	}
+
+	@Test
+	public void disabledAppenderStaysStoppedAfterLogbackReset()
+	{
+		LoggerContext context = new LoggerContext();
+		GameChatAppender installed = new GameChatAppender();
+		installed.install(context, () -> false);
+
+		context.reset();
+		context.getLogger("net.runelite.client.plugins.projectx.walker").warn("walker stalled");
+
+		assertFalse(installed.isStarted());
+		verify(clientThread, never()).invoke(any(Runnable.class));
+		context.stop();
 	}
 
 	private static Object swapStatic(String name, Object value) throws Exception
