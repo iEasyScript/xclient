@@ -26,39 +26,29 @@ public class Rs2Camera {
     private static final int LEGACY_MAX_PITCH = 383;
 
     public static int angleToTile(Actor t) {
-        return ProjectX.getClientThread().invoke(() -> {
-            var playerLocation = new Rs2PlayerModel().getWorldLocation();
-            int angle = (int) Math.toDegrees(Math.atan2(t.getWorldLocation().getY() - playerLocation.getY(),
-                    t.getWorldLocation().getX() - playerLocation.getX()));
-            return angle >= 0 ? angle : 360 + angle;
-        });
+        return ProjectX.getClientThread().invoke(() -> angleFromPlayer(t.getWorldLocation().getX(), t.getWorldLocation().getY()));
     }
 
     public static int angleToTile(TileObject t) {
-        return ProjectX.getClientThread().invoke(() -> {
-            var playerLocation = new Rs2PlayerModel().getWorldLocation();
-            int angle = (int) Math.toDegrees(Math.atan2(t.getWorldLocation().getY() - playerLocation.getY(),
-                    t.getWorldLocation().getX() - playerLocation.getX()));
-            return angle >= 0 ? angle : 360 + angle;
-        });
+        return ProjectX.getClientThread().invoke(() -> angleFromPlayer(t.getWorldLocation().getX(), t.getWorldLocation().getY()));
     }
 
     public static int angleToTile(LocalPoint localPoint) {
-        return ProjectX.getClientThread().invoke(() -> {
-            var playerLocation = new Rs2PlayerModel().getWorldLocation();
-            int angle = (int) Math.toDegrees(Math.atan2(localPoint.getY() - playerLocation.getY(),
-                    localPoint.getX() - playerLocation.getX()));
-            return angle >= 0 ? angle : 360 + angle;
-        });
+        return ProjectX.getClientThread().invoke(() -> angleFromPlayer(localPoint.getX(), localPoint.getY()));
     }
 
     public static int angleToTile(WorldPoint worldPoint) {
-        return ProjectX.getClientThread().invoke(() -> {
-            var playerLocation = new Rs2PlayerModel().getWorldLocation();
-            int angle = (int) Math.toDegrees(Math.atan2(worldPoint.getY() - playerLocation.getY(),
-                    worldPoint.getX() - playerLocation.getX()));
-            return angle >= 0 ? angle : 360 + angle;
-        });
+        return ProjectX.getClientThread().invoke(() -> angleFromPlayer(worldPoint.getX(), worldPoint.getY()));
+    }
+
+    private static int angleFromPlayer(int targetX, int targetY) {
+        var playerLocation = new Rs2PlayerModel().getWorldLocation();
+        if (playerLocation == null) {
+            int facing = (int) (fromClientAngleUnits(readYawDirectly()) * (360.0 / LEGACY_ANGLE_UNITS));
+            return (facing + 90) % 360;
+        }
+        int angle = (int) Math.toDegrees(Math.atan2(targetY - playerLocation.getY(), targetX - playerLocation.getX()));
+        return angle >= 0 ? angle : 360 + angle;
     }
 
     public static void turnTo(final Actor actor) {
