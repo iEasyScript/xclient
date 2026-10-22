@@ -27,7 +27,8 @@ public class Rs2Cannon {
             3, 3, 
             brokenCannon.getWorldLocation().getPlane()
         );
-        if (!cannonLocation.toWorldPoint().equals(CannonPlugin.getCannonPosition().toWorldPoint())) return false;
+        WorldArea cannonPosition = CannonPlugin.getCannonPosition();
+        if (cannonPosition == null || !cannonLocation.toWorldPoint().equals(cannonPosition.toWorldPoint())) return false;
 
         ProjectX.status = "Repairing Cannon";
 
@@ -61,7 +62,8 @@ public class Rs2Cannon {
             3, 3, 
             cannon.getWorldLocation().getPlane()
         );
-        if (!cannonLocation.toWorldPoint().equals(CannonPlugin.getCannonPosition().toWorldPoint())) return false;
+        WorldArea cannonPosition = CannonPlugin.getCannonPosition();
+        if (cannonPosition == null || !cannonLocation.toWorldPoint().equals(cannonPosition.toWorldPoint())) return false;
 		ProjectX.pauseAllScripts.compareAndSet(false, true);
         Rs2GameObject.interact(cannon, "Fire");
         Rs2Player.waitForWalking();
