@@ -222,22 +222,6 @@ public enum BankLocation {
             case VARLAMORE_WEST:
                 // Requires Children of the Sun
                 return Rs2Player.getQuestState(Quest.CHILDREN_OF_THE_SUN) == QuestState.FINISHED;
-            case LOVAKENGJ:
-            case HOSIDIUS:
-            case PISCARILIUS:
-            case ARCEUUS:
-            case WINTERTODT:
-            case SULPHUR_MINE:
-            case ZEAH_SAND_BANK:
-            case BLAST_MINE:
-            case SHAYZIEN_BANK:
-            case SHAYZIEN_CHEST:
-            case GREAT_KOUREND_CASTLE:
-            case HOSIDIUS_KITCHEN:
-            case VINERY_BANK:
-            case MOUNT_KARUULM:
-                // Requires Client of Kourend
-                return Rs2Player.getQuestState(Quest.CLIENT_OF_KOUREND) != QuestState.NOT_STARTED;
             case DWARF_MINE_BANK:
             case BLAST_FURNACE_BANK:
                 // Requires The Giant Dwarf

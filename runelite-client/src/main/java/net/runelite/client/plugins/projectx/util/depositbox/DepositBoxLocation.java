@@ -208,9 +208,7 @@ public enum DepositBoxLocation {
             case MOUNT_QUIDAMORTEM:
             case HOSIDIUS:
             case MOUNT_KARUULM:
-                if (!isMember()) return false;
-                // Requires Client of Kourend
-                return Rs2Player.getQuestState(Quest.CLIENT_OF_KOUREND) != QuestState.NOT_STARTED;
+                return isMember();
             case SHILO_VILLAGE:
                 if (!isMember()) return false;
                 // Requires Shilo Village to enter the village & use the bank
