@@ -8964,11 +8964,9 @@ public class Rs2Walker {
                 log.debug("[Walker] Cannot restore marker: WorldMapPointManager unavailable");
                 return;
             }
-            Rs2PathApi.setMarker(new WorldMapPoint(target, Rs2PathApi.MARKER_IMAGE));
-            Rs2PathApi.getMarker().setName("Target");
-            Rs2PathApi.getMarker().setTarget(Rs2PathApi.getMarker().getWorldPoint());
-            Rs2PathApi.getMarker().setJumpOnClick(true);
-            wmm.add(Rs2PathApi.getMarker());
+            WorldMapPoint marker = Rs2PathApi.createTargetMarker(target);
+            Rs2PathApi.setMarker(marker);
+            wmm.add(marker);
             log.info("[Walker] Restored missing path target marker at {}", target);
         } catch (Exception ex) {
             log.debug("[Walker] Failed to restore target marker at {}", target, ex);

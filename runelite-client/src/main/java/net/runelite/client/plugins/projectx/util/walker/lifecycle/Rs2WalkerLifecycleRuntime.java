@@ -49,11 +49,9 @@ public final class Rs2WalkerLifecycleRuntime {
             return;
         }
         wmm.removeIf(x -> x == Rs2PathApi.getMarker());
-        Rs2PathApi.setMarker(new WorldMapPoint(target, Rs2PathApi.MARKER_IMAGE));
-        Rs2PathApi.getMarker().setName("Target");
-        Rs2PathApi.getMarker().setTarget(Rs2PathApi.getMarker().getWorldPoint());
-        Rs2PathApi.getMarker().setJumpOnClick(true);
-        wmm.add(Rs2PathApi.getMarker());
+        WorldMapPoint marker = Rs2PathApi.createTargetMarker(target);
+        Rs2PathApi.setMarker(marker);
+        wmm.add(marker);
 
         WorldPoint start = ProjectX.getClientThread().invoke(() -> {
             if (client.getTopLevelWorldView().isInstance()) {
