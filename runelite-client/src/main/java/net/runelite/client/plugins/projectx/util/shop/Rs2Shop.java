@@ -5,6 +5,7 @@ import net.runelite.api.MenuAction;
 import net.runelite.api.NPCComposition;
 import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.widgets.ComponentID;
+import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.util.Global;
@@ -153,6 +154,7 @@ public class Rs2Shop {
             invokeMenu(rs2Item, actionAndQuantity);
         } catch (Exception ex) {
             ProjectX.logStackTrace("Rs2Shop", ex);
+            return false;
         }
         return true;
     }
@@ -177,6 +179,7 @@ public class Rs2Shop {
             invokeMenu(rs2Item, actionAndQuantity);
         } catch (Exception ex) {
             ProjectX.logStackTrace("Rs2Shop", ex);
+            return false;
         }
         return true;
     }
@@ -389,6 +392,7 @@ public class Rs2Shop {
 
         }
 
+        Rectangle bounds = itemBounds(rs2Item);
         ProjectX.doInvoke(new NewMenuEntry()
                 .param0(param0)
                 .param1(param1)
@@ -397,7 +401,7 @@ public class Rs2Shop {
                 .itemId(rs2Item.getId())
                 .target(rs2Item.getName())
                 ,
-                (itemBounds(rs2Item) == null) ? new Rectangle(1, 1) : itemBounds(rs2Item));
+                bounds == null ? new Rectangle(1, 1) : bounds);
         //Rs2Reflection.invokeMenu(param0, param1, menuAction.getId(), identifier, rs2Item.id, action, target, -1, -1);
     }
 
@@ -430,6 +434,11 @@ public class Rs2Shop {
      * @return Rectangle of the item
      */
     private static Rectangle itemBounds(Rs2ItemModel rs2Item) {
-        return Rs2Widget.getWidget(19660816).getDynamicChildren()[rs2Item.getSlot()+1].getBounds();
+        Widget items = Rs2Widget.getWidget(19660816);
+        if (items == null) return null;
+        Widget[] children = items.getDynamicChildren();
+        int index = rs2Item.getSlot() + 1;
+        if (children == null || index < 0 || index >= children.length || children[index] == null) return null;
+        return children[index].getBounds();
     }
 }
