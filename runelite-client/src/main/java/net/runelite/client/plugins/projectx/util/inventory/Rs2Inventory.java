@@ -1938,7 +1938,7 @@ public class Rs2Inventory {
         if (inventoryWidgets == null) return;
 
         if (!action.isEmpty()) {
-            var itemWidget = Arrays.stream(inventoryWidgets).filter(x -> x != null && x.getIndex() == rs2Item.getSlot()).findFirst().orElseGet(null);
+            var itemWidget = Arrays.stream(inventoryWidgets).filter(x -> x != null && x.getIndex() == rs2Item.getSlot()).findFirst().orElse(null);
 
             String[] actions = itemWidget != null && itemWidget.getActions() != null ?
                     itemWidget.getActions() :
