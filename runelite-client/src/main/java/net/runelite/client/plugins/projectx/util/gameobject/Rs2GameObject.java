@@ -2015,30 +2015,18 @@ public class Rs2GameObject {
     }
 
     /**
-     * Returns the object is reachable from the player
+     * Returns whether the player can walk to a tile beside the object.
      *
-     * @param tileObject
+     * <p>Worked out in scene coordinates by {@link Rs2Tile#isGameObjectReachable}, so it holds in
+     * instances too. It used to go through world points, and inside an instance the object's
+     * (instance) points were looked up as template points and never found: every object, even one
+     * beside the player, was "unreachable" (Obor's climbing rocks, 2026-10-20).
+     *
+     * @param tileObject the object
      * @return boolean
      */
     public static boolean isReachable(GameObject tileObject) {
-        WorldArea worldArea = getWorldArea(tileObject);
-        if (worldArea == null) {
-            return false;
-        }
-        Rs2WorldArea gameObjectArea = new Rs2WorldArea(worldArea);
-        List<WorldPoint> interactablePoints = gameObjectArea.getInteractable();
-
-        if (interactablePoints.isEmpty()) {
-            interactablePoints.addAll(gameObjectArea.offset(1).toWorldPointList());
-            interactablePoints.removeIf(gameObjectArea::contains);
-        }
-
-        WorldPoint walkableInteractPoint = interactablePoints.stream()
-                .filter(Rs2Tile::isWalkable)
-                .filter(Rs2Tile::isTileReachable)
-                .findFirst()
-                .orElse(null);
-        return walkableInteractPoint != null;
+        return Rs2Tile.isGameObjectReachable(tileObject);
     }
 
     public static WorldArea getWorldArea(GameObject gameObject) {

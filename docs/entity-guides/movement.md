@@ -370,3 +370,36 @@ once. After two consecutive failures, scene clicks pause for 3 seconds.
 
 **Defensive check:** `SceneClickPolicyTest` covers draw-distance selection, camera-relative
 bounds, destination classification, and bounded suppression.
+
+## 19. Inside an instance, never mix template and instance world points
+
+Inside an instance one tile has two `WorldPoint`s. The game and every queryable model
+(`Rs2PlayerModel`, `Rs2NpcModel`, `Rs2TileObjectModel`, `Rs2TileItemModel`) report **instance**
+coordinates; `Rs2Player.getWorldLocation()`, `WorldPoint.fromLocalInstance` and wiki tiles are
+**template** (real-world) coordinates. Comparing one with the other gives distances of thousands
+of tiles, or a lookup that never finds the tile. Do reachability and distance in scene
+coordinates (`LocalPoint`, scene x/y on one `WorldView`), or resolve a point of unknown space
+with `SceneSpace.toLocal(wv, point)` / `SceneSpace.toSceneSpace(wv, point)`.
+
+**Why this matters:** `Rs2Tile.isVisited` read every point inside an instance as a template
+point, while `Rs2GameObject.isReachable` passed it instance points. Every game object was
+"unreachable", so `query().withId(..).interact("Climb")` returned false for Obor's climbing rocks
+right beside the player (Obor 1.0.1, 2026-10-20).
+
+**Pattern to follow:**
+
+```java
+// Wrong: instance point looked up as a template point
+LocalPoint lp = Rs2LocalPoint.fromWorldInstance(object.getWorldLocation());
+// Right: either space
+LocalPoint lp = SceneSpace.toLocal(ProjectX.getClient().getTopLevelWorldView(), point);
+```
+
+**Where this applies:** `Rs2Tile` (`isTileReachable`, `isWalkable(WorldPoint)`,
+`getReachableTilesFromTile`, `isTileObjectReachable`, `isGameObjectReachable`),
+`Rs2GameObject.isReachable`, `AbstractEntityQueryable.within(WorldPoint, int)` /
+`nearest(WorldPoint, int)` (template anchors are mapped onto the scene).
+
+**Defensive check:** `SceneSpaceTest` (both spaces resolve to one scene tile, and the template
+lookup inverts RuneLite's `fromLocalInstance` for all four chunk rotations) and
+`Rs2GameObjectFootprintReachableTest`.

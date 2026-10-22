@@ -1,6 +1,7 @@
 package net.runelite.client.plugins.projectx.util.coords;
 
 import net.runelite.api.Perspective;
+import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.projectx.ProjectX;
@@ -9,57 +10,38 @@ import static net.runelite.api.Constants.CHUNK_SIZE;
 
 public class Rs2LocalPoint {
     /**
-     * Used to convert a worldpoint in an instance to a localpoint
-     * @param worldPoint
-     * @return
+     * Converts a template (real-world) point inside an instance to its scene tile. One template
+     * chunk can be placed several times in an instance (a house reuses its room templates), so the
+     * same template tile can be in more than one place; the copy nearest the player wins, because
+     * the first match could be a room away and off the minimap.
+     *
+     * <p>Only for template points. A point already in instance (scene) coordinates, such as any
+     * queryable model's {@code getWorldLocation()}, is not found here; use
+     * {@link SceneSpace#toLocal} when the point may be in either space.
+     *
+     * @param worldPoint template point
+     * @return the scene tile, or null when no instance chunk holds that template tile
      */
     public static LocalPoint fromWorldInstance(WorldPoint worldPoint)
     {
         return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-            int[][][] instanceTemplateChunks = ProjectX.getClient().getTopLevelWorldView().getInstanceTemplateChunks();
-            int worldX = worldPoint.getX();
-            int worldY = worldPoint.getY();
-            int worldPlane = ProjectX.getClient().getTopLevelWorldView().getPlane();
+            WorldView wv = ProjectX.getClient().getTopLevelWorldView();
+            int[][][] instanceTemplateChunks = wv.getInstanceTemplateChunks();
+            int worldPlane = wv.getPlane();
+            if (instanceTemplateChunks == null || worldPlane < 0 || worldPlane >= instanceTemplateChunks.length) {
+                return null;
+            }
             net.runelite.api.Player player = ProjectX.getClient().getLocalPlayer();
             LocalPoint playerLocal = player == null ? null : player.getLocalLocation();
-            int[] playerScene = playerLocal == null ? null : new int[]{playerLocal.getSceneX(), playerLocal.getSceneY()};
-            LocalPoint best = null;
-            int bestDistance = Integer.MAX_VALUE;
 
-            for (int chunkX = 0; chunkX < instanceTemplateChunks[worldPlane].length; chunkX++)
-            {
-                for (int chunkY = 0; chunkY < instanceTemplateChunks[worldPlane][chunkX].length; chunkY++)
-                {
-                    int templateChunk = instanceTemplateChunks[worldPlane][chunkX][chunkY];
-
-                    int rotation = (templateChunk >> 1) & 0x3;
-                    int templateChunkY = (templateChunk >> 3 & 0x7FF) * CHUNK_SIZE;
-                    int templateChunkX = (templateChunk >> 14 & 0x3FF) * CHUNK_SIZE;
-                    int templateChunkPlane = (templateChunk >> 24) & 0x3;
-
-                    WorldPoint rotatedWorldPoint = rotate(new WorldPoint(worldX, worldY, templateChunkPlane), rotation);
-
-                    if (rotatedWorldPoint.getX() >= templateChunkX && rotatedWorldPoint.getX() < templateChunkX + CHUNK_SIZE
-                            && rotatedWorldPoint.getY() >= templateChunkY && rotatedWorldPoint.getY() < templateChunkY + CHUNK_SIZE)
-                    {
-                        int localX = (rotatedWorldPoint.getX() - templateChunkX) + (chunkX * CHUNK_SIZE);
-                        int localY = (rotatedWorldPoint.getY() - templateChunkY) + (chunkY * CHUNK_SIZE);
-
-                        // One template chunk can be placed several times in an instance (a house
-                        // reuses its room templates), so the same template tile can be in more than
-                        // one place. The first match could be a room away and off the minimap; the
-                        // walker means the copy beside the player.
-                        int distance = playerScene == null ? 0
-                                : Math.max(Math.abs(localX - playerScene[0]), Math.abs(localY - playerScene[1]));
-                        if (best == null || distance < bestDistance) {
-                            best = LocalPoint.fromScene(localX, localY, ProjectX.getClient().getTopLevelWorldView());
-                            bestDistance = distance;
-                        }
-                    }
-                }
+            int tile = SceneSpace.templateToScene(instanceTemplateChunks[worldPlane],
+                    worldPoint.getX(), worldPoint.getY(),
+                    playerLocal == null ? -1 : playerLocal.getSceneX(),
+                    playerLocal == null ? -1 : playerLocal.getSceneY());
+            if (tile == SceneSpace.NONE) {
+                return null;
             }
-
-            return best;
+            return LocalPoint.fromScene(SceneSpace.sceneX(tile), SceneSpace.sceneY(tile), wv);
         }).orElse(null);
     }
 

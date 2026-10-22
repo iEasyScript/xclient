@@ -13,6 +13,7 @@ import net.runelite.client.plugins.projectx.util.antiban.Rs2AntibanSettings;
 import net.runelite.client.plugins.projectx.util.coords.Rs2LocalPoint;
 import net.runelite.client.plugins.projectx.util.coords.Rs2WorldArea;
 import net.runelite.client.plugins.projectx.util.coords.Rs2WorldPoint;
+import net.runelite.client.plugins.projectx.util.coords.SceneSpace;
 import net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject;
 import net.runelite.client.plugins.projectx.util.misc.Rs2UiHelper;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
@@ -229,7 +230,9 @@ public abstract class Rs2Tile implements Tile {
         final WorldView wv = ProjectX.getClient().getTopLevelWorldView();
         if (wv == null) return false;
 
-        return isWalkableLocalInternal(LocalPoint.fromWorld(wv, worldPoint));
+        // Either coordinate space: inside an instance this takes the template tile scripts write
+        // as well as the instance tile the game and the queryable models hand out.
+        return isWalkableLocalInternal(SceneSpace.toLocal(wv, worldPoint));
     }
 
     private static int[][] getFlagsInternal() {
@@ -358,7 +361,10 @@ public abstract class Rs2Tile implements Tile {
         if (flags == null) return tileDistances;
 
         final WorldView wv = ProjectX.getClient().getTopLevelWorldView();
-        final boolean isInstance = wv.getScene().isInstance();
+        // Inside an instance the start (and so every key) may be in either space. A template point
+        // is not on the scene as given and goes through toLocalInstance; an instance point already
+        // is, and used to vanish there, leaving only the start tile "reachable".
+        final boolean isInstance = wv.getScene().isInstance() && LocalPoint.fromWorld(wv, tile) == null;
 
         final ArrayDeque<WorldPoint> queue = new ArrayDeque<>();
         tileDistances.put(tile, 0);
@@ -509,15 +515,28 @@ public abstract class Rs2Tile implements Tile {
         final WorldPoint playerLoc = Rs2Player.getWorldLocation();
         if (playerLoc == null) return false;
 
-        if (targetPoint.getPlane() != playerLoc.getPlane()) return false;
+        final WorldView wv = ProjectX.getClient().getTopLevelWorldView();
+        if (wv == null) return false;
+
+        // Inside an instance Rs2Player.getWorldLocation() is a template point, while the target may
+        // be an instance point (Rs2GameObject.isReachable, every queryable model). A point that is
+        // on the scene as given is on the scene's plane, so only a point that is not is checked
+        // against the player's (template) plane.
+        final boolean onSceneAsGiven = LocalPoint.fromWorld(wv, targetPoint) != null;
+        if (!onSceneAsGiven && targetPoint.getPlane() != playerLoc.getPlane()) return false;
         if (CollisionMap.ignoreCollisionPacked.contains(WorldPointUtil.packWorldPoint(targetPoint))) return true;
 
         final int[][] flags = getFlagsInternal();
         if (flags == null) return false;
 
+        final LocalPoint targetLocal = SceneSpace.toLocal(wv, targetPoint);
+        if (targetLocal == null) return false;
+        if (wv.getScene().isInstance() && isCollisionIgnoredInternal(wv, targetLocal.getSceneX(), targetLocal.getSceneY())) return true;
+
         final boolean[][] visited = reachableFromPlayer(flags, playerLoc);
 
-        return isVisited(targetPoint, visited);
+        return isWithinBounds(targetLocal.getSceneX(), targetLocal.getSceneY())
+                && visited[targetLocal.getSceneX()][targetLocal.getSceneY()];
     }
 
     private static boolean[][] reachableFromPlayer(int[][] flags, WorldPoint playerLoc) {
@@ -598,6 +617,80 @@ public abstract class Rs2Tile implements Tile {
         return visited;
     }
 
+    /**
+     * Whether the player can walk to a tile beside this game object, worked out entirely in scene
+     * coordinates so it gives the same answer in normal areas and in instances.
+     *
+     * <p>Same rule as before: one of the tiles ringing the object's footprint (diagonals included)
+     * must be walkable and either reachable from the player or a tile the pathfinder ignores
+     * collision on. It used to build that ring as world points and look each one up again, which
+     * inside an instance mixed instance points (the object) with template points (the player) and
+     * answered "no" for objects right beside the player.
+     */
+    public static boolean isGameObjectReachable(GameObject gameObject) {
+        return runClientReadBoolean(() -> isGameObjectReachableInternal(gameObject));
+    }
+
+    private static boolean isGameObjectReachableInternal(GameObject gameObject) {
+        if (gameObject == null) return false;
+
+        final LocalPoint objectLocal = gameObject.getLocalLocation();
+        if (objectLocal == null || !objectLocal.isInScene()) return false;
+
+        final Point min = gameObject.getSceneMinLocation();
+        final Point max = gameObject.getSceneMaxLocation();
+        if (min == null || max == null) return false;
+
+        final WorldView wv = ProjectX.getClient().getTopLevelWorldView();
+        if (wv == null) return false;
+
+        final WorldPoint playerLoc = Rs2Player.getWorldLocation();
+        if (playerLoc == null) return false;
+
+        final int[][] flags = getFlagsInternal();
+        if (flags == null) return false;
+
+        final boolean[][] reachable = reachableFromPlayer(flags, playerLoc);
+        return canReachFootprint(flags, reachable, min.getX(), min.getY(), max.getX(), max.getY(),
+                (x, y) -> isCollisionIgnoredInternal(wv, x, y));
+    }
+
+    /** A scene-tile test; see {@link #canReachFootprint}. */
+    @FunctionalInterface
+    interface SceneTileTest {
+        boolean test(int sceneX, int sceneY);
+    }
+
+    /**
+     * Pure scene maths behind {@link #isGameObjectReachable}: true when a tile ringing the
+     * footprint {@code [minX..maxX] x [minY..maxY]} is on the scene, walkable, and reachable (or
+     * passes {@code alwaysReachable}).
+     */
+    static boolean canReachFootprint(int[][] flags, boolean[][] reachable, int minX, int minY, int maxX, int maxY,
+                                     SceneTileTest alwaysReachable) {
+        for (int x = minX - 1; x <= maxX + 1; x++) {
+            for (int y = minY - 1; y <= maxY + 1; y++) {
+                if (x >= minX && x <= maxX && y >= minY && y <= maxY) continue;
+                if (!isWithinBounds(x, y)) continue;
+                if (!isWalkable(flags, x, y)) continue;
+                if (reachable[x][y] || (alwaysReachable != null && alwaysReachable.test(x, y))) return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Whether the pathfinder ignores collision on this scene tile. Its list is in real-world
+     * coordinates, so inside an instance the tile is converted to its template point first.
+     */
+    private static boolean isCollisionIgnoredInternal(WorldView wv, int sceneX, int sceneY) {
+        if (CollisionMap.ignoreCollisionPacked.isEmpty()) return false;
+        final WorldPoint real = wv.getScene().isInstance()
+                ? WorldPoint.fromLocalInstance(ProjectX.getClient(), LocalPoint.fromScene(sceneX, sceneY, wv))
+                : WorldPoint.fromScene(wv, sceneX, sceneY, wv.getPlane());
+        return real != null && CollisionMap.ignoreCollisionPacked.contains(WorldPointUtil.packWorldPoint(real));
+    }
+
     public static boolean isTileObjectReachable(TileObject tileObject) {
         return runClientReadBoolean(() -> isTileObjectReachableInternal(tileObject));
     }
@@ -606,12 +699,22 @@ public abstract class Rs2Tile implements Tile {
         if (tileObject == null) return false;
 
         final WorldPoint playerLoc = Rs2Player.getWorldLocation();
-        if (playerLoc == null || tileObject.getPlane() != playerLoc.getPlane()) return false;
+        if (playerLoc == null) return false;
+
+        final WorldView wv = ProjectX.getClient().getTopLevelWorldView();
+        if (wv == null) return false;
+
+        // The object's plane is a scene plane. Inside an instance the player's world location is a
+        // template point, whose plane is the template chunk's and need not be the scene's.
+        final boolean instance = wv.getScene().isInstance();
+        final int playerPlane = instance ? wv.getPlane() : playerLoc.getPlane();
+        if (tileObject.getPlane() != playerPlane) return false;
 
         final LocalPoint objectLocal = tileObject.getLocalLocation();
         if (objectLocal == null || !objectLocal.isInScene()) return false;
 
         if (CollisionMap.ignoreCollisionPacked.contains(WorldPointUtil.packWorldPoint(tileObject.getWorldLocation()))) return true;
+        if (instance && isCollisionIgnoredInternal(wv, objectLocal.getSceneX(), objectLocal.getSceneY())) return true;
 
         final int[][] flags = getFlagsInternal();
         if (flags == null) return false;
@@ -773,25 +876,15 @@ public abstract class Rs2Tile implements Tile {
      * @return True if the tile has been visited and is within bounds, otherwise false.
      */
     private static boolean isVisited(WorldPoint worldPoint, boolean[][] visited) {
-        int baseX = 0;
-        int baseY = 0;
-        int x = 0;
-        int y = 0;
-        if (ProjectX.getClient().getTopLevelWorldView().getScene().isInstance()) {
-            LocalPoint localPoint = Rs2LocalPoint.fromWorldInstance(worldPoint);
-            if (localPoint == null) {
-                return false;
-            }
-            x = localPoint.getSceneX();
-            y = localPoint.getSceneY();
-        } else {
-            baseX = ProjectX.getClient().getTopLevelWorldView().getBaseX();
-            baseY = ProjectX.getClient().getTopLevelWorldView().getBaseY();
-            x = worldPoint.getX() - baseX;
-            y = worldPoint.getY() - baseY;
+        // Either coordinate space (see SceneSpace). This used to read every point inside an
+        // instance as a template point, so an instance point - what objects, NPCs and the
+        // queryable models report - was never found and everything was "unreachable".
+        LocalPoint localPoint = SceneSpace.toLocal(ProjectX.getClient().getTopLevelWorldView(), worldPoint);
+        if (localPoint == null) {
+            return false;
         }
-
-
+        int x = localPoint.getSceneX();
+        int y = localPoint.getSceneY();
         return isWithinBounds(x, y) && visited[x][y];
     }
 
