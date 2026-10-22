@@ -157,4 +157,9 @@ public class MasterPanel extends PluginPanel
 
         header.refresh();
     }
+
+    /** Called off the Swing thread by the plugin's refresh timer, before loadSettings. */
+    public void refreshBusyState() {
+        header.refreshBusyState();
+    }
 }

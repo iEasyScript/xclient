@@ -36,6 +36,7 @@ class AntibanStatusHeader extends JPanel
     private final JLabel activity = value();
     private final JLabel intensity = value();
     private final JLabel busy = value();
+    private volatile Boolean busyState;
 
     AntibanStatusHeader()
     {
@@ -172,17 +173,26 @@ class AntibanStatusHeader extends JPanel
             ? Rs2Antiban.getActivityIntensity().getName()
             : AntibanUi.NO_VALUE);
 
-        if (Rs2Antiban.getCategory() == null)
+        Boolean isBusy = busyState;
+        if (isBusy == null)
         {
             busy.setText(AntibanUi.NO_VALUE);
             busy.setForeground(AntibanUi.TEXT);
         }
         else
         {
-            boolean isBusy = Rs2Antiban.getCategory().isBusy();
             busy.setText(isBusy ? "Yes" : "No");
             busy.setForeground(isBusy ? AntibanUi.ACCENT : AntibanUi.TEXT);
         }
+    }
+
+    /**
+     * Reads the category's busy state. Call this off the Swing thread: isBusy() can wait on
+     * the client thread, which froze the UI for up to 10s per refresh.
+     */
+    void refreshBusyState()
+    {
+        busyState = Rs2Antiban.getCategory() != null ? Rs2Antiban.getCategory().isBusy() : null;
     }
 
     private void reset()

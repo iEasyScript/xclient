@@ -189,8 +189,8 @@ public class QuestScript extends Script {
                     }
                 }
 
-                if (getQuestHelperPlugin().getSelectedQuest() != null && !ProjectX.getClientThread().runOnClientThreadOptional(() ->
-                        getQuestHelperPlugin().getSelectedQuest().isCompleted()).orElse(null)) {
+                QuestHelper selectedQuest = getQuestHelperPlugin().getSelectedQuest();
+                if (selectedQuest != null && !ProjectX.getClientThread().runOnClientThreadOptional(selectedQuest::isCompleted).orElse(true)) {
                     // An option menu is up that selectDialogueOption() could not account for.
                     // The Cook's Assistant exemption that used to sit on this branch is gone with
                     // it: that quest was carved out because this path would wreck its opening

@@ -110,6 +110,9 @@ public class Rs2ActorModel implements Actor
     @Override
     public int getAnimation()
     {
+        if (actor == null) {
+            return -1;
+        }
         return actor.getAnimation();
     }
 

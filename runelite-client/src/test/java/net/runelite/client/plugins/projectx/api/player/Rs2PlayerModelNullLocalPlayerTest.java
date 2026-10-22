@@ -10,6 +10,7 @@ import net.runelite.client.plugins.projectx.api.player.models.Rs2PlayerModel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -52,5 +53,10 @@ public class Rs2PlayerModelNullLocalPlayerTest {
         assertNull(player.getLocalLocation());
         assertNull(player.projectActorLocationToMainWorld());
         verifyNoInteractions(clientThread);
+    }
+
+    @Test
+    public void animationIsIdleWithoutLocalPlayer() {
+        assertEquals(-1, new Rs2PlayerModel().getAnimation());
     }
 }
