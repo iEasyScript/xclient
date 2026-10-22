@@ -43,6 +43,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -57,6 +58,7 @@ import net.runelite.client.RuneLite;
 public class ProfileManager {
     private static final File PROFILES_DIR = new File(RuneLite.RUNELITE_DIR, "projectx-profiles");
     private static final File PROFILES = new File(PROFILES_DIR, "profiles.json");
+    private static final ReentrantLock PROCESS_LOCK = new ReentrantLock();
 
     private final Gson gson;
 
@@ -73,11 +75,26 @@ public class ProfileManager {
 
         @SneakyThrows
         public Lock() {
-            lockFile = new File(PROFILES_DIR, "profiles.lck");
-            lockOut = new FileOutputStream(lockFile);
-            lockChannel = lockOut.getChannel();
-            lockChannel.lock();
-            profiles = new ArrayList<>(load());
+            PROCESS_LOCK.lock();
+            FileOutputStream out = null;
+            try {
+                lockFile = new File(PROFILES_DIR, "profiles.lck");
+                out = new FileOutputStream(lockFile);
+                out.getChannel().lock();
+                lockOut = out;
+                lockChannel = out.getChannel();
+                profiles = new ArrayList<>(load());
+            } catch (Throwable t) {
+                if (out != null) {
+                    try {
+                        out.close();
+                    } catch (IOException e) {
+                        t.addSuppressed(e);
+                    }
+                }
+                PROCESS_LOCK.unlock();
+                throw t;
+            }
         }
 
         private List<ConfigProfile> load() {
@@ -97,6 +114,19 @@ public class ProfileManager {
         @Override
         @SneakyThrows
         public void close() {
+            try {
+                save();
+            } finally {
+                try {
+                    lockOut.close();
+                    lockFile.delete();
+                } finally {
+                    PROCESS_LOCK.unlock();
+                }
+            }
+        }
+
+        private void save() throws IOException {
             if (modified) {
                 log.debug("saving {} profiles", profiles.size());
 
@@ -119,9 +149,6 @@ public class ProfileManager {
                     Files.move(tempFile.toPath(), PROFILES.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 }
             }
-
-            lockOut.close();
-            lockFile.delete();
         }
 
         public List<ConfigProfile> getProfiles() {
