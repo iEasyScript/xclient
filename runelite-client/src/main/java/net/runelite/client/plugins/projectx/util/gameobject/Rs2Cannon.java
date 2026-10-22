@@ -3,8 +3,8 @@ package net.runelite.client.plugins.projectx.util.gameobject;
 import net.runelite.api.ObjectID;
 import net.runelite.api.TileObject;
 import net.runelite.api.VarPlayer;
-import net.runelite.api.coords.WorldArea;
-import net.runelite.client.plugins.cannon.CannonPlugin;
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.projectx.util.math.Rs2Random;
@@ -20,15 +20,7 @@ public class Rs2Cannon {
 
         if (brokenCannon == null) return false;
 
-        // Create centered WorldArea (3x3 area with cannon at center)
-        WorldArea cannonLocation = new WorldArea(
-            brokenCannon.getWorldLocation().getX() - 1, 
-            brokenCannon.getWorldLocation().getY() - 1, 
-            3, 3, 
-            brokenCannon.getWorldLocation().getPlane()
-        );
-        WorldArea cannonPosition = CannonPlugin.getCannonPosition();
-        if (cannonPosition == null || !cannonLocation.toWorldPoint().equals(cannonPosition.toWorldPoint())) return false;
+        if (!isOwnedCannon(brokenCannon)) return false;
 
         ProjectX.status = "Repairing Cannon";
 
@@ -55,15 +47,7 @@ public class Rs2Cannon {
         TileObject cannon = Rs2GameObject.findObject(new Integer[]{ObjectID.DWARF_MULTICANNON, ObjectID.DWARF_MULTICANNON_43027});
         if (cannon == null) return false;
 
-        // Create centered WorldArea (3x3 area with cannon at center)
-        WorldArea cannonLocation = new WorldArea(
-            cannon.getWorldLocation().getX() - 1, 
-            cannon.getWorldLocation().getY() - 1, 
-            3, 3, 
-            cannon.getWorldLocation().getPlane()
-        );
-        WorldArea cannonPosition = CannonPlugin.getCannonPosition();
-        if (cannonPosition == null || !cannonLocation.toWorldPoint().equals(cannonPosition.toWorldPoint())) return false;
+        if (!isOwnedCannon(cannon)) return false;
 		ProjectX.pauseAllScripts.compareAndSet(false, true);
         Rs2GameObject.interact(cannon, "Fire");
         Rs2Player.waitForWalking();
@@ -72,6 +56,14 @@ public class Rs2Cannon {
         sleepUntil(() -> ProjectX.getClientThread().runOnClientThreadOptional(() -> ProjectX.getClient().getVarpValue(VarPlayer.CANNON_AMMO)).orElse(0) > Rs2Random.between(10, 15));
 		ProjectX.pauseAllScripts.compareAndSet(true, false);
         return true;
+    }
+
+    private static boolean isOwnedCannon(TileObject cannon) {
+        int ownedCoord = ProjectX.getVarbitPlayerValue(VarPlayerID.OWNEDMCANNON);
+        if (ownedCoord <= 0) return false;
+        WorldPoint location = cannon.getWorldLocation();
+        WorldPoint southWest = new WorldPoint(location.getX() - 1, location.getY() - 1, location.getPlane());
+        return southWest.equals(WorldPoint.fromCoord(ownedCoord));
     }
 
 }
