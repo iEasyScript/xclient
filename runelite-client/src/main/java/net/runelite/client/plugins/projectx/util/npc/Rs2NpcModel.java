@@ -6,6 +6,8 @@ import net.runelite.api.HeadIcon;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
 import net.runelite.api.NpcOverrides;
+import net.runelite.api.Player;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.api.IEntity;
@@ -89,8 +91,13 @@ public class Rs2NpcModel extends ActorModel implements NPC
 	 */
 	public boolean isWithinDistanceFromPlayer(int maxDistance) {
 		return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-			return this.getLocalLocation().distanceTo(
-					ProjectX.getClient().getLocalPlayer().getLocalLocation()) <= maxDistance;
+			Player localPlayer = ProjectX.getClient().getLocalPlayer();
+			LocalPoint playerLocation = localPlayer == null ? null : localPlayer.getLocalLocation();
+			LocalPoint npcLocation = this.getLocalLocation();
+			if (playerLocation == null || npcLocation == null) {
+				return false;
+			}
+			return npcLocation.distanceTo(playerLocation) <= maxDistance;
 		}).orElse(false);
 	}
 
@@ -102,8 +109,13 @@ public class Rs2NpcModel extends ActorModel implements NPC
 	 */
 	public int getDistanceFromPlayer() {
 		return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-			return this.getLocalLocation().distanceTo(
-					ProjectX.getClient().getLocalPlayer().getLocalLocation());
+			Player localPlayer = ProjectX.getClient().getLocalPlayer();
+			LocalPoint playerLocation = localPlayer == null ? null : localPlayer.getLocalLocation();
+			LocalPoint npcLocation = this.getLocalLocation();
+			if (playerLocation == null || npcLocation == null) {
+				return Integer.MAX_VALUE;
+			}
+			return npcLocation.distanceTo(playerLocation);
 		}).orElse(Integer.MAX_VALUE);
 	}
 

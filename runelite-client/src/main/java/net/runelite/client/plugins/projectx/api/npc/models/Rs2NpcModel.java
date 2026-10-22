@@ -57,8 +57,13 @@ public class Rs2NpcModel extends Rs2ActorModel implements IEntity
      */
     public boolean isWithinDistanceFromPlayer(int maxDistance) {
         return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-            return this.getLocalLocation().distanceTo(
-                    ProjectX.getClient().getLocalPlayer().getLocalLocation()) <= maxDistance;
+            Player localPlayer = ProjectX.getClient().getLocalPlayer();
+            LocalPoint playerLocation = localPlayer == null ? null : localPlayer.getLocalLocation();
+            LocalPoint npcLocation = this.getLocalLocation();
+            if (playerLocation == null || npcLocation == null) {
+                return false;
+            }
+            return npcLocation.distanceTo(playerLocation) <= maxDistance;
         }).orElse(false);
     }
 
@@ -70,8 +75,13 @@ public class Rs2NpcModel extends Rs2ActorModel implements IEntity
      */
     public int getDistanceFromPlayer() {
         return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-            return this.getLocalLocation().distanceTo(
-                    ProjectX.getClient().getLocalPlayer().getLocalLocation());
+            Player localPlayer = ProjectX.getClient().getLocalPlayer();
+            LocalPoint playerLocation = localPlayer == null ? null : localPlayer.getLocalLocation();
+            LocalPoint npcLocation = this.getLocalLocation();
+            if (playerLocation == null || npcLocation == null) {
+                return Integer.MAX_VALUE;
+            }
+            return npcLocation.distanceTo(playerLocation);
         }).orElse(Integer.MAX_VALUE);
     }
 
