@@ -5,6 +5,7 @@
 package net.runelite.client.ui;
 
 import java.awt.*;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -16,13 +17,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.border.MatteBorder;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.swing.text.DefaultCaret;
@@ -148,6 +153,8 @@ final class LogConsolePanel extends JPanel
 			}
 		});
 
+		textArea.setComponentPopupMenu(buildContextMenu());
+
 		// opening the console lands on the newest line, wherever the view was left
 		addHierarchyListener(ev ->
 		{
@@ -270,6 +277,57 @@ final class LogConsolePanel extends JPanel
 		}
 
 		appendOnEdt(text.replace("\r", ""));
+	}
+
+	private JPopupMenu buildContextMenu()
+	{
+		JPopupMenu menu = new JPopupMenu();
+		JMenuItem copy = new JMenuItem("Copy");
+		copy.addActionListener(ev -> textArea.copy());
+		JMenuItem copyAll = new JMenuItem("Copy all");
+		copyAll.addActionListener(ev -> copyToClipboard(textArea.getText()));
+		JMenuItem selectAll = new JMenuItem("Select all");
+		selectAll.addActionListener(ev ->
+		{
+			followTail = false;
+			textArea.requestFocusInWindow();
+			textArea.selectAll();
+		});
+		JMenuItem clear = new JMenuItem("Clear");
+		clear.addActionListener(ev -> clear());
+		menu.add(copy);
+		menu.add(copyAll);
+		menu.add(selectAll);
+		menu.addSeparator();
+		menu.add(clear);
+		menu.addPopupMenuListener(new PopupMenuListener()
+		{
+			@Override
+			public void popupMenuWillBecomeVisible(PopupMenuEvent ev)
+			{
+				copy.setEnabled(textArea.getSelectionStart() != textArea.getSelectionEnd());
+				boolean hasText = textArea.getDocument().getLength() > 0;
+				copyAll.setEnabled(hasText);
+				selectAll.setEnabled(hasText);
+				clear.setEnabled(hasText);
+			}
+
+			@Override
+			public void popupMenuWillBecomeInvisible(PopupMenuEvent ev)
+			{
+			}
+
+			@Override
+			public void popupMenuCanceled(PopupMenuEvent ev)
+			{
+			}
+		});
+		return menu;
+	}
+
+	private static void copyToClipboard(String text)
+	{
+		Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
 	}
 
 	void clear()

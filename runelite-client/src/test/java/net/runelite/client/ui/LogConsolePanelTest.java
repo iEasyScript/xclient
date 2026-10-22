@@ -9,12 +9,16 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -22,6 +26,8 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.text.BadLocationException;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,6 +58,37 @@ public class LogConsolePanelTest
 		panel.append(lines(0, 200));
 		settle();
 		assertTrue(isAtBottom());
+	}
+
+	@Test
+	public void rightClickMenuOffersCopyOnlyForASelection() throws Exception
+	{
+		onEdt(() ->
+		{
+			JPopupMenu menu = textArea.getComponentPopupMenu();
+			assertEquals(Arrays.asList("Copy", "Copy all", "Select all", "Clear"), Arrays.stream(menu.getComponents())
+				.filter(c -> c instanceof JMenuItem)
+				.map(c -> ((JMenuItem) c).getText())
+				.collect(Collectors.toList()));
+			JMenuItem copy = (JMenuItem) menu.getComponent(0);
+
+			textArea.select(0, 0);
+			fireWillBecomeVisible(menu);
+			assertFalse(copy.isEnabled());
+
+			textArea.select(0, 5);
+			fireWillBecomeVisible(menu);
+			assertTrue(copy.isEnabled());
+		});
+	}
+
+	private static void fireWillBecomeVisible(JPopupMenu menu)
+	{
+		PopupMenuEvent event = new PopupMenuEvent(menu);
+		for (PopupMenuListener listener : menu.getPopupMenuListeners())
+		{
+			listener.popupMenuWillBecomeVisible(event);
+		}
 	}
 
 	@Test
