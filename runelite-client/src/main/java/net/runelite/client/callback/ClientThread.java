@@ -98,7 +98,7 @@ public class ClientThread
 				Thread.currentThread().interrupt();
 				return Optional.empty();
 			}
-			task.cancel(true);
+			task.cancel(false);
 			if (e instanceof TimeoutException) {
 				if (timeoutMillis < clientThreadTimeoutMillis)
 				{

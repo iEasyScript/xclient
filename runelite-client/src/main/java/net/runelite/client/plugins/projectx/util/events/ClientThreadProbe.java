@@ -5,7 +5,7 @@ import net.runelite.client.plugins.projectx.ProjectX;
 
 final class ClientThreadProbe
 {
-	static final long VALIDATE_TIMEOUT_MILLIS = 1000;
+	static final long VALIDATE_TIMEOUT_MILLIS = 2000;
 
 	private ClientThreadProbe()
 	{
