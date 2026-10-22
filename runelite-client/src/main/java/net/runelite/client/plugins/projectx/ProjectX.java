@@ -609,6 +609,9 @@ public class ProjectX {
             } else {
                 SwingUtilities.invokeAndWait(dialog);
             }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            log.debug("Interrupted while displaying message {}", message);
         } catch (Exception ex) {
             log.error("Error displaying message {}:", message, ex);
         }
@@ -954,7 +957,9 @@ public class ProjectX {
                 log.warn(message);
                 break;
             case ERROR:
-                if (ex != null) {
+                if (causedByInterrupt(ex)) {
+                    log.debug(message, ex);
+                } else if (ex != null) {
                     log.error(message, ex);
                 } else {
                     log.error(message);
