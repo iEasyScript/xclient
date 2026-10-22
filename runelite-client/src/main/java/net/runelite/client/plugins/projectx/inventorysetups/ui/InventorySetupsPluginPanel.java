@@ -982,7 +982,8 @@ public class InventorySetupsPluginPanel extends PluginPanel
 		// Always output the unassigned setups in the defined order of the provided setups
 		for (final InventorySetup setup : setups)
 		{
-			if (plugin.getCache().getSetupSectionsMap().get(setup.getName()).size() == 0)
+			final Map<String, InventorySetupsSection> sectionsOfSetup = plugin.getCache().getSetupSectionsMap().get(setup.getName());
+			if (sectionsOfSetup != null && sectionsOfSetup.isEmpty())
 			{
 				unassignedSection.getSetups().add(setup.getName());
 				setupsInSection.add(setup.getName());

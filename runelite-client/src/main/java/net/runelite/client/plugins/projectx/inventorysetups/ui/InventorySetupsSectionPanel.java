@@ -252,7 +252,7 @@ public class InventorySetupsSectionPanel extends JPanel implements InventorySetu
 			{
 				if (plugin.getConfig().panelView() == InventorySetupsPanelViewID.ICON)
 				{
-					List<InventorySetup> setupObjectsInSection = section.getSetups().stream().map(setupName -> plugin.getCache().getInventorySetupNames().get(setupName)).collect(Collectors.toList());
+					List<InventorySetup> setupObjectsInSection = section.getSetups().stream().map(setupName -> plugin.getCache().getInventorySetupNames().get(setupName)).filter(Objects::nonNull).collect(Collectors.toList());
 					final JPanel iconGridPanel = createIconPanelGrid(plugin, panel, setupObjectsInSection, MAX_ICONS_PER_ROW, setupNamesToBeDisplayed, section, allowEditable);
 					panelWithSetups.add(iconGridPanel, constraints);
 					constraints.gridy++;
@@ -269,6 +269,10 @@ public class InventorySetupsSectionPanel extends JPanel implements InventorySetu
 							continue;
 						}
 						final InventorySetup setupInSection = plugin.getCache().getInventorySetupNames().get(name);
+						if (setupInSection == null)
+						{
+							continue;
+						}
 						createSetupPanelForSection(setupInSection, section, constraints, allowEditable);
 					}
 				}
