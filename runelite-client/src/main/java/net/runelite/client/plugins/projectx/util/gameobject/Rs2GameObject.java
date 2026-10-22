@@ -1805,7 +1805,10 @@ public class Rs2GameObject {
             int dy = playerLocal.getSceneY() - objectLocal.getSceneY();
             tooFar = Math.max(Math.abs(dx), Math.abs(dy)) > 51;
         } else {
-            tooFar = Rs2Player.getWorldLocation().distanceTo(object.getWorldLocation()) > 51;
+            WorldPoint playerWorld = Rs2Player.getWorldLocation();
+            WorldPoint objectWorld = object.getWorldLocation();
+            if (playerWorld == null || objectWorld == null) return false;
+            tooFar = playerWorld.distanceTo(objectWorld) > 51;
         }
         if (tooFar) {
             ProjectX.log("Object with id " + object.getId() + " is not close enough to interact with. Walking to the object....");
