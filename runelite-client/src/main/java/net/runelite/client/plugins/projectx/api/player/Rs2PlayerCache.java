@@ -9,6 +9,7 @@ import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.api.player.models.Rs2PlayerModel;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -20,8 +21,8 @@ public final class Rs2PlayerCache {
     private final Client client;
     private final ClientThread clientThread;
 
-    private int lastUpdatePlayers = 0;
-    private List<Rs2PlayerModel> players = new ArrayList<>();
+    private volatile int lastUpdatePlayers = 0;
+    private volatile List<Rs2PlayerModel> players = new ArrayList<>();
 
     @Inject
     public Rs2PlayerCache(Client client, ClientThread clientThread) {
@@ -38,27 +39,30 @@ public final class Rs2PlayerCache {
      * @return Stream of Rs2PlayerModel
      */
     public Stream<Rs2PlayerModel> getStream() {
-        if (lastUpdatePlayers >= client.getTickCount()) {
-            return players.stream();
-        }
-
-        List<Rs2PlayerModel> result = new ArrayList<>();
-
-        for (var id : ProjectX.getWorldViewIds()) {
-            WorldView worldView = client.getWorldView(id);
-            if (worldView == null) {
-                continue;
+        return clientThread.runOnClientThreadOptional(() -> {
+            int tick = client.getTickCount();
+            if (lastUpdatePlayers >= tick) {
+                return players;
             }
-            result.addAll(worldView.players()
-                    .stream()
-                    .filter(Objects::nonNull)
-                    .map(Rs2PlayerModel::new)
-                    .collect(Collectors.toList()));
-        }
 
-        players = result;
-        lastUpdatePlayers = client.getTickCount();
-        return players.stream();
+            List<Rs2PlayerModel> result = new ArrayList<>();
+
+            for (var id : ProjectX.getWorldViewIds()) {
+                WorldView worldView = client.getWorldView(id);
+                if (worldView == null) {
+                    continue;
+                }
+                result.addAll(worldView.players()
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .map(Rs2PlayerModel::new)
+                        .collect(Collectors.toList()));
+            }
+
+            players = result;
+            lastUpdatePlayers = tick;
+            return result;
+        }).orElse(Collections.emptyList()).stream();
     }
 
     /**
