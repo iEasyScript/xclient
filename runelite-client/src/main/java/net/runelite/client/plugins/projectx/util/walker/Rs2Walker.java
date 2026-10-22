@@ -2880,11 +2880,11 @@ public class Rs2Walker {
                     break;
                 }
                 nextWalkingDistance = path.size() <= 5 ? 0 : Rs2Random.between(9, 12);
-                int dist2d = currentWorldPoint.distanceTo2D(Rs2Player.getWorldLocation());
+                WorldPoint playerLoc = Rs2Player.getWorldLocation();
+                if (playerLoc == null) { exitReason = "player-location-null"; break; }
+                int dist2d = currentWorldPoint.distanceTo2D(playerLoc);
                 boolean approachPlannedTransportOrigin = shouldApproachPlannedTransportOrigin(
-                        hasExplicitTransportStep(path, i),
-                        currentWorldPoint,
-                        Rs2Player.getWorldLocation(),
+                        hasExplicitTransportStep(path, i), currentWorldPoint, playerLoc,
                         RAW_TRANSPORT_DISPATCH_MAX_DISTANCE);
                 if (dist2d > nextWalkingDistance || approachPlannedTransportOrigin) {
                     tmarkPostTransport("post_transport_click_eligibility", target,
@@ -2893,7 +2893,6 @@ public class Rs2Walker {
                     // Minimap clickable area is a circle, so reach is a Euclidean radius —
                     // cardinal tiles reach ~13, diagonals ~9. Empirically 14 was too
                     // optimistic (clicks at 13.5–13.9 Euclidean missed the clip).
-                    WorldPoint playerLoc = Rs2Player.getWorldLocation();
                     final int MINIMAP_REACH_EUCLIDEAN = NORMAL_MINIMAP_REACH_EUCLIDEAN;
 
 					// Checkpoint-style walking: once we set a minimap flag, let the player actually
@@ -2923,7 +2922,7 @@ public class Rs2Walker {
                                 }
 								final WorldPoint posBeforeWait = playerLoc;
 								sleepUntil(() ->
-												interimFinal.distanceTo2D(Rs2Player.getWorldLocation()) <= interimPreclickTiles()
+												isPlayerWithin2D(interimFinal, interimPreclickTiles())
 														|| !Rs2Player.isMoving(),
 										INTERIM_MOVING_POLL_MS);
                                 WorldPoint posAfterWait = Rs2Player.getWorldLocation();
@@ -3169,7 +3168,7 @@ public class Rs2Walker {
                     // Keep stuck-detection honest: observed movement resets the movement timer.
                     // Without this, isStuckTooLong() fires after long successful walks because
                     // routeState.lastMovedTimeMs is only refreshed at processWalk entry (not during the loop).
-                    if (posBefore.distanceTo2D(Rs2Player.getWorldLocation()) > 0) {
+                    if (hasPlayerMovedFrom2D(posBefore)) {
                         routeState.lastMovedTimeMs = System.currentTimeMillis();
                         routeState.stuckCount = 0;
                     }
@@ -10745,6 +10744,16 @@ public class Rs2Walker {
     public static boolean isNear(WorldPoint target) {
         WorldPoint pl = Rs2Player.getWorldLocation();
         return pl != null && pl.equals(target);
+    }
+
+    private static boolean isPlayerWithin2D(WorldPoint from, int tiles) {
+        WorldPoint playerLoc = Rs2Player.getWorldLocation();
+        return playerLoc != null && from.distanceTo2D(playerLoc) <= tiles;
+    }
+
+    private static boolean hasPlayerMovedFrom2D(WorldPoint from) {
+        WorldPoint playerLoc = Rs2Player.getWorldLocation();
+        return playerLoc != null && from.distanceTo2D(playerLoc) > 0;
     }
 
     public static boolean isNearPath() {
