@@ -37,6 +37,7 @@ public class ConfigProfile
 	private final long id;
 	@Getter
 	@Setter
+	@ToString.Exclude
     public String name;
 	// Profiles are logged with {} in several places; secrets stay out of toString.
 	@Getter
