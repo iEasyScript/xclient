@@ -15,6 +15,7 @@ import net.runelite.client.plugins.projectx.util.security.LoginLockout;
 import net.runelite.client.plugins.projectx.util.security.LoginManager;
 import net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ThreadLocalRandom;
@@ -72,6 +73,20 @@ public class AutoLoginScript extends Script {
     private Instant lastLoginAttemptTime = null;
     private long lastExtendedSleepLoggedMinute = -1;
     private boolean lockoutLogged = false;
+    private Clock clock = Clock.systemUTC();
+
+    void setClock(Clock clock) {
+        this.clock = clock;
+    }
+
+    String getLoginStateName() {
+        return loginState.name();
+    }
+
+    int getRetryCount() {
+        return retryCount;
+    }
+
 
 
     public boolean run(AutoLoginConfig autoLoginConfig) {
@@ -102,7 +117,7 @@ public class AutoLoginScript extends Script {
     /**
      * Main state machine for auto login processing.
      */
-    private void processAutoLoginStateMachine(AutoLoginConfig config) {
+    void processAutoLoginStateMachine(AutoLoginConfig config) {
         switch (loginState) {
             case WAITING_FOR_LOGIN_SCREEN:
                 handleWaitingForLoginScreenState(config);
@@ -157,25 +172,29 @@ public class AutoLoginScript extends Script {
         }
 
         if (waitForLoginLockout()) {
-            lastLoginAttemptTime = Instant.now();
+            lastLoginAttemptTime = Instant.now(clock);
             loginWatchdogStartTime = null;
             return;
         }
 
         // check login watchdog timeout if enabled
         if (config.enableLoginWatchdog() && loginWatchdogStartTime != null) {
-            long watchdogTime = Duration.between(loginWatchdogStartTime, Instant.now()).toMinutes();
+            long watchdogTime = Duration.between(loginWatchdogStartTime, Instant.now(clock)).toMinutes();
             if (watchdogTime >= config.loginWatchdogTimeout()) {
                 log.warn("Login watchdog timeout reached after {} minutes, entering extended sleep", watchdogTime);
-                extendedSleepStartTime = Instant.now();
+                extendedSleepStartTime = Instant.now(clock);
                 transitionToState(LoginState.LOGIN_EXTENDED_SLEEP);
                 return;
             }
         }
 
+        if (LoginManager.getGameState() != GameState.LOGIN_SCREEN) {
+            return;
+        }
+
         // check if enough time has passed for retry — uses exponential backoff
         if (lastLoginAttemptTime != null) {
-            long timeSinceLastAttempt = Duration.between(lastLoginAttemptTime, Instant.now()).toSeconds();
+            long timeSinceLastAttempt = Duration.between(lastLoginAttemptTime, Instant.now(clock)).toSeconds();
             int backoff = computeRetryBackoffSeconds(retryCount, config.loginRetryDelay());
             if (timeSinceLastAttempt < backoff) {
                 return;
@@ -186,7 +205,7 @@ public class AutoLoginScript extends Script {
         if (retryCount >= config.maxLoginRetries()) {
             if (config.enableLoginWatchdog()) {
                 log.warn("Max login retries reached, entering extended sleep");
-                extendedSleepStartTime = Instant.now();
+                extendedSleepStartTime = Instant.now(clock);
                 transitionToState(LoginState.LOGIN_EXTENDED_SLEEP);
             } else {
                 log.warn("Max login retries reached, resetting retry count");
@@ -195,8 +214,7 @@ public class AutoLoginScript extends Script {
             return;
         }
 
-        // check if still on login screen
-        if (ProjectX.getClient() != null && ProjectX.getClient().getGameState() == GameState.LOGIN_SCREEN) {
+        if (ProjectX.getClient() != null) {
             log.info("Retrying login attempt {} of {}", retryCount + 1, config.maxLoginRetries());
             int currentLoginIndex = ProjectX.getClient().getLoginIndex();
             if (ProjectX.getClient().getLoginIndex() == 3 || ProjectX.getClient().getLoginIndex() == 24) { // you were disconnected from the server.
@@ -226,12 +244,6 @@ public class AutoLoginScript extends Script {
 
             // we have to find out  other indexes that mean we cannot login
             initiateLogin(config);
-        } else {
-
-
-            // not on login screen anymore, return to waiting
-            resetLoginState();
-            transitionToState(LoginState.WAITING_FOR_LOGIN_SCREEN);
         }
     }
 
@@ -261,13 +273,13 @@ public class AutoLoginScript extends Script {
         }
 
         if (extendedSleepStartTime == null) {
-            extendedSleepStartTime = Instant.now();
+            extendedSleepStartTime = Instant.now(clock);
             log.info("Extended sleep started for {} minutes", config.extendedSleepDuration());
             return;
         }
 
         // check if extended sleep period is complete
-        long sleepTime = Duration.between(extendedSleepStartTime, Instant.now()).toMinutes();
+        long sleepTime = Duration.between(extendedSleepStartTime, Instant.now(clock)).toMinutes();
         if (sleepTime >= config.extendedSleepDuration()) {
             log.info("Extended sleep period completed after {} minutes, resuming login attempts", sleepTime);
             resetLoginState();
@@ -289,7 +301,7 @@ public class AutoLoginScript extends Script {
         try {
             // start login watchdog if enabled and not already started
             if (config.enableLoginWatchdog() && loginWatchdogStartTime == null) {
-                loginWatchdogStartTime = Instant.now();
+                loginWatchdogStartTime = Instant.now(clock);
                 log.info("Login watchdog started for {} minutes", config.loginWatchdogTimeout());
             }
 
@@ -368,7 +380,7 @@ public class AutoLoginScript extends Script {
 
             // perform login attempt and track retry state
             retryCount++;
-            lastLoginAttemptTime = Instant.now();
+            lastLoginAttemptTime = Instant.now(clock);
 
             boolean loginInitiated;
             if (targetWorld != -1) {
@@ -388,7 +400,7 @@ public class AutoLoginScript extends Script {
         } catch (Exception ex) {
             log.error("Error during intelligent login", ex);
             retryCount++;
-            lastLoginAttemptTime = Instant.now();
+            lastLoginAttemptTime = Instant.now(clock);
         }
     }
 
