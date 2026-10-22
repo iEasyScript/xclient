@@ -9250,7 +9250,8 @@ public class Rs2Walker {
                     if (transport.getType() == TransportType.SPIRIT_TREE) {
                         if (!Rs2PathApi.getPathfinderConfig().isUseSpiritTrees()) {
                             log.debug("[Walker] skip spirit tree transport — setting is off");
-                            continue;
+                            // The origin does not move with i: later indices would only repeat this skip.
+                            break;
                         }
                         if (attemptObserved(transport, () -> handleSpiritTree(transport))) {
                             sleepUntil(() -> !Rs2Player.isAnimating());
@@ -9512,6 +9513,9 @@ public class Rs2Walker {
                         }
                         return false;
                     }
+                    // No object at the origin. The scan is keyed on the origin, not on i, so every
+                    // later index would only repeat the same scene scan.
+                    break;
                 }
             }
         }
