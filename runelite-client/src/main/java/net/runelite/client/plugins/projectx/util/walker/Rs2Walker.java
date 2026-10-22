@@ -12549,11 +12549,9 @@ public class Rs2Walker {
             WalkerState state = walkWithStateInternal(target, distance);
             if (state == WalkerState.ARRIVED) {
                 WebWalkLog.bankWalkDebug("arrived goal={}", target);
-            } else {
+            } else if (state != WalkerState.MOVING) {
                 WebWalkLog.bankWalkFailed(target, state);
                 setTarget(null, "rs2walker:walkWithBankedTransports:direct-walk-failed");
-                return state;
-
             }
             return state;
         } else {
