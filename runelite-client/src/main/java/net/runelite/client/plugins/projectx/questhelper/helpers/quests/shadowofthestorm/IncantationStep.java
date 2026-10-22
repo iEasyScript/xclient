@@ -34,6 +34,7 @@ import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.eventbus.Subscribe;
 
 import java.util.Collections;
@@ -127,7 +128,7 @@ public class IncantationStep extends DetailedQuestStep
 			return;
 		}
 
-		if (widget.getId() != InterfaceID.INVENTORY)
+		if (WidgetUtil.componentToInterface(widget.getId()) != InterfaceID.INVENTORY)
 		{
 			return;
 		}
@@ -143,9 +144,14 @@ public class IncantationStep extends DetailedQuestStep
 	 */
 	private void updateChoiceIfRequired()
 	{
-		if (!shouldUpdateChoice())
+		if (incantationOrder == null || !shouldUpdateChoice())
 		{
 			return;
+		}
+
+		if (incantationPosition >= incantationOrder.length)
+		{
+			incantationPosition = 0;
 		}
 
 		// As the incantations have all the same dialogs we want to reset the choices after each dialog
