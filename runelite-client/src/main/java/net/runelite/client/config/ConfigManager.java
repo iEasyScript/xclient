@@ -70,9 +70,11 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -91,6 +93,10 @@ public class ConfigManager
 	private static final int KEY_SPLITTER_GROUP = 0;
 	private static final int KEY_SPLITTER_PROFILE = 1;
 	private static final int KEY_SPLITTER_KEY = 2;
+
+	static final String REDACTED = "<redacted>";
+	private static final Pattern KEY_SEGMENT_SPLITTER = Pattern.compile("(?<=[a-z0-9])(?=[A-Z])|[^A-Za-z0-9]+");
+	private static final String[] SECRET_KEY_FRAGMENTS = {"password", "token", "secret", "apikey", "webhook"};
 
 	@Nullable
 	@Getter
@@ -117,6 +123,7 @@ public class ConfigManager
 	private String rsProfileKey;
 
 	private final Map<Type, Serializer<?>> serializers = Collections.synchronizedMap(new WeakHashMap<>());
+	private final Set<String> secretKeys = ConcurrentHashMap.newKeySet();
 
 	@Inject
 	ConfigInventorySetupDataManager configInventorySetupDataManager;
@@ -217,7 +224,10 @@ public class ConfigManager
 				continue;
 			}
 
-			log.debug("Loading configuration value {}: {}", wholeKey, newValue);
+			if (log.isDebugEnabled())
+			{
+				log.debug("Loading configuration value {}: {}", wholeKey, redactForLog(secretKeys, groupName, key, newValue));
+			}
 
 			ConfigChanged configChanged = new ConfigChanged();
 			configChanged.setGroup(groupName);
@@ -1035,7 +1045,10 @@ public class ConfigManager
 			return;
 		}
 
-		log.debug("Setting configuration value for {} to {}", wholeKey, value);
+		if (log.isDebugEnabled())
+		{
+			log.debug("Setting configuration value for {} to {}", wholeKey, redactForLog(secretKeys, groupName, key, value));
+		}
 		handler.invalidate();
 
 		ConfigChanged configChanged = new ConfigChanged();
@@ -1217,6 +1230,8 @@ public class ConfigManager
 				.result())
 			.collect(Collectors.toList());
 
+		items.forEach(i -> registerSecret(group.value(), i.getItem()));
+
 		ConfigInformation information = inter.getAnnotation(ConfigInformation.class);
 
 		return new ConfigDescriptor(group, sections, items, information);
@@ -1246,6 +1261,8 @@ public class ConfigManager
 			{
 				continue;
 			}
+
+			registerSecret(group.value(), item);
 
 			if (!method.isDefault())
 			{
@@ -1318,7 +1335,10 @@ public class ConfigManager
 				}
 			}
 
-			log.debug("Setting default configuration value for {}.{} to {}", group.value(), item.keyName(), defaultValue);
+			if (log.isDebugEnabled())
+			{
+				log.debug("Setting default configuration value for {}.{} to {}", group.value(), item.keyName(), redactForLog(secretKeys, group.value(), item.keyName(), defaultValue));
+			}
 
 			if (Strings.isNullOrEmpty(valueString))
 			{
@@ -1808,6 +1828,55 @@ public class ConfigManager
 	 */
 	@VisibleForTesting
 	@Nullable
+	private void registerSecret(String groupName, ConfigItem item)
+	{
+		if (item.secret())
+		{
+			secretKeys.add(groupName + "." + item.keyName());
+		}
+	}
+
+	static Object redactForLog(Set<String> secretKeys, String groupName, String key, Object value)
+	{
+		return value != null && isSecretKey(secretKeys, groupName, key) ? REDACTED : value;
+	}
+
+	static boolean isSecretKey(Set<String> secretKeys, String groupName, String key)
+	{
+		if (key == null)
+		{
+			return false;
+		}
+
+		if (secretKeys.contains(groupName + "." + key))
+		{
+			return true;
+		}
+
+		String normalized = key.toLowerCase(Locale.ROOT).replace("_", "").replace("-", "");
+		for (String fragment : SECRET_KEY_FRAGMENTS)
+		{
+			if (normalized.contains(fragment))
+			{
+				return true;
+			}
+		}
+
+		if (normalized.endsWith("pin"))
+		{
+			return true;
+		}
+
+		for (String segment : KEY_SEGMENT_SPLITTER.split(key))
+		{
+			if (segment.equalsIgnoreCase("pin") || segment.equalsIgnoreCase("pins"))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	static String[] splitKey(String key)
 	{
 		int i = key.indexOf('.');
