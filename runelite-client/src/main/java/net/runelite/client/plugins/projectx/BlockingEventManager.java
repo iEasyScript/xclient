@@ -111,7 +111,7 @@ public class BlockingEventManager
         try {
             validateAndEnqueueWithBackoff();
         } catch (Throwable t) {
-            ProjectX.log(Level.ERROR, "BlockingEvent loop error: %s", t);
+            log.error("BlockingEvent loop error", t);
         } finally {
             // re-schedule using the latest currentDelay (volatile)
             loopFuture = scheduler.schedule(this::loopOnce, currentDelay, TimeUnit.MILLISECONDS);
@@ -138,10 +138,7 @@ public class BlockingEventManager
                         }
                     }
                 } catch (Exception ex) {
-                    ProjectX.log(Level.ERROR,
-                            "Error validating BlockingEvent (%s): %s",
-                            event.getName(),
-                            ex);
+                    ProjectX.log("Error validating BlockingEvent (" + event.getName() + ")", Level.ERROR, ex);
                 }
             }
         }
@@ -194,10 +191,7 @@ public class BlockingEventManager
             }
             catch (Exception ex)
             {
-                ProjectX.log(Level.ERROR,
-                        "Error executing BlockingEvent (%s): %s",
-                        event.getName(),
-                        ex);
+                ProjectX.log("Error executing BlockingEvent (" + event.getName() + ")", Level.ERROR, ex);
             }
             finally
             {
