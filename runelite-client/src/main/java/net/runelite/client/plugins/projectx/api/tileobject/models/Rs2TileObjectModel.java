@@ -182,6 +182,16 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
         });
     }
 
+    private ObjectComposition getVisibleObjectComposition() {
+        return ProjectX.getClientThread().invoke(() -> {
+            ObjectComposition composition = ProjectX.getClient().getObjectDefinition(tileObject.getId());
+            if (composition != null && composition.getImpostorIds() != null) {
+                return composition.getImpostor();
+            }
+            return composition;
+        });
+    }
+
     @Override
     public boolean isReachable() {
         WorldView objectWorldView = getWorldView();
@@ -267,9 +277,9 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
             String objName = "";
             if (action != null) {
                 //performance improvement to only get compoisiton if action has been specified
-                var objComp = getObjectComposition();
+                var objComp = getVisibleObjectComposition();
                 if (objComp == null) {
-                    log.warn("Failed to interact with object {} - no object composition", getId());
+                    log.warn("Failed to interact with object {} - object not currently visible", getId());
                     return false;
                 }
                 String[] actions = objComp.getActions();

@@ -1,5 +1,6 @@
 package net.runelite.client.plugins.projectx.api.tileobject.models;
 
+import java.awt.Rectangle;
 import java.util.function.Supplier;
 import net.runelite.api.Client;
 import net.runelite.api.ObjectComposition;
@@ -7,6 +8,7 @@ import net.runelite.api.TileObject;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.util.menu.NewMenuEntry;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,6 +19,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 public class Rs2TileObjectModelCompositionTest {
@@ -65,6 +68,19 @@ public class Rs2TileObjectModelCompositionTest {
         when(client.getObjectDefinition(OBJECT_ID)).thenReturn(base);
 
         assertSame(impostor, new Rs2TileObjectModel(tileObject).getObjectComposition());
+    }
+
+    @Test
+    public void clickReturnsFalseWithoutInvokingWhenImpostorIsUnresolved() {
+        ObjectComposition base = mock(ObjectComposition.class);
+        when(base.getImpostorIds()).thenReturn(new int[]{1, 2});
+        when(base.getImpostor()).thenReturn(null);
+        when(base.getActions()).thenReturn(new String[5]);
+        when(base.getName()).thenReturn("null");
+        when(client.getObjectDefinition(OBJECT_ID)).thenReturn(base);
+
+        assertFalse(new Rs2TileObjectModel(tileObject).click("Enter"));
+        projectx.verify(() -> ProjectX.doInvoke(any(NewMenuEntry.class), any(Rectangle.class)), never());
     }
 
     @Test
