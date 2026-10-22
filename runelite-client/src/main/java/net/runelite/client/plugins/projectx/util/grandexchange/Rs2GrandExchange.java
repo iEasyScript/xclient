@@ -581,7 +581,9 @@ public class Rs2GrandExchange {
      * click "Yes" to proceed with the offer.
      */
     private static void confirm() {
-        Rs2Widget.clickWidget(GrandExchangeWidget.getConfirm());
+        if (!Rs2Widget.clickWidget(GrandExchangeWidget.getConfirm())) {
+            return;
+        }
         sleepUntil(() -> Rs2Widget.hasWidget("Your offer is much"), 2000);
         if (Rs2Widget.hasWidget("Your offer is much")) {
             Rs2Widget.clickWidget("Yes");
