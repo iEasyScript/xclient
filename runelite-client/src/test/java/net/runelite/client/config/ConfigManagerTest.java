@@ -24,6 +24,7 @@
  */
 package net.runelite.client.config;
 
+import com.google.gson.Gson;
 import com.google.inject.Guice;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
@@ -37,6 +38,7 @@ import net.runelite.api.Client;
 import net.runelite.client.RuneLite;
 import net.runelite.client.account.SessionManager;
 import net.runelite.client.eventbus.EventBus;
+import net.runelite.http.api.RuneLiteAPI;
 import org.junit.Assert;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
@@ -63,6 +65,9 @@ public class ConfigManagerTest
 	@Mock
 	@Bind
 	RuneLiteConfig runeliteConfig;
+
+	@Bind
+	Gson gson = RuneLiteAPI.GSON;
 
 	@Bind
 	@Named("sessionfile")
@@ -163,6 +168,33 @@ public class ConfigManagerTest
 		manager.unsetConfiguration(descriptor.getGroup().value(), "nullDefaultKey");
 		manager.setDefaultConfiguration(conf, false);
 		Assert.assertNull(conf.nullDefaultKey());
+	}
+
+	@ConfigGroup("inventorySetupKeyTest")
+	public interface InventorySetupKeyConfig extends Config
+	{
+		@ConfigItem(
+			keyName = "useInventorySetup",
+			name = "Use Inventory Setup",
+			description = "value"
+		)
+		default boolean useInventorySetup()
+		{
+			return false;
+		}
+	}
+
+	@Test
+	public void testResetBooleanKeyNamedInventorySetup()
+	{
+		InventorySetupKeyConfig conf = manager.getConfig(InventorySetupKeyConfig.class);
+		manager.setConfiguration("inventorySetupKeyTest", "useInventorySetup", true);
+		Assert.assertTrue(conf.useInventorySetup());
+
+		manager.setDefaultConfiguration(conf, true);
+
+		Assert.assertFalse(conf.useInventorySetup());
+		Assert.assertEquals("false", manager.getConfiguration("inventorySetupKeyTest", "useInventorySetup"));
 	}
 
 	@Test
