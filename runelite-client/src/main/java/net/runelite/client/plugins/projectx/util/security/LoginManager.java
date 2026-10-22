@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -98,6 +99,7 @@ public final class LoginManager {
 		if (isLoggedIn()) {
 			LOGIN_ATTEMPT_ACTIVE.set(false);
 			lastLoginTimestamp.set(Instant.now());
+			LoginLockout.getInstance().recordSuccessfulLogin();
 		}
 	}
 
@@ -196,6 +198,11 @@ public final class LoginManager {
             log.warn("Cannot login - client is not initialised");
             return false;
         }
+        if (checkLoginLockout()) {
+            log.debug("Login skipped - login lockout cooldown active ({}s remaining)",
+                    TimeUnit.MILLISECONDS.toSeconds(LoginLockout.getInstance().remainingMillis()));
+            return false;
+        }
         synchronized (LOGIN_LOCK) {
             Instant lastAttempt = LAST_LOGIN_ATTEMPT.get();
             Instant now = Instant.now();
@@ -222,6 +229,37 @@ public final class LoginManager {
             // Keep attempt active until either logged in state observed or logout recorded externally
             LOGIN_ATTEMPT_ACTIVE.set(false);
         }
+    }
+
+    public static boolean isLoginLockoutScreen() {
+        Client client = ProjectX.getClient();
+        return client != null
+                && client.getGameState() == GameState.LOGIN_SCREEN
+                && LoginLockout.isLockoutLoginIndex(client.getLoginIndex());
+    }
+
+    public static boolean checkLoginLockout() {
+        LoginLockout lockout = LoginLockout.getInstance();
+        if (!isLoginLockoutScreen()) {
+            return lockout.isActive();
+        }
+        if (lockout.recordLockout()) {
+            log.warn("Too many login attempts - pausing all logins for {}s (lockout #{})",
+                    TimeUnit.MILLISECONDS.toSeconds(lockout.remainingMillis()), lockout.getConsecutiveLockouts());
+        }
+        if (lockout.tryClaimDismiss()) {
+            dismissLoginLockoutScreen(ProjectX.getClient());
+        }
+        return true;
+    }
+
+    private static void dismissLoginLockoutScreen(Client client) {
+        if (client == null || ProjectX.getMouse() == null) {
+            return;
+        }
+        int loginScreenWidth = 804;
+        int startingWidth = (client.getCanvasWidth() / 2) - (loginScreenWidth / 2);
+        ProjectX.getMouse().click(365 + startingWidth, 326);
     }
 
     private static void handleDisconnectDialogs(Client client) {

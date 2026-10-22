@@ -7,6 +7,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.client.config.ConfigProfile;
 import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.util.security.LoginLockout;
 import net.runelite.client.plugins.projectx.util.security.LoginManager;
 
 import java.io.IOException;
@@ -22,12 +23,14 @@ public class LoginHandler extends AgentHandler {
 	private static final int LOGIN_INDEX_BANNED = 14;
 	private static final int LOGIN_INDEX_DISCONNECTED = 24;
 	private static final int LOGIN_INDEX_NON_MEMBER = 34;
+	private static final int LOGIN_INDEX_TOO_MANY_ATTEMPTS = LoginLockout.LOGIN_INDEX_TOO_MANY_ATTEMPTS;
 
 	private static final Set<Integer> FATAL_LOGIN_INDICES = Set.of(
 			LOGIN_INDEX_AUTH_FAILURE,
 			LOGIN_INDEX_INVALID_CREDENTIALS,
 			LOGIN_INDEX_BANNED,
-			LOGIN_INDEX_NON_MEMBER
+			LOGIN_INDEX_NON_MEMBER,
+			LOGIN_INDEX_TOO_MANY_ATTEMPTS
 	);
 
 	private static final int DEFAULT_TIMEOUT_SECONDS = 30;
@@ -72,6 +75,10 @@ public class LoginHandler extends AgentHandler {
 		result.put("loggedIn", ProjectX.isLoggedIn());
 		result.put("gameState", gameState.name());
 		result.put("loginAttemptActive", LoginManager.isLoginAttemptActive());
+		long loginCooldownMs = LoginLockout.getInstance().remainingMillis();
+		if (loginCooldownMs > 0) {
+			result.put("loginCooldownMs", loginCooldownMs);
+		}
 
 		if (ProjectX.isLoggedIn()) {
 			long durationMs = LoginManager.getLoginDuration().toMillis();
@@ -149,6 +156,15 @@ public class LoginHandler extends AgentHandler {
 		} catch (Exception e) {
 			log.error("Login attempt failed", e);
 			sendJson(exchange, 500, errorResponse("Login failed: " + e.getMessage()));
+			return;
+		}
+
+		if (!loginInitiated && LoginLockout.getInstance().isActive()) {
+			Map<String, Object> result = new LinkedHashMap<>();
+			result.put("success", false);
+			result.put("message", "Too many login attempts - login paused until the cooldown ends");
+			result.put("loginCooldownMs", LoginLockout.getInstance().remainingMillis());
+			sendJson(exchange, 429, result);
 			return;
 		}
 
@@ -260,6 +276,8 @@ public class LoginHandler extends AgentHandler {
 				return "Disconnected from server";
 			case LOGIN_INDEX_NON_MEMBER:
 				return "Non-member account cannot login to members world";
+			case LOGIN_INDEX_TOO_MANY_ATTEMPTS:
+				return "Too many login attempts - wait before retrying";
 			default:
 				return null;
 		}

@@ -9,6 +9,7 @@ import net.runelite.client.plugins.projectx.Script;
 import net.runelite.client.plugins.projectx.util.discord.Rs2Discord;
 import net.runelite.client.plugins.projectx.util.math.Rs2Random;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
+import net.runelite.client.plugins.projectx.util.security.LoginLockout;
 import net.runelite.client.plugins.projectx.util.security.LoginManager;
 import net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil;
 import net.runelite.client.plugins.projectx.util.world.RegionPreference;
@@ -55,6 +56,7 @@ public class BreakHandlerV2Script extends Script {
     private int preBreakWorld = -1;
     private ConfigProfile activeProfile;
     private boolean unexpectedLogoutDetected = false;
+    private boolean loginLockoutLogged = false;
     private String originalWindowTitle = "";
     private boolean pluginStopTriggered = false;
     private boolean pluginRestartPending = false;
@@ -356,6 +358,10 @@ public class BreakHandlerV2Script extends Script {
             return;
         }
 
+        if (waitForLoginLockout()) {
+            return;
+        }
+
         // Check retry limit (max 10 attempts)
         if (loginRetryCount >= MAX_LOGIN_ATTEMPTS) {
             log.error("[BreakHandlerV2] Max login attempts ({}) reached", MAX_LOGIN_ATTEMPTS);
@@ -381,6 +387,10 @@ public class BreakHandlerV2Script extends Script {
         } else if (loginRetryCount > 0) {
             // Small delay between initial fast retries (5 seconds)
             sleep(5000);
+        }
+
+        if (waitForLoginLockout()) {
+            return;
         }
 
         // Select world based on configuration
@@ -412,6 +422,22 @@ public class BreakHandlerV2Script extends Script {
         }
     }
 
+    private boolean waitForLoginLockout() {
+        if (!LoginManager.checkLoginLockout()) {
+            loginLockoutLogged = false;
+            return false;
+        }
+        if (!loginLockoutLogged) {
+            long remainingSeconds = TimeUnit.MILLISECONDS.toSeconds(LoginLockout.getInstance().remainingMillis());
+            log.warn("[BreakHandlerV2] Too many login attempts - waiting {}s before logging in again", remainingSeconds);
+            sendDiscordNotification("Login Paused",
+                "Too many login attempts. Waiting " + (remainingSeconds / 60 + 1) + " minutes before retrying.");
+            loginLockoutLogged = true;
+        }
+        loginRetryCount = Math.min(Math.max(loginRetryCount, INITIAL_FAST_RETRIES), MAX_LOGIN_ATTEMPTS - 1);
+        return true;
+    }
+
     /**
      * Calculate exponential backoff delay for login retries
      * First 3 attempts: 5s delay
@@ -438,6 +464,11 @@ public class BreakHandlerV2Script extends Script {
                 "Logged into world " + ProjectX.getClient().getWorld());
             clearPersistedBreakState();
             transitionToState(BreakHandlerV2State.BREAK_ENDING);
+            return;
+        }
+
+        if (LoginManager.checkLoginLockout()) {
+            transitionToState(BreakHandlerV2State.LOGIN_REQUESTED);
             return;
         }
 

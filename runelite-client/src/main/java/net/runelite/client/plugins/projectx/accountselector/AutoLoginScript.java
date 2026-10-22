@@ -6,10 +6,12 @@ import net.runelite.client.config.ConfigProfile;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.Script;
 import net.runelite.client.plugins.projectx.breakhandler.BreakHandlerScript;
+import net.runelite.client.plugins.projectx.breakhandler.breakhandlerv2.BreakHandlerV2State;
 import net.runelite.client.plugins.projectx.util.discord.Rs2Discord;
 import net.runelite.client.plugins.projectx.util.discord.models.DiscordEmbed;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import net.runelite.client.plugins.projectx.util.player.Rs2PlayerModel;
+import net.runelite.client.plugins.projectx.util.security.LoginLockout;
 import net.runelite.client.plugins.projectx.util.security.LoginManager;
 import net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil;
 
@@ -40,6 +42,16 @@ public class AutoLoginScript extends Script {
         return (int) Math.max(floor, jittered);
     }
 
+    static boolean isBreakHandlerOwningLogin() {
+        return BreakHandlerScript.isBreakActive()
+                || BreakHandlerScript.isMicroBreakActive()
+                || BreakHandlerV2State.isBreakActive();
+    }
+
+    static boolean canStartLogin(GameState gameState) {
+        return gameState == GameState.LOGIN_SCREEN;
+    }
+
     // ban detection state
     public static boolean isBanned = false;
     private static String lastKnownPlayerName = "";
@@ -59,6 +71,7 @@ public class AutoLoginScript extends Script {
     private Instant extendedSleepStartTime = null;
     private Instant lastLoginAttemptTime = null;
     private long lastExtendedSleepLoggedMinute = -1;
+    private boolean lockoutLogged = false;
 
 
     public boolean run(AutoLoginConfig autoLoginConfig) {
@@ -67,7 +80,7 @@ public class AutoLoginScript extends Script {
         mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
             try {
                 if (!super.run()) return;
-                if (BreakHandlerScript.isBreakActive() || BreakHandlerScript.isMicroBreakActive()) return;
+                if (isBreakHandlerOwningLogin()) return;
 
                 // check for ban detection first
                 checkForBan();
@@ -118,6 +131,14 @@ public class AutoLoginScript extends Script {
             return;
         }
 
+        if (!canStartLogin(LoginManager.getGameState())) {
+            return;
+        }
+
+        if (waitForLoginLockout()) {
+            return;
+        }
+
         log.info("Login screen detected, initiating login");
         initiateLogin(config);
         transitionToState(LoginState.ATTEMPTING_LOGIN);
@@ -132,6 +153,11 @@ public class AutoLoginScript extends Script {
             log.info("Login successful");
             resetLoginState();
             transitionToState(LoginState.WAITING_FOR_LOGIN_SCREEN);
+            return;
+        }
+
+        if (waitForLoginLockout()) {
+            lastLoginAttemptTime = Instant.now();
             return;
         }
 
@@ -206,6 +232,19 @@ public class AutoLoginScript extends Script {
             resetLoginState();
             transitionToState(LoginState.WAITING_FOR_LOGIN_SCREEN);
         }
+    }
+
+    private boolean waitForLoginLockout() {
+        if (!LoginManager.checkLoginLockout()) {
+            lockoutLogged = false;
+            return false;
+        }
+        if (!lockoutLogged) {
+            log.warn("Too many login attempts - AutoLogin waiting {}s before the next attempt",
+                    TimeUnit.MILLISECONDS.toSeconds(LoginLockout.getInstance().remainingMillis()));
+            lockoutLogged = true;
+        }
+        return true;
     }
 
     /**
