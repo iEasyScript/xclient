@@ -4,6 +4,7 @@ import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.stream.Stream;
@@ -21,6 +22,31 @@ import static org.junit.Assert.fail;
  * escape into script logs.
  */
 public class AbstractEntityQueryableInterruptionTest {
+
+	// No client in these tests. Other tests in the suite leave ProjectX's static client and client
+	// thread set; with them, anchor mapping would wait on a client thread that never runs.
+	private Object previousClient;
+	private Object previousClientThread;
+
+	@Before
+	public void noClient() throws Exception {
+		previousClient = swapStatic("client", null);
+		previousClientThread = swapStatic("clientThread", null);
+	}
+
+	@After
+	public void restoreClient() throws Exception {
+		swapStatic("client", previousClient);
+		swapStatic("clientThread", previousClientThread);
+	}
+
+	private static Object swapStatic(String name, Object value) throws Exception {
+		java.lang.reflect.Field field = net.runelite.client.plugins.projectx.ProjectX.class.getDeclaredField(name);
+		field.setAccessible(true);
+		Object previous = field.get(null);
+		field.set(null, value);
+		return previous;
+	}
 
 	@After
 	public void clearInterrupt() {

@@ -94,6 +94,14 @@ public interface IEntity {
 }
 ```
 
+**Coordinates in instances:** every model's `getWorldLocation()` is in the scene's own
+coordinates, which inside an instance are instance coordinates, so `within(n)`, `nearest()` and
+`nearestReachable()` compare like with like. `Rs2Player.getWorldLocation()` and wiki tiles are
+template (real-world) coordinates there; `within(anchor, n)` and `nearest(anchor, n)` map such an
+anchor onto the scene first. Reachability is worked out in scene coordinates. If it cannot be
+worked out (no player world view, or the check throws), `nearestReachable()` and `interact(...)`
+fall back to the nearest entity within 10 tiles rather than refusing.
+
 **Available Models:**
 - `Rs2NpcModel` - NPCs
 - `Rs2PlayerModel` - Players
