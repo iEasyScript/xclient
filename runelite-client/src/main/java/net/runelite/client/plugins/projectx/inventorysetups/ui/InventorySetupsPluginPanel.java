@@ -954,7 +954,12 @@ public class InventorySetupsPluginPanel extends PluginPanel
 		for (final InventorySetupsSection section : plugin.getSections())
 		{
 			// For quick look up
-			Set<String> setupsInSection = plugin.getCache().getSectionSetupsMap().get(section.getName()).keySet();
+			final Map<String, InventorySetup> setupsOfSection = plugin.getCache().getSectionSetupsMap().get(section.getName());
+			if (setupsOfSection == null)
+			{
+				continue;
+			}
+			Set<String> setupsInSection = setupsOfSection.keySet();
 			if (sectionShouldBeHidden(setupNamesToBeIncluded, setupsInSection))
 			{
 				continue;
