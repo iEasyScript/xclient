@@ -237,11 +237,14 @@ public class Rs2Camera {
     }
 
     public static boolean isTileOnScreen(TileObject tileObject) {
-        int viewportHeight = ProjectX.getClient().getViewportHeight();
-        int viewportWidth = ProjectX.getClient().getViewportWidth();
+        Client client = ProjectX.getClient();
+        LocalPoint localPoint = tileObject.getLocalLocation();
+        if (!isInWorldViewScene(client, localPoint)) return false;
 
+        int viewportHeight = client.getViewportHeight();
+        int viewportWidth = client.getViewportWidth();
 
-        Polygon poly = Perspective.getCanvasTilePoly(ProjectX.getClient(), tileObject.getLocalLocation());
+        Polygon poly = Perspective.getCanvasTilePoly(client, localPoint);
 
         if (poly == null) return false;
 
@@ -253,6 +256,8 @@ public class Rs2Camera {
         // screen, and asking for its height throws ArrayIndexOutOfBounds inside the game client.
         if (localPoint == null || !localPoint.isInScene()) return false;
         Client client = ProjectX.getClient();
+        if (!isInWorldViewScene(client, localPoint)) return false;
+
         int viewportHeight = client.getViewportHeight();
         int viewportWidth = client.getViewportWidth();
 
@@ -266,6 +271,18 @@ public class Rs2Camera {
         // Optionally, check if the tile is in front of the camera
         Point canvasPoint = Perspective.localToCanvas(client, localPoint, client.getPlane());
         return canvasPoint != null;
+    }
+
+    private static boolean isInWorldViewScene(Client client, LocalPoint localPoint) {
+        if (localPoint == null) return false;
+        int sceneX = localPoint.getSceneX();
+        int sceneY = localPoint.getSceneY();
+        return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            WorldView worldView = client.getWorldView(localPoint.getWorldView());
+            return worldView != null
+                    && sceneX >= 0 && sceneY >= 0
+                    && sceneX < worldView.getSizeX() && sceneY < worldView.getSizeY();
+        }).orElse(false);
     }
 
     // get the camera zoom
