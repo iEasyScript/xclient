@@ -3,7 +3,6 @@ package net.runelite.client.plugins.projectx.util.events;
 import java.lang.reflect.Field;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.BooleanSupplier;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.gameval.InterfaceID;
@@ -19,8 +18,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -130,11 +129,8 @@ public class MembershipPromptEventTest
 	{
 		when(clientThread.runOnClientThreadOptional(any())).thenAnswer(invocation ->
 			Optional.ofNullable(((Callable<Object>) invocation.getArgument(0)).call()));
-		doAnswer(invocation ->
-		{
-			((BooleanSupplier) invocation.getArgument(0)).getAsBoolean();
-			return null;
-		}).when(clientThread).invokeLater(any(BooleanSupplier.class));
+		when(clientThread.runOnClientThreadOptional(any(), anyLong())).thenAnswer(invocation ->
+			Optional.ofNullable(((Callable<Object>) invocation.getArgument(0)).call()));
 	}
 
 	private void visible(int componentId)

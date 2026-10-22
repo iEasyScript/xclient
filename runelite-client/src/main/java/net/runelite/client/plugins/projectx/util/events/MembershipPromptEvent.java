@@ -17,11 +17,10 @@ public class MembershipPromptEvent implements BlockingEvent {
             {InterfaceID.MembershipBenefitsPromptHop.UNIVERSE, InterfaceID.MembershipBenefitsPromptHop.CLOSE_BUTTON},
     };
 
-    private final CachedClientCheck visible = new CachedClientCheck(() -> findCloseButton(ProjectX.getClient()) != null);
 
     @Override
     public boolean validate() {
-        return visible.get();
+        return ClientThreadProbe.isVisible(() -> findCloseButton(ProjectX.getClient()) != null);
     }
 
     @Override

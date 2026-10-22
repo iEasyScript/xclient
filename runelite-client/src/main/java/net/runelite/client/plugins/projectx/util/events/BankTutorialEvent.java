@@ -13,11 +13,10 @@ public class BankTutorialEvent implements BlockingEvent {
 
     static final String CLOSE_TEXT = "Close";
 
-    private final CachedClientCheck visible = new CachedClientCheck(() -> findCloseButton(ProjectX.getClient()) != null);
 
     @Override
     public boolean validate() {
-        return visible.get();
+        return ClientThreadProbe.isVisible(() -> findCloseButton(ProjectX.getClient()) != null);
     }
 
     @Override

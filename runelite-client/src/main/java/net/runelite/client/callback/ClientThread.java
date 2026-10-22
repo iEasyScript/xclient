@@ -47,6 +47,9 @@ public class ClientThread
 	protected ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 	public Future<?> scheduledFuture;
 
+	/** How long {@link #runOnClientThreadOptional(Callable)} waits for the game thread. */
+	long clientThreadTimeoutMillis = 10000;
+
 	@Inject
 	private Client client;
 
@@ -70,8 +73,12 @@ public class ClientThread
 	 * @return
 	 * @param <T>
 	 */
-	@SneakyThrows
 	public <T> Optional<T> runOnClientThreadOptional(Callable<T> method) {
+		return runOnClientThreadOptional(method, clientThreadTimeoutMillis);
+	}
+
+	@SneakyThrows
+	public <T> Optional<T> runOnClientThreadOptional(Callable<T> method, long timeoutMillis) {
 		if (client.isClientThread()) {
 			try {
 				return Optional.ofNullable(method.call());
@@ -85,7 +92,7 @@ public class ClientThread
 		final FutureTask<T> task = new FutureTask<>(method);
 		invoke(task);
 		try {
-			return Optional.ofNullable(task.get(10000, TimeUnit.MILLISECONDS));
+			return Optional.ofNullable(task.get(timeoutMillis, TimeUnit.MILLISECONDS));
 		} catch (InterruptedException | TimeoutException | ExecutionException e) {
 			if (e instanceof InterruptedException) {
 				Thread.currentThread().interrupt();
@@ -93,7 +100,16 @@ public class ClientThread
 			}
 			task.cancel(true);
 			if (e instanceof TimeoutException) {
-				logStall();
+				if (timeoutMillis < clientThreadTimeoutMillis)
+				{
+					// A short, deliberate probe (blocking-event validation) giving up is not a stall.
+					log.debug("Client thread did not run task within {}ms (caller thread {})",
+						timeoutMillis, Thread.currentThread().getName());
+				}
+				else
+				{
+					logStall();
+				}
 				return Optional.empty();
 			}
 			if (!ProjectX.isDebug()) {
