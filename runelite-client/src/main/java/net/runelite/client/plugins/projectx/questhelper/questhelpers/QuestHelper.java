@@ -194,6 +194,7 @@ public abstract class QuestHelper implements Module, QuestDebugRenderer
 
 	public boolean clientMeetsRequirements()
 	{
+		initializeRequirements();
 		if (getGeneralRequirements() == null)
 		{
 			return true;
