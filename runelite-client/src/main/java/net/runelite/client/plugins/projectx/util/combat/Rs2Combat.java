@@ -41,7 +41,8 @@ public class Rs2Combat {
 //        if (isSelected(widget.getId() + 1)) {
 //            return true;
 //        }
-        log("Setting attack style to " + Rs2Widget.getWidget(widget.getId() + 3).getText());
+        Widget label = Rs2Widget.getWidget(widget.getId() + 3);
+        log("Setting attack style to " + (label != null ? label.getText() : style.name()));
         Rs2Widget.clickWidget(widget);
         return true;
     }
