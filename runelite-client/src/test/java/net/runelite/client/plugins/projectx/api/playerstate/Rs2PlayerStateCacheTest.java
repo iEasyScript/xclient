@@ -163,6 +163,28 @@ public class Rs2PlayerStateCacheTest
 	}
 
 	/**
+	 * A varbit that changes while the map loads must not keep its old cached value: the event is not
+	 * cached outside LOGGED_IN, so the old entry is dropped and the next read asks the client.
+	 */
+	@Test
+	public void varbitChangedDuringLoadingDropsTheStaleValue()
+	{
+		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+		when(client.getVarbitValue(VARBIT_ID)).thenReturn(1);
+		assertEquals(1, cache.getVarbitValue(VARBIT_ID));
+
+		when(client.getGameState()).thenReturn(GameState.LOADING);
+		VarbitChanged event = new VarbitChanged();
+		event.setVarbitId(VARBIT_ID);
+		event.setValue(2);
+		cache.onVarbitChanged(event);
+
+		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+		when(client.getVarbitValue(VARBIT_ID)).thenReturn(2);
+		assertEquals(2, cache.getVarbitValue(VARBIT_ID));
+	}
+
+	/**
 	 * Varplayer-tracked quests (Fishing Contest among them) were never matched, so completing one
 	 * mid-session left the cached state at whatever login saw. completedQuests fails closed on a stale
 	 * state, so the quest-gated transport — the White Wolf Mountain tunnel — stayed unusable until relog.

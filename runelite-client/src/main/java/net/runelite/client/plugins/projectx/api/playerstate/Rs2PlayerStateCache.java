@@ -91,6 +91,16 @@ public final class Rs2PlayerStateCache {
 		// arriving after that clear and before the next LOGGED_IN would repopulate the very value the
 		// clear existed to discard. Gating the writes closes that window instead of racing it.
 		if (client == null || client.getGameState() != GameState.LOGGED_IN) {
+			// Not cached now, but the value it replaces must go too. Dropping the event left the old
+			// value in the map for good: a varbit that changed during a map load (LOADING) was served
+			// stale until the next hop or logout. Mahogany Homes kept clicking a hotspot it had already
+			// repaired, because its varbit still read "broken". The next read goes to the client.
+			if (event.getVarbitId() != -1) {
+				varbits.remove(event.getVarbitId());
+			}
+			if (event.getVarpId() != -1) {
+				varps.remove(event.getVarpId());
+			}
 			return;
 		}
 		if (event.getVarbitId() != -1) {
