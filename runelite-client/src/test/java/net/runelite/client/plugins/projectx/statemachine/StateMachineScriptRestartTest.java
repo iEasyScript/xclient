@@ -61,11 +61,48 @@ public class StateMachineScriptRestartTest {
         }
     }
 
+    @Test public void cancelledStepAfterStopDoesNotReRegister() {
+        Machine machine = new Machine();
+        try (MockedStatic<ProjectX> ignored = mockStatic(ProjectX.class)) {
+            machine.step();
+            machine.shutdown();
+            Thread.currentThread().interrupt();
+            try {
+                assertFalse(machine.step());
+            } finally {
+                Thread.interrupted();
+            }
+            assertFalse(StateMachineScript.getRegistry().containsKey(NAME));
+            assertNull(machine.getSnapshot());
+        } finally {
+            machine.shutdown();
+            machine.dispose();
+        }
+    }
+
+    @Test public void stopDuringStateActionDoesNotRepublishSnapshot() {
+        Machine machine = new Machine();
+        try (MockedStatic<ProjectX> ignored = mockStatic(ProjectX.class)) {
+            machine.stopInAction = true;
+            machine.step();
+            assertFalse(StateMachineScript.getRegistry().containsKey(NAME));
+            assertNull(machine.getSnapshot());
+        } finally {
+            machine.shutdown();
+            machine.dispose();
+        }
+    }
+
     private static final class Machine extends StateMachineScript<Machine.State> {
         enum State { IDLE, WORKING }
 
         boolean advance;
+        boolean stopInAction;
         final List<State> visited = new ArrayList<>();
+
+        @Override protected State onError(State state, Exception e) {
+            return State.WORKING;
+        }
 
         @Override protected State initialState() {
             return State.IDLE;
@@ -78,6 +115,10 @@ public class StateMachineScriptRestartTest {
 
         @Override protected void onState(State state) {
             visited.add(state);
+            if (stopInAction) {
+                shutdown();
+                throw new IllegalStateException("stopped");
+            }
         }
 
         void dispose() {
