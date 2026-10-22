@@ -90,6 +90,8 @@ public class QuestScript extends Script {
 
     QuestStep dialogueStartedStep = null;
 
+    private final MultiNpcTargetTracker multiNpcTarget = new MultiNpcTargetTracker();
+
     /**
      * How many consecutive ticks an option menu may go unrecognised before it is dismissed.
      * Small, but not zero: the quest helper's "[n]" marker lands a client tick after the menu
@@ -240,6 +242,7 @@ public class QuestScript extends Script {
                     } else {
                         if (dialogueStartedStep != null) {
                             dialogueCooldownEndsAt = System.currentTimeMillis() + Rs2Random.between(4000, 7000);
+                            multiNpcTarget.release();
                         }
                         dialogueStartedStep = null;
                     }
@@ -1307,6 +1310,7 @@ public class QuestScript extends Script {
 	@Override
 	public void shutdown() {
 		super.shutdown();
+		multiNpcTarget.release();
 		reset();
 	}
 
@@ -1361,12 +1365,9 @@ public class QuestScript extends Script {
         Rs2NpcModel npc = npcs.stream().findFirst().orElse(null);
 
         if (step.isAllowMultipleHighlights()) {
-            npc = npcs.stream()
-                    .filter(x -> !npcsHandled.contains(x.getIndex()))
-                    .findFirst()
-                    .orElseGet(() -> npcs.stream()
-                            .min(Comparator.comparing(x -> Rs2Player.getWorldLocation().distanceTo(x.getWorldLocation())))
-                            .orElse(null));
+            npc = multiNpcTarget.select(step, npcs, Rs2NpcModel::getIndex, npcsHandled,
+                    Comparator.comparing(x -> Rs2Player.getWorldLocation().distanceTo(x.getWorldLocation())),
+                    System.currentTimeMillis());
         }
 
         // Quest helper also uses NpcStep for an NPC the player only watches or follows -- the guard in
@@ -1422,6 +1423,9 @@ public class QuestScript extends Script {
                 npc.click("");
             } else {
                 npc.click(chooseCorrectNPCOption(step, npc));
+                if (step.isAllowMultipleHighlights()) {
+                    multiNpcTarget.commit(step, npc.getIndex(), System.currentTimeMillis());
+                }
             }
 
             if (step.isAllowMultipleHighlights()) {
