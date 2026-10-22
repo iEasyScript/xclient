@@ -1490,11 +1490,12 @@ public class QuestScript extends Script {
             return false;
         }
 
-        // Walk first when more than one tile away AND no tile beside the target can be reached. The object's
-        // own tile is never the question (a boat on water or a door in a wall is never walkable), and a
-        // closed door between us still makes it unreachable, so the walker opens it before we interact.
+        // Walk first when more than one tile away AND no reachable tile beside the target shares an open edge
+        // with it. The object's own tile is never the question (a boat on water or a door in a wall is never
+        // walkable), and a closed door or a wall between us still makes it unreachable, so the walker gets us
+        // to the right side before we interact.
         if (step.getDefinedPoint().getWorldPoint() != null && Rs2Player.getWorldLocation().distanceTo2D(step.getDefinedPoint().getWorldPoint()) > 1
-                && (object == null || !object.isReachable())) {
+                && (object == null || !isInteractableFromReachableTile(step, object))) {
             WorldPoint targetTile = null;
             WorldPoint stepLocation = object == null ? step.getDefinedPoint().getWorldPoint() : object.getWorldLocation();
             int radius = 0;
@@ -1541,6 +1542,18 @@ public class QuestScript extends Script {
         }
 
         return true;
+    }
+
+    private static boolean isInteractableFromReachableTile(ObjectStep step, Rs2TileObjectModel object) {
+        if (object.getTileObjectType() != TileObjectType.GAME) {
+            return object.isReachable();
+        }
+        return step.getObjects().stream()
+                .filter(x -> x instanceof GameObject && x.getHash() == object.getHash())
+                .map(GameObject.class::cast)
+                .findFirst()
+                .map(Rs2Tile::isGameObjectInteractableFromReachableTile)
+                .orElse(false);
     }
 
     private boolean applyDigStep(DigStep step) {

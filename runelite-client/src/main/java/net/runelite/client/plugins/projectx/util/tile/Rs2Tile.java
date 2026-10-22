@@ -751,6 +751,47 @@ public abstract class Rs2Tile implements Tile {
         return false;
     }
 
+    public static boolean isGameObjectInteractableFromReachableTile(GameObject gameObject) {
+        return runClientReadBoolean(() -> isGameObjectInteractableFromReachableTileInternal(gameObject));
+    }
+
+    private static boolean isGameObjectInteractableFromReachableTileInternal(GameObject gameObject) {
+        if (gameObject == null) return false;
+
+        final WorldView wv = ProjectX.getClient().getTopLevelWorldView();
+        final Player player = ProjectX.getClient().getLocalPlayer();
+        if (wv == null || player == null) return false;
+
+        final WorldView objectWv = gameObject.getWorldView();
+        final WorldView playerWv = player.getWorldView();
+        if (objectWv == null || playerWv == null || !objectWv.isTopLevel() || !playerWv.isTopLevel()) return false;
+        if (gameObject.getPlane() != wv.getPlane()) return false;
+
+        final Point sceneMin = gameObject.getSceneMinLocation();
+        final Point sceneMax = gameObject.getSceneMaxLocation();
+        final LocalPoint playerLocal = player.getLocalLocation();
+        if (sceneMin == null || sceneMax == null || playerLocal == null) return false;
+
+        if (CollisionMap.ignoreCollisionPacked.contains(WorldPointUtil.packWorldPoint(gameObject.getWorldLocation()))) return true;
+
+        final int[][] flags = getFlagsInternal();
+        if (flags == null) return false;
+
+        return canInteractWithFootprintFromReachableTile(flags,
+                reachableFrom(flags, playerLocal.getSceneX(), playerLocal.getSceneY()),
+                sceneMin.getX(), sceneMin.getY(), sceneMax.getX(), sceneMax.getY());
+    }
+
+    static boolean canInteractWithFootprintFromReachableTile(int[][] flags, boolean[][] reachable,
+                                                             int minX, int minY, int maxX, int maxY) {
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                if (canInteractFromReachableTile(flags, reachable, x, y, 0)) return true;
+            }
+        }
+        return false;
+    }
+
     private static boolean isBehindWallFace(int wallOrientation, int dx, int dy) {
         for (int[] edge : WALL_EDGES) {
             if ((wallOrientation & edge[0]) != 0 && edge[1] == -dx && edge[2] == -dy) return true;
