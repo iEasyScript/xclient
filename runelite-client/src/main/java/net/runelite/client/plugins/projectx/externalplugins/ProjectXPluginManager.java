@@ -1159,10 +1159,12 @@ public class ProjectXPluginManager {
             if (jar != null) {
                 jar.delete();
             }
+            throw new PluginInstantiationException(e);
         } catch (Exception ex) {
             log.error("Incompatible plugin found: " + clazz.getSimpleName());
             File jar = getPluginJarFile(plugin.getClass().getSimpleName());
             jar.delete();
+            throw new PluginInstantiationException(ex);
         }
 
         log.debug("Loaded plugin {}", clazz.getSimpleName());
