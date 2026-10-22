@@ -242,6 +242,7 @@ public class MisthalinMystery extends BasicQuestHelper
 
 		climbWall = new ObjectStep(this, ObjectID.MISTMYST_DESTRUCTABLE_WALL_CLIMBABLE, new WorldPoint(1648, 4829, 0), "Climb over the damaged wall.");
 		observeThroughTree = new ObjectStep(this, ObjectID.MISTMYST_TREE, new WorldPoint(1630, 4849, 0), "Observe Lacey through the trees.");
+		observeThroughTree.addDialogStep("Say nothing");
 
 		takeNote2 = new ObjectStep(this, ObjectID.MISTMYST_CLUE_OUTSIDE, new WorldPoint(1632, 4850, 0), "Pick up the note that appeared by the fence.");
 		readNotes2 = new DetailedQuestStep(this, "Read the notes.", notes2.highlighted());

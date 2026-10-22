@@ -48,7 +48,23 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
 
     public Rs2TileObjectModel(TileObject tileObject) {
         this.tileObject = tileObject;
-        this.tileObjectType = TileObjectType.GENERIC;
+        this.tileObjectType = typeOf(tileObject);
+    }
+
+    static TileObjectType typeOf(TileObject tileObject) {
+        if (tileObject instanceof GameObject) {
+            return TileObjectType.GAME;
+        }
+        if (tileObject instanceof WallObject) {
+            return TileObjectType.WALL;
+        }
+        if (tileObject instanceof DecorativeObject) {
+            return TileObjectType.DECORATIVE;
+        }
+        if (tileObject instanceof GroundObject) {
+            return TileObjectType.GROUND;
+        }
+        return TileObjectType.GENERIC;
     }
 
     @Getter
