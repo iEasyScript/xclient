@@ -1,0 +1,76 @@
+package net.runelite.client.plugins.projectx.api.tileobject.models;
+
+import java.util.function.Supplier;
+import net.runelite.api.Client;
+import net.runelite.api.ObjectComposition;
+import net.runelite.api.TileObject;
+import net.runelite.api.coords.LocalPoint;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.plugins.projectx.ProjectX;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+public class Rs2TileObjectModelCompositionTest {
+
+    private static final int OBJECT_ID = 43700;
+
+    private MockedStatic<ProjectX> projectx;
+    private Client client;
+    private TileObject tileObject;
+
+    @Before
+    public void setUp() {
+        client = mock(Client.class);
+        ClientThread clientThread = mock(ClientThread.class);
+        when(clientThread.invoke(any(Supplier.class))).thenAnswer(inv -> ((Supplier<?>) inv.getArgument(0)).get());
+        projectx = Mockito.mockStatic(ProjectX.class);
+        projectx.when(ProjectX::getClientThread).thenReturn(clientThread);
+        projectx.when(ProjectX::getClient).thenReturn(client);
+
+        tileObject = mock(TileObject.class);
+        when(tileObject.getId()).thenReturn(OBJECT_ID);
+        when(tileObject.getLocalLocation()).thenReturn(new LocalPoint(6400, 6400, -1));
+    }
+
+    @After
+    public void tearDown() {
+        projectx.close();
+    }
+
+    @Test
+    public void unresolvedImpostorFallsBackToBaseComposition() {
+        ObjectComposition base = mock(ObjectComposition.class);
+        when(base.getImpostorIds()).thenReturn(new int[]{1, 2});
+        when(base.getImpostor()).thenReturn(null);
+        when(client.getObjectDefinition(OBJECT_ID)).thenReturn(base);
+
+        assertSame(base, new Rs2TileObjectModel(tileObject).getObjectComposition());
+    }
+
+    @Test
+    public void resolvedImpostorIsReturned() {
+        ObjectComposition base = mock(ObjectComposition.class);
+        ObjectComposition impostor = mock(ObjectComposition.class);
+        when(base.getImpostorIds()).thenReturn(new int[]{1, 2});
+        when(base.getImpostor()).thenReturn(impostor);
+        when(client.getObjectDefinition(OBJECT_ID)).thenReturn(base);
+
+        assertSame(impostor, new Rs2TileObjectModel(tileObject).getObjectComposition());
+    }
+
+    @Test
+    public void clickReturnsFalseWhenCompositionIsMissing() {
+        when(client.getObjectDefinition(OBJECT_ID)).thenReturn(null);
+
+        assertFalse(new Rs2TileObjectModel(tileObject).click("Enter"));
+    }
+}
