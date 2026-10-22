@@ -464,7 +464,7 @@ public class ProjectXProfilePanel extends ProjectXPluginPanel {
     }
 
     private void exportProfile(ConfigProfile profile, File file) {
-        log.info("Exporting profile {} to {}", profile.getId(), file);
+        log.info("Exporting profile {}", profile.getId());
 
         executor.execute(() -> {
             configManager.sendConfig();
