@@ -677,12 +677,16 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
 // in config as a JSON string.
 // ---------------------------------------------------------------------------
     private JComboBox<InventorySetup> createInventorySetupsComboBox(ConfigDescriptor cd, ConfigItemDescriptor cid) {
-        // Suppose MInventorySetupsPlugin.getInventorySetups() returns a List<InventorySetup>
-        List<InventorySetup> setups = MInventorySetupsPlugin.getInventorySetups();
+        return createInventorySetupsComboBox(configManager, cd.getGroup().value(), cid.getItem().keyName(), MInventorySetupsPlugin.getInventorySetups());
+    }
+
+    static JComboBox<InventorySetup> createInventorySetupsComboBox(ConfigManager configManager, String group, String key, List<InventorySetup> setups) {
+        if (setups == null) {
+            return new JComboBox<>();
+        }
         if (setups.isEmpty()) {
             // If there are no setups, return an empty combo box
-            configManager.setConfiguration(cd.getGroup().value(), cid.getItem().keyName(), "");
-            configManager.sendConfig();
+            configManager.setConfiguration(group, key, "");
             return new JComboBox<>();
         }
         JComboBox<InventorySetup> box = new JComboBox<>(new DefaultComboBoxModel<>(setups.toArray(new InventorySetup[0])));
@@ -701,11 +705,10 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
         });
 
         // 1) Retrieve dezerialized InventorySetup from config
-        InventorySetup dezerialized = configManager.getConfiguration(cd.getGroup().value(), cid.getItem().keyName(), InventorySetup.class);
+        InventorySetup dezerialized = configManager.getConfiguration(group, key, InventorySetup.class);
         if (dezerialized == null) {
             dezerialized = setups.get(0);
-            configManager.setConfiguration(cd.getGroup().value(), cid.getItem().keyName(), dezerialized);
-            configManager.sendConfig();
+            configManager.setConfiguration(group, key, dezerialized);
         }
         for (InventorySetup setup : setups) {
             if (setup.getName().equals(dezerialized.getName())) {
@@ -720,7 +723,7 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 InventorySetup chosen = (InventorySetup) box.getSelectedItem();
                 if (chosen != null) {
-                    configManager.setConfiguration(cd.getGroup().value(), cid.getItem().keyName(), chosen);
+                    configManager.setConfiguration(group, key, chosen);
                 }
             }
         });
