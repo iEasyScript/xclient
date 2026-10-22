@@ -12,6 +12,8 @@ import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.ConsoleAppender;
 import ch.qos.logback.core.joran.spi.ConsoleTarget;
+import java.io.FilterOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.function.Consumer;
@@ -28,6 +30,7 @@ final class ConsoleLogAppender extends AppenderBase<ILoggingEvent>
 
 	static void bindStdoutAppenders(LoggerContext context, OutputStream stdout)
 	{
+		OutputStream shielded = new CloseShieldOutputStream(stdout);
 		for (Logger logger : context.getLoggerList())
 		{
 			Iterator<Appender<ILoggingEvent>> appenders = logger.iteratorForAppenders();
@@ -37,7 +40,7 @@ final class ConsoleLogAppender extends AppenderBase<ILoggingEvent>
 				if (appender instanceof ConsoleAppender
 					&& ConsoleTarget.SystemOut.getName().equals(((ConsoleAppender<ILoggingEvent>) appender).getTarget()))
 				{
-					((ConsoleAppender<ILoggingEvent>) appender).setOutputStream(stdout);
+					((ConsoleAppender<ILoggingEvent>) appender).setOutputStream(shielded);
 				}
 			}
 		}
@@ -62,5 +65,25 @@ final class ConsoleLogAppender extends AppenderBase<ILoggingEvent>
 		}
 		String formatted = layout.doLayout(eventObject);
 		logConsumer.accept(formatted);
+	}
+
+	private static final class CloseShieldOutputStream extends FilterOutputStream
+	{
+		private CloseShieldOutputStream(OutputStream out)
+		{
+			super(out);
+		}
+
+		@Override
+		public void write(byte[] b, int off, int len) throws IOException
+		{
+			out.write(b, off, len);
+		}
+
+		@Override
+		public void close() throws IOException
+		{
+			flush();
+		}
 	}
 }

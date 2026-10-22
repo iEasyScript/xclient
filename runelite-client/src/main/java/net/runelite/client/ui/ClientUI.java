@@ -168,6 +168,7 @@ public class ClientUI
 	private boolean consoleVisible;
 	private boolean sidebarTabRestored;
 	private boolean updatingNavigation;
+	private boolean closing;
 
 	@RequiredArgsConstructor
 	private static class HistoryEntry
@@ -278,7 +279,10 @@ public class ClientUI
 						: selectedTabHistory.removeLast();
 
 					openPanel(entry.navBtn, entry.sidebarOpen);
-					saveSidebarTab();
+					if (!closing)
+					{
+						saveSidebarTab();
+					}
 				}
 			}
 			finally
@@ -288,6 +292,12 @@ public class ClientUI
 		}
 
 		sidebarEntries.remove(navBtn);
+	}
+
+	@Subscribe(priority = 100)
+	private void onClientShutdown(ClientShutdown event)
+	{
+		closing = true;
 	}
 
 	@Subscribe

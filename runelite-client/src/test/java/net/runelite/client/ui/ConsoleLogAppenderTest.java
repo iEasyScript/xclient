@@ -14,6 +14,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class ConsoleLogAppenderTest
 {
@@ -72,6 +73,30 @@ public class ConsoleLogAppenderTest
 		assertEquals(1, occurrences(out, "plain print"));
 	}
 
+	@Test
+	public void stoppingTheLoggerContextLeavesStdoutOpen()
+	{
+		CloseTrackingStream terminal = new CloseTrackingStream();
+
+		Logger root = context.getLogger(Logger.ROOT_LOGGER_NAME);
+		PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+		encoder.setContext(context);
+		encoder.setPattern("%msg%n");
+		encoder.start();
+		ConsoleAppender<ILoggingEvent> stdout = new ConsoleAppender<>();
+		stdout.setContext(context);
+		stdout.setEncoder(encoder);
+		stdout.start();
+		root.addAppender(stdout);
+
+		ConsoleLogAppender.bindStdoutAppenders(context, terminal);
+		root.info("before stop");
+		context.stop();
+
+		assertFalse(terminal.closed);
+		assertEquals(1, occurrences(terminal.toString(StandardCharsets.UTF_8), "before stop"));
+	}
+
 	private static int occurrences(String text, String needle)
 	{
 		int count = 0;
@@ -80,6 +105,17 @@ public class ConsoleLogAppenderTest
 			count++;
 		}
 		return count;
+	}
+
+	private static final class CloseTrackingStream extends ByteArrayOutputStream
+	{
+		private boolean closed;
+
+		@Override
+		public void close()
+		{
+			closed = true;
+		}
 	}
 
 	private static final class Tee extends OutputStream
