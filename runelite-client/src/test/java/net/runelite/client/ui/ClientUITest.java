@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Provider;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
@@ -34,6 +35,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -45,6 +47,7 @@ public class ClientUITest
 {
 	private static final String CONFIG_GROUP = "runelite";
 	private static final String SIDEBAR_TAB = "clientSidebarTab";
+	private static final String SIDEBAR_CLOSED = "clientSidebarClosed";
 
 	private ConfigManager configManager;
 	private EventBus eventBus;
@@ -75,8 +78,7 @@ public class ClientUITest
 		ConsoleLogAppender consoleLogAppender = (ConsoleLogAppender) get("consoleLogAppender");
 		if (consoleLogAppender != null)
 		{
-			root.detachAppender(consoleLogAppender);
-			consoleLogAppender.stop();
+			consoleLogAppender.uninstall();
 		}
 		if (stdoutAppender != null)
 		{
@@ -123,6 +125,32 @@ public class ClientUITest
 
 		verify(configManager, never()).setConfiguration(eq(CONFIG_GROUP), eq(SIDEBAR_TAB), any(String.class));
 		verify(configManager, never()).unsetConfiguration(CONFIG_GROUP, SIDEBAR_TAB);
+	}
+
+	@Test
+	public void removingTheOpenTabWhileClosingDoesNotReopenAClosedSidebar() throws Exception
+	{
+		NavigationButton first = button("First", 1);
+		NavigationButton second = button("Second", 2);
+		AtomicReference<JTabbedPane> sidebar = new AtomicReference<>();
+		onEdt(() ->
+		{
+			installSidebar();
+			sidebar.set((JTabbedPane) get("sidebar"));
+			clientUI.addNavigation(first);
+			clientUI.addNavigation(second);
+			clientUI.openPanel(first, true);
+			clientUI.openPanel(second, true);
+			sidebar.get().setVisible(false);
+			pushHistory();
+		});
+
+		eventBus.post(new ClientShutdown());
+		onEdt(() -> clientUI.removeNavigation(second));
+
+		verify(configManager, never()).setConfiguration(eq(CONFIG_GROUP), eq(SIDEBAR_CLOSED), any(Boolean.class));
+		verify(configManager, never()).unsetConfiguration(CONFIG_GROUP, SIDEBAR_CLOSED);
+		assertFalse(sidebar.get().isVisible());
 	}
 
 	@Test
@@ -177,7 +205,16 @@ public class ClientUITest
 			int index = sidebar.getSelectedIndex();
 			try
 			{
-				set("selectedTab", index < 0 ? null : Iterables.get(entries, index));
+				NavigationButton selected = index < 0 ? null : Iterables.get(entries, index);
+				if (selected == get("selectedTab"))
+				{
+					return;
+				}
+				set("selectedTab", selected);
+				if (sidebar.isVisible())
+				{
+					pushHistory();
+				}
 			}
 			catch (ReflectiveOperationException ex)
 			{
@@ -185,6 +222,14 @@ public class ClientUITest
 			}
 		});
 		set("sidebar", sidebar);
+		set("content", new JPanel());
+	}
+
+	private void pushHistory() throws ReflectiveOperationException
+	{
+		Method pushHistory = ClientUI.class.getDeclaredMethod("pushHistory");
+		pushHistory.setAccessible(true);
+		pushHistory.invoke(clientUI);
 	}
 
 	private static NavigationButton button(String tooltip, int priority)

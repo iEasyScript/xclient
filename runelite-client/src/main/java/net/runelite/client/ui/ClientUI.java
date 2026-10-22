@@ -30,7 +30,6 @@ import com.formdev.flatlaf.util.SystemInfo;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
-import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -278,7 +277,7 @@ public class ClientUI
 						? new HistoryEntry(true, null)
 						: selectedTabHistory.removeLast();
 
-					openPanel(entry.navBtn, entry.sidebarOpen);
+					openPanel(entry.navBtn, closing ? sidebar.isVisible() : entry.sidebarOpen);
 					if (!closing)
 					{
 						saveSidebarTab();
@@ -1330,13 +1329,7 @@ public class ClientUI
 		System.setOut(consolePrintStream);
 
 		LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-		ConsoleLogAppender.bindStdoutAppenders(loggerContext, originalOut);
-		consoleLogAppender = new ConsoleLogAppender(consolePanel::append);
-		consoleLogAppender.setContext(loggerContext);
-		consoleLogAppender.start();
-
-		Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
-		rootLogger.addAppender(consoleLogAppender);
+		consoleLogAppender = ConsoleLogAppender.install(loggerContext, originalOut, consolePanel::append);
 	}
 
 	private BufferedImage createConsoleIcon(boolean active)

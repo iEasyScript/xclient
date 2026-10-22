@@ -3,8 +3,11 @@ package net.runelite.client.ui;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.ConsoleAppender;
+import ch.qos.logback.core.joran.spi.JoranException;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -18,6 +21,13 @@ import static org.junit.Assert.assertFalse;
 
 public class ConsoleLogAppenderTest
 {
+	private static final String CONFIG = "<configuration>"
+		+ "<appender name=\"STDOUT\" class=\"ch.qos.logback.core.ConsoleAppender\">"
+		+ "<encoder><pattern>%msg%n</pattern></encoder>"
+		+ "</appender>"
+		+ "<root level=\"INFO\"><appender-ref ref=\"STDOUT\"/></root>"
+		+ "</configuration>";
+
 	private PrintStream originalOut;
 	private LoggerContext context;
 
@@ -95,6 +105,67 @@ public class ConsoleLogAppenderTest
 
 		assertFalse(terminal.closed);
 		assertEquals(1, occurrences(terminal.toString(StandardCharsets.UTF_8), "before stop"));
+	}
+
+	@Test
+	public void reconfigurationKeepsTheConsoleAppenderAndStdoutBinding() throws JoranException
+	{
+		ByteArrayOutputStream terminal = new ByteArrayOutputStream();
+		ByteArrayOutputStream consolePanel = new ByteArrayOutputStream();
+		StringBuilder console = new StringBuilder();
+
+		configure();
+		System.setOut(new PrintStream(new Tee(consolePanel, terminal), true, StandardCharsets.UTF_8));
+		ConsoleLogAppender.install(context, terminal, console::append);
+
+		context.reset();
+		configure();
+		context.getLogger(Logger.ROOT_LOGGER_NAME).info("after reset");
+
+		assertEquals(1, occurrences(console.toString(), "after reset"));
+		assertEquals(0, occurrences(consolePanel.toString(StandardCharsets.UTF_8), "after reset"));
+		assertEquals(1, occurrences(terminal.toString(StandardCharsets.UTF_8), "after reset"));
+	}
+
+	@Test
+	public void lineLoggedBeforeReconfigurationEndsDoesNotLeaveStdoutUnbound() throws JoranException
+	{
+		ByteArrayOutputStream terminal = new ByteArrayOutputStream();
+		ByteArrayOutputStream consolePanel = new ByteArrayOutputStream();
+		StringBuilder console = new StringBuilder();
+
+		configure();
+		System.setOut(new PrintStream(new Tee(consolePanel, terminal), true, StandardCharsets.UTF_8));
+		ConsoleLogAppender.install(context, terminal, console::append);
+
+		context.reset();
+		Logger root = context.getLogger(Logger.ROOT_LOGGER_NAME);
+		root.info("during reset");
+		configure();
+		root.info("after reset");
+
+		assertEquals(1, occurrences(console.toString(), "during reset"));
+		assertEquals(1, occurrences(console.toString(), "after reset"));
+		assertEquals(0, occurrences(consolePanel.toString(StandardCharsets.UTF_8), "after reset"));
+		assertEquals(1, occurrences(terminal.toString(StandardCharsets.UTF_8), "after reset"));
+	}
+
+	@Test
+	public void stoppingTheLoggerContextDetachesTheConsoleAppender()
+	{
+		ConsoleLogAppender appender = ConsoleLogAppender.install(context, new ByteArrayOutputStream(), line -> { });
+
+		context.stop();
+
+		assertFalse(appender.isStarted());
+		assertFalse(context.getLogger(Logger.ROOT_LOGGER_NAME).isAttached(appender));
+	}
+
+	private void configure() throws JoranException
+	{
+		JoranConfigurator configurator = new JoranConfigurator();
+		configurator.setContext(context);
+		configurator.doConfigure(new ByteArrayInputStream(CONFIG.getBytes(StandardCharsets.UTF_8)));
 	}
 
 	private static int occurrences(String text, String needle)

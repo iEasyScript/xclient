@@ -4,10 +4,12 @@
  */
 package net.runelite.client.ui;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.LoggerContextListener;
 import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
 import ch.qos.logback.core.ConsoleAppender;
@@ -18,19 +20,47 @@ import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.function.Consumer;
 
-final class ConsoleLogAppender extends AppenderBase<ILoggingEvent>
+final class ConsoleLogAppender extends AppenderBase<ILoggingEvent> implements LoggerContextListener
 {
 	private final Consumer<String> logConsumer;
+	private final OutputStream stdout;
 	private PatternLayout layout;
+	private volatile boolean rebindPending;
 
 	ConsoleLogAppender(Consumer<String> logConsumer)
 	{
-		this.logConsumer = logConsumer;
+		this(logConsumer, null);
 	}
 
-	static void bindStdoutAppenders(LoggerContext context, OutputStream stdout)
+	private ConsoleLogAppender(Consumer<String> logConsumer, OutputStream stdout)
+	{
+		this.logConsumer = logConsumer;
+		this.stdout = stdout;
+	}
+
+	static ConsoleLogAppender install(LoggerContext context, OutputStream stdout, Consumer<String> logConsumer)
+	{
+		ConsoleLogAppender appender = new ConsoleLogAppender(logConsumer, stdout);
+		appender.setContext(context);
+		bindStdoutAppenders(context, stdout);
+		appender.start();
+		context.addListener(appender);
+		context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(appender);
+		return appender;
+	}
+
+	void uninstall()
+	{
+		LoggerContext context = (LoggerContext) getContext();
+		context.removeListener(this);
+		context.getLogger(Logger.ROOT_LOGGER_NAME).detachAppender(this);
+		stop();
+	}
+
+	static boolean bindStdoutAppenders(LoggerContext context, OutputStream stdout)
 	{
 		OutputStream shielded = new CloseShieldOutputStream(stdout);
+		boolean bound = false;
 		for (Logger logger : context.getLoggerList())
 		{
 			Iterator<Appender<ILoggingEvent>> appenders = logger.iteratorForAppenders();
@@ -41,9 +71,43 @@ final class ConsoleLogAppender extends AppenderBase<ILoggingEvent>
 					&& ConsoleTarget.SystemOut.getName().equals(((ConsoleAppender<ILoggingEvent>) appender).getTarget()))
 				{
 					((ConsoleAppender<ILoggingEvent>) appender).setOutputStream(shielded);
+					bound = true;
 				}
 			}
 		}
+		return bound;
+	}
+
+	@Override
+	public boolean isResetResistant()
+	{
+		return true;
+	}
+
+	@Override
+	public void onStart(LoggerContext context)
+	{
+	}
+
+	@Override
+	public void onReset(LoggerContext context)
+	{
+		rebindPending = stdout != null;
+		start();
+		context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(this);
+	}
+
+	@Override
+	public void onStop(LoggerContext context)
+	{
+		rebindPending = false;
+		context.getLogger(Logger.ROOT_LOGGER_NAME).detachAppender(this);
+		stop();
+	}
+
+	@Override
+	public void onLevelChange(Logger logger, Level level)
+	{
 	}
 
 	@Override
@@ -62,6 +126,10 @@ final class ConsoleLogAppender extends AppenderBase<ILoggingEvent>
 		if (!isStarted())
 		{
 			return;
+		}
+		if (rebindPending && bindStdoutAppenders((LoggerContext) getContext(), stdout))
+		{
+			rebindPending = false;
 		}
 		String formatted = layout.doLayout(eventObject);
 		logConsumer.accept(formatted);
