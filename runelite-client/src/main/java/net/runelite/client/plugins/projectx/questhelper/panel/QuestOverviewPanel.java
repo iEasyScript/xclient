@@ -253,17 +253,18 @@ public class QuestOverviewPanel extends JPanel
 		allQuestStepPanelList.clear();
 
 		List<PanelDetails> steps = quest.getPanels();
+		QuestStep questStep = quest.getCurrentStep();
 		QuestStep currentStep;
-		if (isActive)
+		if (isActive && questStep != null)
 		{
-			currentStep = quest.getCurrentStep().getActiveStep();
+			currentStep = questStep.getActiveStep();
 		}
 		else
 		{
 			currentStep = new DetailedQuestStep(quest, "Fake step");
 		}
 
-		if (quest.getCurrentStep() != null)
+		if (questStep != null)
 		{
 			questNameLabel.setText(quest.getQuest().getName());
 			actionsContainer.setVisible(true);
