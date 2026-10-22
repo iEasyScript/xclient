@@ -190,7 +190,10 @@ public class GroundItemsPlugin extends Plugin
 	private final Map<WorldPoint, Lootbeam> lootbeams = new HashMap<>();
 
 	public static Table<WorldPoint, Integer, GroundItem> getCollectedGroundItems() {
-		return ImmutableTable.copyOf(collectedGroundItems);
+		synchronized (collectedGroundItems)
+		{
+			return ImmutableTable.copyOf(collectedGroundItems);
+		}
 	}
 
 	@Provides
