@@ -278,6 +278,7 @@ public class ClientUI
 						: selectedTabHistory.removeLast();
 
 					openPanel(entry.navBtn, entry.sidebarOpen);
+					saveSidebarTab();
 				}
 			}
 			finally
@@ -452,15 +453,7 @@ public class ClientUI
 
 				if (!updatingNavigation)
 				{
-					sidebarTabRestored = true;
-					if (newSelectedTab == null)
-					{
-						configManager.unsetConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_TAB);
-					}
-					else
-					{
-						configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_TAB, newSelectedTab.getTooltip());
-					}
+					saveSidebarTab();
 				}
 
 				if (sidebar.isVisible())
@@ -764,6 +757,7 @@ public class ClientUI
 			frame.revalidateMinimumSize();
 			// this must run after the native window border is installed on the window
 			frame.updateContainsInScreen();
+			sidebarTabRestored = true;
 		});
 
 		// Show out of date dialog if needed
@@ -1144,6 +1138,19 @@ public class ClientUI
 		return frame.getGraphicsConfiguration();
 	}
 
+	private void saveSidebarTab()
+	{
+		sidebarTabRestored = true;
+		if (selectedTab == null)
+		{
+			configManager.unsetConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_TAB);
+		}
+		else
+		{
+			configManager.setConfiguration(CONFIG_GROUP, CONFIG_CLIENT_SIDEBAR_TAB, selectedTab.getTooltip());
+		}
+	}
+
 	void openPanel(NavigationButton navBtn, boolean showSidebar)
 	{
 		if (navBtn != null && !sidebarEntries.contains(navBtn))
@@ -1313,6 +1320,7 @@ public class ClientUI
 		System.setOut(consolePrintStream);
 
 		LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+		ConsoleLogAppender.bindStdoutAppenders(loggerContext, originalOut);
 		consoleLogAppender = new ConsoleLogAppender(consolePanel::append);
 		consoleLogAppender.setContext(loggerContext);
 		consoleLogAppender.start();

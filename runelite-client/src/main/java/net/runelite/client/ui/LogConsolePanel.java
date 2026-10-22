@@ -6,6 +6,8 @@ package net.runelite.client.ui;
 
 import java.awt.*;
 import java.awt.event.HierarchyEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -45,6 +47,7 @@ final class LogConsolePanel extends JPanel
 	private boolean followTail = true;
 	private boolean snapQueued;
 	private int snapAttempts;
+	private int tailCaretDot = -1;
 
 	LogConsolePanel()
 	{
@@ -61,15 +64,65 @@ final class LogConsolePanel extends JPanel
 		textArea.setForeground(new Color(0, 255, 70));
 		textArea.setBorder(null);
 
-		DefaultCaret caret = (DefaultCaret) textArea.getCaret();
+		DefaultCaret caret = new DefaultCaret()
+		{
+			@Override
+			protected void adjustVisibility(Rectangle nloc)
+			{
+				if (getDot() != tailCaretDot || getMark() != tailCaretDot)
+				{
+					super.adjustVisibility(nloc);
+				}
+			}
+		};
 		caret.setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+		textArea.setCaret(caret);
 
 		scrollPane.setBorder(null);
 		add(scrollPane, BorderLayout.CENTER);
 
 		// Following is decided by what the user does, never by measuring the view: under a flood the
 		// scroll position trails the document, which reads as "the user scrolled up".
-		scrollPane.addMouseWheelListener(ev -> reconsiderFollowingTail());
+		scrollPane.addMouseWheelListener(ev ->
+		{
+			if (ev.getPreciseWheelRotation() < 0)
+			{
+				followTail = false;
+			}
+			reconsiderFollowingTail();
+		});
+
+		textArea.addKeyListener(new KeyAdapter()
+		{
+			@Override
+			public void keyPressed(KeyEvent ev)
+			{
+				followTail = false;
+				SwingUtilities.invokeLater(LogConsolePanel.this::reconsiderFollowingTail);
+			}
+		});
+		textArea.addMouseListener(new MouseAdapter()
+		{
+			@Override
+			public void mousePressed(MouseEvent ev)
+			{
+				followTail = false;
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent ev)
+			{
+				reconsiderFollowingTail();
+			}
+		});
+		textArea.addMouseMotionListener(new MouseMotionAdapter()
+		{
+			@Override
+			public void mouseDragged(MouseEvent ev)
+			{
+				followTail = false;
+			}
+		});
 
 		JScrollBar vertical = scrollPane.getVerticalScrollBar();
 		vertical.addMouseListener(new MouseAdapter()
@@ -135,7 +188,7 @@ final class LogConsolePanel extends JPanel
 	private void snapToBottom()
 	{
 		int end = textArea.getDocument().getLength();
-		textArea.setCaretPosition(end);
+		moveCaretToTail();
 
 		Rectangle2D newestLine;
 		try
@@ -184,11 +237,10 @@ final class LogConsolePanel extends JPanel
 		{
 			pending.append(text, 0, text.length());
 
-			int excess = pending.length() - MAX_CHARACTERS_SCROLLED_UP;
-			if (excess > 0)
+			if (pending.length() > 2 * MAX_CHARACTERS_SCROLLED_UP)
 			{
 				// the oldest buffered lines would be trimmed out of the document on arrival anyway
-				pending.delete(0, excess);
+				pending.delete(0, pending.length() - MAX_CHARACTERS_SCROLLED_UP);
 			}
 
 			if (flushScheduled)
@@ -212,7 +264,8 @@ final class LogConsolePanel extends JPanel
 				return;
 			}
 
-			text = pending.toString();
+			int cap = followTail ? MAX_CHARACTERS : MAX_CHARACTERS_SCROLLED_UP;
+			text = pending.substring(Math.max(0, pending.length() - cap));
 			pending.setLength(0);
 		}
 
@@ -252,7 +305,7 @@ final class LogConsolePanel extends JPanel
 			trimIfNecessary(atBottom);
 			if (atBottom)
 			{
-				textArea.setCaretPosition(document.getLength());
+				moveCaretToTail();
 				// NEVER_UPDATE stops the caret dragging the view, so move it ourselves; the attempt
 				// budget is per batch, or a flood that outruns the layout would exhaust it for good.
 				snapAttempts = 0;
@@ -265,12 +318,18 @@ final class LogConsolePanel extends JPanel
 		}
 	}
 
+	private void moveCaretToTail()
+	{
+		tailCaretDot = textArea.getDocument().getLength();
+		textArea.setCaretPosition(tailCaretDot);
+	}
+
 	// Deferred so the user's gesture has reached the scrollbar before it is read.
 	private void reconsiderFollowingTail()
 	{
 		SwingUtilities.invokeLater(() ->
 		{
-			followTail = isScrolledToBottom();
+			followTail = isScrolledToBottom() && textArea.getSelectionStart() == textArea.getSelectionEnd();
 			if (followTail)
 			{
 				snapAttempts = 0;

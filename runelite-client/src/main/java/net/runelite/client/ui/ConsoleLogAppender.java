@@ -4,9 +4,16 @@
  */
 package net.runelite.client.ui;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.PatternLayout;
 import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.Appender;
 import ch.qos.logback.core.AppenderBase;
+import ch.qos.logback.core.ConsoleAppender;
+import ch.qos.logback.core.joran.spi.ConsoleTarget;
+import java.io.OutputStream;
+import java.util.Iterator;
 import java.util.function.Consumer;
 
 final class ConsoleLogAppender extends AppenderBase<ILoggingEvent>
@@ -17,6 +24,23 @@ final class ConsoleLogAppender extends AppenderBase<ILoggingEvent>
 	ConsoleLogAppender(Consumer<String> logConsumer)
 	{
 		this.logConsumer = logConsumer;
+	}
+
+	static void bindStdoutAppenders(LoggerContext context, OutputStream stdout)
+	{
+		for (Logger logger : context.getLoggerList())
+		{
+			Iterator<Appender<ILoggingEvent>> appenders = logger.iteratorForAppenders();
+			while (appenders.hasNext())
+			{
+				Appender<ILoggingEvent> appender = appenders.next();
+				if (appender instanceof ConsoleAppender
+					&& ConsoleTarget.SystemOut.getName().equals(((ConsoleAppender<ILoggingEvent>) appender).getTarget()))
+				{
+					((ConsoleAppender<ILoggingEvent>) appender).setOutputStream(stdout);
+				}
+			}
+		}
 	}
 
 	@Override
