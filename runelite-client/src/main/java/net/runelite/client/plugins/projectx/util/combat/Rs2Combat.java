@@ -17,6 +17,7 @@ import net.runelite.client.plugins.projectx.util.magic.Rs2Magic;
 import net.runelite.client.plugins.projectx.util.tabs.Rs2Tab;
 import net.runelite.client.plugins.projectx.util.widget.Rs2Widget;
 
+import java.awt.Rectangle;
 import java.util.List;
 import java.util.Map;
 
@@ -111,12 +112,17 @@ public class Rs2Combat {
         int currentSpecEnergy = ProjectX.getClientThread().runOnClientThreadOptional(
                 () -> ProjectX.getClient().getVarpValue(VarPlayer.SPECIAL_ATTACK_PERCENT)
         ).orElse(0);
-        // The orb's button by name: the 10485795 (160:35) this used was moved by the 2026-10-07 update.
-        if (Rs2Widget.isHidden(InterfaceID.Orbs.SPECBUTTON)) return false;
+        Rectangle specBounds = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            // The orb button by name: 10485795 (160:35) was moved by the 2026-10-07 update.
+            Widget widget = ProjectX.getClient().getWidget(InterfaceID.Orbs.SPECBUTTON);
+            if (widget == null || widget.isHidden()) return null;
+            return widget.getBounds();
+        }).orElse(null);
+        if (specBounds == null) return false;
         if (currentSpecEnergy < specialAttackEnergyRequired) return false;
         if (state == getSpecState()) return true;
 
-        ProjectX.getMouse().click(Rs2Widget.getWidget(InterfaceID.Orbs.SPECBUTTON).getBounds());
+        ProjectX.getMouse().click(specBounds);
 
         log("Used special attack");
 
