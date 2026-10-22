@@ -14,6 +14,7 @@ import net.runelite.client.plugins.projectx.shortestpath.WorldPointUtil;
 
 public class Rs2Reachable {
     private static int lastUpdateTick = 0;
+    private static WorldPoint lastStart;
     @Getter
     private static IntSet reachableTiles;
 
@@ -33,8 +34,11 @@ public class Rs2Reachable {
         Client client = ProjectX.getClient();
         int tick = client.getTickCount();
 
-        // Reuse cache for this tick
-        if (reachableTiles != null && lastUpdateTick == tick) {
+        // Reuse cache for this tick - for the same start only. The flood runs from the start, so a
+        // set from another start answers a different question: IEntity.isReachable floods from
+        // each entity in turn, and nearestReachable() then judged every entity after the first
+        // by whether it was connected to the first one.
+        if (reachableTiles != null && lastUpdateTick == tick && java.util.Objects.equals(lastStart, start)) {
             return reachableTiles;
         }
 
@@ -44,6 +48,7 @@ public class Rs2Reachable {
             if (worldView == null) {
                 reachableTiles = new IntOpenHashSet();
                 lastUpdateTick = tick;
+                lastStart = start;
                 return reachableTiles;
             }
 
@@ -51,6 +56,7 @@ public class Rs2Reachable {
             if (collisionMaps == null) {
                 reachableTiles = new IntOpenHashSet();
                 lastUpdateTick = tick;
+                lastStart = start;
                 return reachableTiles;
             }
 
@@ -66,6 +72,7 @@ public class Rs2Reachable {
             if (start == null || start.getPlane() != plane) {
                 reachableTiles = new IntOpenHashSet();
                 lastUpdateTick = tick;
+                lastStart = start;
                 return reachableTiles;
             }
 
@@ -76,6 +83,7 @@ public class Rs2Reachable {
                     || localStartX >= REGION_SIZE || localStartY >= REGION_SIZE) {
                 reachableTiles = new IntOpenHashSet();
                 lastUpdateTick = tick;
+                lastStart = start;
                 return reachableTiles;
             }
 
@@ -147,6 +155,7 @@ public class Rs2Reachable {
 
             reachableTiles = reachablePackedPoints;
             lastUpdateTick = tick;
+            lastStart = start;
             return reachableTiles;
         });
     }
