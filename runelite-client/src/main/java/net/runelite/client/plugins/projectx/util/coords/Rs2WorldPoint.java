@@ -103,7 +103,7 @@ public class Rs2WorldPoint {
             return Integer.MAX_VALUE;
         }
         List<WorldPoint> checkpointWPs = this.pathTo(other);
-        if (checkpointWPs == null)
+        if (checkpointWPs == null || checkpointWPs.isEmpty())
         {
             // No path found
             return Integer.MAX_VALUE;
