@@ -276,6 +276,10 @@ public class GrandExchangeWidget
 	 */
 	static Widget getSlot(GrandExchangeSlots slot)
 	{
+		if (slot == null)
+		{
+			return null;
+		}
 		switch (slot)
 		{
 			case ONE:
