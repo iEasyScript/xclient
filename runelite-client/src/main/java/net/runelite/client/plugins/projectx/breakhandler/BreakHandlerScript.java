@@ -943,8 +943,9 @@ public class BreakHandlerScript extends Script {
         // detect fresh login - update player name cache
         if (currentlyLoggedIn && !wasLoggedIn) {
             Rs2PlayerModel localPlayer = Rs2Player.getLocalPlayer();
-            if (localPlayer != null && localPlayer.getName() != null) {
-                lastKnownPlayerName = localPlayer.getName();
+            String playerName = localPlayer != null ? localPlayer.getName() : null;
+            if (playerName != null) {
+                lastKnownPlayerName = playerName;
                 log.info("Updated cached player name: {}", lastKnownPlayerName);
             }
         }

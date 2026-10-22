@@ -193,7 +193,7 @@ public class Rs2Discord {
         embed.setDescription(description);
         embed.setColor(color);
         embed.addField(new DiscordEmbed.Field("Player", 
-                playerName.isEmpty() ? "Unknown" : playerName, true));
+                playerName == null || playerName.isEmpty() ? "Unknown" : playerName, true));
         embed.addField(new DiscordEmbed.Field("Time", timestamp, true));
         embed.addField(new DiscordEmbed.Field("Source", source, true));
         embed.setFooter(new DiscordEmbed.Footer("ProjectX", null));
@@ -293,6 +293,6 @@ public class Rs2Discord {
      * creates a player field
      */
     public static DiscordEmbed.Field createPlayerField(String playerName) {
-        return createField("Player", playerName.isEmpty() ? "Unknown" : playerName, true);
+        return createField("Player", playerName == null || playerName.isEmpty() ? "Unknown" : playerName, true);
     }
 }
