@@ -3134,9 +3134,8 @@ public class Rs2Walker {
                             long elapsed = System.currentTimeMillis() - clickedAt;
                             if (elapsed < 600) return false;
                             if (!Rs2Player.isMoving()) return true;
-                            WorldPoint now = Rs2Player.getWorldLocation();
-                            if (b.distanceTo2D(now) <= proximityWake) return true;
-                            return before.distanceTo2D(now) >= progressCap;
+                            return proximityWaitSatisfied(Rs2Player.getWorldLocation(), b, before,
+                                    proximityWake, progressCap);
                         }, 1200);
                         WorldPoint afterClickWait = Rs2Player.getWorldLocation();
                         boolean routeRetryClicked = false;
@@ -4268,6 +4267,20 @@ public class Rs2Walker {
         routeState.idleNudgeLastObservedLocation = playerLoc;
         routeState.stuckCount = 0;
         return true;
+    }
+
+    static boolean proximityWaitSatisfied(WorldPoint now,
+                                          WorldPoint clickedTarget,
+                                          WorldPoint before,
+                                          int proximityWake,
+                                          int progressCap) {
+        if (now == null) {
+            return false;
+        }
+        if (clickedTarget.distanceTo2D(now) <= proximityWake) {
+            return true;
+        }
+        return before.distanceTo2D(now) >= progressCap;
     }
 
     static boolean routeArrivalSatisfied(WorldPoint playerLoc,
