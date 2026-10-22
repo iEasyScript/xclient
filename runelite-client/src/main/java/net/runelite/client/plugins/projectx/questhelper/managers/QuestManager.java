@@ -481,16 +481,7 @@ public class QuestManager
 
 			SortedMap<QuestHelperQuest, List<ItemRequirement>> newReqs = new TreeMap<>();
 			SortedMap<QuestHelperQuest, List<ItemRequirement>> newRecommended = new TreeMap<>();
-			filteredQuests.forEach((QuestHelper questHelper) -> {
-				if (questHelper.getItemRequirements() != null)
-				{
-					newReqs.put(questHelper.getQuest(), questHelper.getItemRequirements());
-				}
-				if (questHelper.getItemRecommended() != null)
-				{
-					newRecommended.put(questHelper.getQuest(), questHelper.getItemRecommended());
-				}
-			});
+			collectItemRequirements(filteredQuests, newReqs, newRecommended);
 			itemRequirements = newReqs;
 			itemRecommended = newRecommended;
 
@@ -500,6 +491,22 @@ public class QuestManager
 			{
 				shutDownBackgroundQuest(backgroundHelpers.get(checkItemsName));
 				startUpBackgroundQuest(checkItemsName);
+			}
+		});
+	}
+
+	static void collectItemRequirements(List<QuestHelper> quests, SortedMap<QuestHelperQuest, List<ItemRequirement>> reqs,
+		SortedMap<QuestHelperQuest, List<ItemRequirement>> recommended)
+	{
+		quests.forEach((QuestHelper questHelper) -> {
+			questHelper.initializeRequirements();
+			if (questHelper.getItemRequirements() != null)
+			{
+				reqs.put(questHelper.getQuest(), questHelper.getItemRequirements());
+			}
+			if (questHelper.getItemRecommended() != null)
+			{
+				recommended.put(questHelper.getQuest(), questHelper.getItemRecommended());
 			}
 		});
 	}
