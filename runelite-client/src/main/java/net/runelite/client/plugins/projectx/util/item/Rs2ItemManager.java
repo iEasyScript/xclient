@@ -86,7 +86,7 @@ public class Rs2ItemManager {
     // get item id by name
     public int getItemId(String itemName) {
         var items =searchItem(itemName);
-        return items.get(0).getId();
+        return items.isEmpty() ? -1 : items.get(0).getId();
     }
 
     public ItemComposition getItemComposition(int itemId) {
@@ -103,7 +103,8 @@ public class Rs2ItemManager {
 
     // get GE price
     public int getGEPrice(String itemName) {
-        return Rs2GrandExchange.getOfferPrice(getItemId(itemName));
+        int itemId = getItemId(itemName);
+        return itemId == -1 ? -1 : Rs2GrandExchange.getOfferPrice(itemId);
     }
 
     public int getGEPrice(int itemId) {
