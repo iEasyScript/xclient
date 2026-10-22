@@ -148,7 +148,7 @@ public class Rs2Camera {
 
         if (currentPitchPercentage < percentage) {
             holdUntil(KeyEvent.VK_UP, () -> cameraPitchPercentage() >= percentage);
-        } else {
+        } else if (currentPitchPercentage > percentage) {
             holdUntil(KeyEvent.VK_DOWN, () -> cameraPitchPercentage() <= percentage);
         }
     }
@@ -193,7 +193,11 @@ public class Rs2Camera {
     }
 
     public static int getPitch() {
-        return fromClientAngleUnits(ProjectX.getClientThread().runOnClientThreadOptional(() -> ProjectX.getClient().getCameraPitch()).orElse(0));
+        return fromClientAngleUnits(ProjectX.getClientThread().runOnClientThreadOptional(() -> ProjectX.getClient().getCameraPitch()).orElseGet(Rs2Camera::readPitchDirectly));
+    }
+
+    private static int readPitchDirectly() {
+        return ProjectX.getClient().getCameraPitch();
     }
 
     // set camera pitch
@@ -328,7 +332,11 @@ public class Rs2Camera {
     }
     // Get camera/compass facing
     public static int getYaw() {
-        return fromClientAngleUnits(ProjectX.getClientThread().runOnClientThreadOptional(() -> ProjectX.getClient().getCameraYaw()).orElse(0));
+        return fromClientAngleUnits(ProjectX.getClientThread().runOnClientThreadOptional(() -> ProjectX.getClient().getCameraYaw()).orElseGet(Rs2Camera::readYawDirectly));
+    }
+
+    private static int readYawDirectly() {
+        return ProjectX.getClient().getCameraYaw();
     }
 
     // Set camera/compass facing

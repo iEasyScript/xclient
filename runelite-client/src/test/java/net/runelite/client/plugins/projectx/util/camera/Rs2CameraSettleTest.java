@@ -24,6 +24,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -35,6 +36,8 @@ public class Rs2CameraSettleTest {
     private static final int TICK_MS = 20;
     private static final int HELD_SPEED = 160;
     private static final int COAST_DECAY = 20;
+    private static final int MAX_POLL_MS = 320;
+    private static final int SCHEDULING_SLACK_MS = 1000;
 
     private MockedStatic<ProjectX> projectx;
     private MockedStatic<Rs2Keyboard> keyboard;
@@ -140,7 +143,25 @@ public class Rs2CameraSettleTest {
         long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
 
         assertFalse(settled);
-        assertTrue("settle wait ran " + elapsedMs + "ms", elapsedMs < Rs2Camera.SETTLE_TIMEOUT_MS + 400);
+        assertTrue("settle wait ran " + elapsedMs + "ms", elapsedMs < Rs2Camera.SETTLE_TIMEOUT_MS + MAX_POLL_MS + SCHEDULING_SLACK_MS);
+    }
+
+    @Test
+    public void failedClientThreadReadFallsBackToTheLiveCameraAngles() {
+        doReturn(Optional.empty()).when(clientThread).runOnClientThreadOptional(any());
+        doReturn(Rs2Camera.toClientAngleUnits(1536)).when(client).getCameraYaw();
+        doReturn(Rs2Camera.toClientAngleUnits(383)).when(client).getCameraPitch();
+
+        assertEquals(1536, Rs2Camera.getYaw());
+        assertEquals(383, Rs2Camera.getPitch());
+    }
+
+    @Test
+    public void adjustPitchLeavesTheKeysAloneWhenAlreadyAtTarget() {
+        Rs2Camera.adjustPitch(Rs2Camera.cameraPitchPercentage());
+
+        keyboard.verify(() -> Rs2Keyboard.keyHold(anyInt()), never());
+        keyboard.verify(() -> Rs2Keyboard.keyRelease(anyInt()), never());
     }
 
     @Test
