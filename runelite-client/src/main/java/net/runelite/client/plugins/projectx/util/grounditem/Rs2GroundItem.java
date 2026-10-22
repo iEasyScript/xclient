@@ -3,6 +3,7 @@ package net.runelite.client.plugins.projectx.util.grounditem;
 import com.google.common.collect.Table;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.grounditems.GroundItem;
 import net.runelite.client.plugins.grounditems.GroundItemsPlugin;
@@ -131,6 +132,10 @@ public class Rs2GroundItem {
         if (worldPoint == null) return (RS2Item[]) EMPTY_ARRAY;
 
         return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+                    final Player localPlayer = ProjectX.getClient().getLocalPlayer();
+                    if (localPlayer == null) return EMPTY_ARRAY;
+                    final LocalPoint playerLocation = localPlayer.getLocalLocation();
+                    if (playerLocation == null) return EMPTY_ARRAY;
                     List<RS2Item> temp = new ArrayList<>();
                     final int pX = worldPoint.getX();
                     final int pY = worldPoint.getY();
@@ -146,7 +151,7 @@ public class Rs2GroundItem {
                     }
                     //sort on closest item first
                     return temp.stream().sorted(Comparator.comparingInt(value -> value.getTile().getLocalLocation()
-                                    .distanceTo(ProjectX.getClient().getLocalPlayer().getLocalLocation())))
+                                    .distanceTo(playerLocation)))
                             .toArray(RS2Item[]::new);
                 }).orElse(EMPTY_ARRAY);
     }
