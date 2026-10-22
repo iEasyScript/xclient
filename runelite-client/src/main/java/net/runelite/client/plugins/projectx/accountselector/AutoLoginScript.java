@@ -158,6 +158,7 @@ public class AutoLoginScript extends Script {
 
         if (waitForLoginLockout()) {
             lastLoginAttemptTime = Instant.now();
+            loginWatchdogStartTime = null;
             return;
         }
 

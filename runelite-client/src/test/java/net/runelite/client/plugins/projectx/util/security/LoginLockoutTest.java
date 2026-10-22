@@ -50,8 +50,23 @@ public class LoginLockoutTest {
             assertTrue(lockout.recordLockout());
             long duration = TimeUnit.MINUTES.toMillis(minutes);
             assertEquals(duration, lockout.remainingMillis());
+            lockout.recordScreenCleared();
             clock.addAndGet(duration);
         }
+    }
+
+    @Test public void lockoutScreenThatOutlivesItsCooldownIsNotCountedAgain() {
+        LoginLockout lockout = lockout(0.5);
+        assertTrue(lockout.recordLockout());
+        clock.addAndGet(TimeUnit.MINUTES.toMillis(5));
+        assertFalse(lockout.isActive());
+        assertFalse(lockout.recordLockout());
+        assertFalse(lockout.isActive());
+        assertEquals(1, lockout.getConsecutiveLockouts());
+        lockout.recordScreenCleared();
+        assertTrue(lockout.recordLockout());
+        assertEquals(2, lockout.getConsecutiveLockouts());
+        assertEquals(TimeUnit.MINUTES.toMillis(10), lockout.remainingMillis());
     }
 
     @Test public void jitterStaysWithinBounds() {
@@ -68,6 +83,7 @@ public class LoginLockoutTest {
     @Test public void successfulLoginClearsCooldownAndEscalation() {
         LoginLockout lockout = lockout(0.5);
         lockout.recordLockout();
+        lockout.recordScreenCleared();
         clock.addAndGet(TimeUnit.MINUTES.toMillis(5));
         lockout.recordLockout();
         lockout.recordSuccessfulLogin();

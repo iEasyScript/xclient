@@ -160,11 +160,7 @@ public class LoginHandler extends AgentHandler {
 		}
 
 		if (!loginInitiated && LoginLockout.getInstance().isActive()) {
-			Map<String, Object> result = new LinkedHashMap<>();
-			result.put("success", false);
-			result.put("message", "Too many login attempts - login paused until the cooldown ends");
-			result.put("loginCooldownMs", LoginLockout.getInstance().remainingMillis());
-			sendJson(exchange, 429, result);
+			sendLoginCooldown(exchange);
 			return;
 		}
 
@@ -189,6 +185,12 @@ public class LoginHandler extends AgentHandler {
 
 		LoginResult loginResult = waitForLoginResult(timeoutSeconds);
 
+		if (!loginResult.success && LoginLockout.isLockoutLoginIndex(loginResult.loginIndex)) {
+			LoginManager.checkLoginLockout();
+			sendLoginCooldown(exchange);
+			return;
+		}
+
 		Map<String, Object> result = new LinkedHashMap<>();
 		result.put("success", loginResult.success);
 		result.put("message", loginResult.message);
@@ -203,6 +205,15 @@ public class LoginHandler extends AgentHandler {
 		}
 
 		sendJson(exchange, loginResult.success ? 200 : 401, result);
+	}
+
+	private void sendLoginCooldown(HttpExchange exchange) throws IOException {
+		Map<String, Object> result = new LinkedHashMap<>();
+		result.put("success", false);
+		result.put("message", "Too many login attempts - login paused until the cooldown ends");
+		result.put("loginIndex", LOGIN_INDEX_TOO_MANY_ATTEMPTS);
+		result.put("loginCooldownMs", LoginLockout.getInstance().remainingMillis());
+		sendJson(exchange, 429, result);
 	}
 
 	private LoginResult waitForLoginResult(int timeoutSeconds) {

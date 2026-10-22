@@ -26,6 +26,7 @@ public final class LoginLockout {
     private boolean active;
     private long cooldownUntil;
     private boolean dismissedOnce;
+    private boolean awaitingScreenClear;
     private long lastDismissAt;
 
     LoginLockout() {
@@ -52,7 +53,7 @@ public final class LoginLockout {
     }
 
     public synchronized boolean recordLockout() {
-        if (isActive()) {
+        if (isActive() || awaitingScreenClear) {
             return false;
         }
         consecutiveLockouts++;
@@ -61,7 +62,12 @@ public final class LoginLockout {
         cooldownUntil = clock.getAsLong() + duration;
         active = true;
         dismissedOnce = false;
+        awaitingScreenClear = true;
         return true;
+    }
+
+    public synchronized void recordScreenCleared() {
+        awaitingScreenClear = false;
     }
 
     public synchronized boolean isActive() {
@@ -93,5 +99,6 @@ public final class LoginLockout {
         consecutiveLockouts = 0;
         active = false;
         dismissedOnce = false;
+        awaitingScreenClear = false;
     }
 }
