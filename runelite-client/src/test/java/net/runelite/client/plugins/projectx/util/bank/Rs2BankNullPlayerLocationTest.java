@@ -45,6 +45,20 @@ public class Rs2BankNullPlayerLocationTest {
     }
 
     @Test
+    public void walkToBankIsFalseWithoutBankLocation() {
+        assertFalse(Rs2Bank.walkToBank());
+        assertFalse(Rs2Bank.walkToBank(null));
+        assertFalse(Rs2Bank.walkToBank(null, false));
+    }
+
+    @Test
+    public void miningGuildRequirementsAreUnmetWithoutPlayerLocation() {
+        player.when(Rs2Player::isMember).thenReturn(true);
+        player.when(Rs2Player::isInMemberWorld).thenReturn(true);
+        assertFalse(BankLocation.MINING_GUILD.hasRequirements());
+    }
+
+    @Test
     public void distanceBetweenIsUnreachableForNullEndpoint() {
         WorldPoint point = new WorldPoint(3164, 3487, 0);
         assertEquals(Integer.MAX_VALUE, Rs2Walker.getDistanceBetween(null, point));

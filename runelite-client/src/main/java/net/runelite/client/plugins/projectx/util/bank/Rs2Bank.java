@@ -2524,6 +2524,10 @@ public class Rs2Bank {
      * @return true if the Rs2Player's location is within 4 tiles of the specified bank location.
      */
     public static boolean walkToBank(BankLocation bankLocation, boolean toggleRun) {
+        if (bankLocation == null) {
+            log.warn("Bank location is null, cannot walk to bank.");
+            return false;
+        }
         if (Rs2Bank.isOpen()) return true;
         Rs2Player.toggleRunEnergy(toggleRun);
         ProjectX.status = "Walking to nearest bank " + bankLocation.toString();
