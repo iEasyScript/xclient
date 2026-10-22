@@ -1801,6 +1801,19 @@ public class Rs2Walker {
         return processWalk(target, distance, 0);
     }
 
+    private static WalkerState settleReachedPathEndpoint(WorldPoint target, WorldPoint endpoint, WorldPoint playerLoc,
+                                                         int distance, int processWalkTail) {
+        if (walkCancelledDiag(target, "processWalk:at-path-endpoint", processWalkTail)) {
+            return WalkerState.EXIT;
+        }
+        boolean arrived = playerLoc.distanceTo(target) <= tightFinishThreshold(target, endpoint, distance);
+        if (!arrived) {
+            traceProcessWalkExit("path-endpoint-short-of-target", target, processWalkTail);
+        }
+        setTarget(null, "rs2walker:processWalk:reached-path-endpoint");
+        return arrived ? WalkerState.ARRIVED : WalkerState.EXIT;
+    }
+
     private static WalkerState processWalk(WorldPoint target, int distance, int partialRetries) {
         if (debug) {
             return WalkerState.EXIT;
@@ -1971,6 +1984,10 @@ public class Rs2Walker {
             // Partial paths end at an intermediate waypoint (dst still far from {@code target});
             // clearing here would drop currentTarget before the partial-path retry/recalc branch.
             if (!partialPath && isNear(dst) && routeState.interimTargetWp == null) {
+                WorldPoint endpointPlayerLoc = Rs2Player.getWorldLocation();
+                if (endpointPlayerLoc != null) {
+                    return settleReachedPathEndpoint(target, dst, endpointPlayerLoc, distance, processWalkTail);
+                }
                 setTarget(null, "rs2walker:processWalk:reached-path-endpoint");
             }
 
