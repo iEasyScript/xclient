@@ -221,14 +221,14 @@ public class QuestScript extends Script {
                         return;
                     }
 
-                    if (getQuestHelperPlugin().getSelectedQuest() != null &&
-                            getQuestHelperPlugin().getSelectedQuest().getQuest().getId() == Quest.COOKS_ASSISTANT.getId() &&
+                    if (selectedQuest != null &&
+                            selectedQuest.getQuest().getId() == Quest.COOKS_ASSISTANT.getId() &&
                             Rs2Dialogue.isInDialogue()) {
                         dialogueStartedStep = questStep;  // Force this to be true for Cook's Assistant
                     }
 
-                    if (getQuestHelperPlugin().getSelectedQuest() != null &&
-                            getQuestHelperPlugin().getSelectedQuest().getQuest().getId() == Quest.PIRATES_TREASURE.getId() &&
+                    if (selectedQuest != null &&
+                            selectedQuest.getQuest().getId() == Quest.PIRATES_TREASURE.getId() &&
                             Rs2Dialogue.isInDialogue()) {
                         dialogueStartedStep = questStep;
                     }
@@ -269,7 +269,7 @@ public class QuestScript extends Script {
 					 * If we do not prioritize this, the script will think we are missing items
 					 */
 					if (questStep instanceof DetailedQuestStep && !(questStep instanceof NpcStep || questStep instanceof ObjectStep || questStep instanceof DigStep)) {
-                        boolean result = applyDetailedQuestStep((DetailedQuestStep) getQuestHelperPlugin().getSelectedQuest().getCurrentStep().getActiveStep());
+                        boolean result = applyDetailedQuestStep((DetailedQuestStep) selectedQuest.getCurrentStep().getActiveStep());
                         if (result) {
                             sleepUntil(() -> Rs2Player.isInteracting() || Rs2Player.isMoving() || Rs2Player.isAnimating() || Rs2Dialogue.isInDialogue(), 500);
                             sleepUntil(() -> !Rs2Player.isInteracting() && !Rs2Player.isMoving() && !Rs2Player.isAnimating());
@@ -277,17 +277,17 @@ public class QuestScript extends Script {
                         }
                     }
 
-                    if (getQuestHelperPlugin().getSelectedQuest().getCurrentStep() instanceof ConditionalStep) {
-                        QuestStep conditionalStep = getQuestHelperPlugin().getSelectedQuest().getCurrentStep().getActiveStep();
+                    if (selectedQuest.getCurrentStep() instanceof ConditionalStep) {
+                        QuestStep conditionalStep = selectedQuest.getCurrentStep().getActiveStep();
                         applyStep(conditionalStep);
-                    } else if (getQuestHelperPlugin().getSelectedQuest().getCurrentStep() instanceof NpcStep) {
-                        applyNpcStep((NpcStep) getQuestHelperPlugin().getSelectedQuest().getCurrentStep());
-                    } else if (getQuestHelperPlugin().getSelectedQuest().getCurrentStep() instanceof ObjectStep) {
-                        applyObjectStep((ObjectStep) getQuestHelperPlugin().getSelectedQuest().getCurrentStep());
-                    } else if (getQuestHelperPlugin().getSelectedQuest().getCurrentStep() instanceof DigStep) {
-                        applyDigStep((DigStep) getQuestHelperPlugin().getSelectedQuest().getCurrentStep());
-                    } else if (getQuestHelperPlugin().getSelectedQuest().getCurrentStep() instanceof PuzzleStep) {
-                        applyPuzzleStep((PuzzleStep) getQuestHelperPlugin().getSelectedQuest().getCurrentStep());
+                    } else if (selectedQuest.getCurrentStep() instanceof NpcStep) {
+                        applyNpcStep((NpcStep) selectedQuest.getCurrentStep());
+                    } else if (selectedQuest.getCurrentStep() instanceof ObjectStep) {
+                        applyObjectStep((ObjectStep) selectedQuest.getCurrentStep());
+                    } else if (selectedQuest.getCurrentStep() instanceof DigStep) {
+                        applyDigStep((DigStep) selectedQuest.getCurrentStep());
+                    } else if (selectedQuest.getCurrentStep() instanceof PuzzleStep) {
+                        applyPuzzleStep((PuzzleStep) selectedQuest.getCurrentStep());
                     }
 
                     sleepUntil(() -> Rs2Player.isInteracting() || Rs2Player.isMoving() || Rs2Player.isAnimating() || Rs2Dialogue.isInDialogue(), 500);
