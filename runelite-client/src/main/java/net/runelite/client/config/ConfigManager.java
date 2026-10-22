@@ -157,7 +157,7 @@ public class ConfigManager
 		// Ensure existing config is saved
 		sendConfig();
 
-		log.info("Switching profile to: {} ({})", newProfile.getName(), newProfile.getId());
+		log.info("Switching profile to: {}", newProfile.getId());
 
 		// sync the latest config revision from the server
 		if (sessionManager.getAccountSession() != null && newProfile.isSync())
@@ -278,7 +278,7 @@ public class ConfigManager
 
 			if (profile.isSync())
 			{
-				log.info("Active remote profile '{}' lost due to session close, converting to a local profile.", profile.getName());
+				log.info("Active remote profile {} lost due to session close, converting to a local profile.", profile.getId());
 				profile.setSync(false);
 				profile.setRev(-1L);
 			}
@@ -684,7 +684,7 @@ public class ConfigManager
 					continue;
 				}
 
-				log.info("Profile '{}' (sync: {}, active: {}, id: {})", p.getName(), p.isSync(), p.isActive(), p.getId());
+				log.info("Profile {} (sync: {}, active: {})", p.getId(), p.isSync(), p.isActive());
 			}
 
 			if (rsProfile == null)
@@ -756,7 +756,7 @@ public class ConfigManager
 
 			if (profile != null)
 			{
-				log.info("Using profile: {} ({})", profile.getName(), profile.getId());
+				log.info("Using profile: {}", profile.getId());
 			}
 			else
 			{
@@ -768,7 +768,7 @@ public class ConfigManager
 					profile.setActive(true);
 				}
 
-				log.info("Creating profile: {} ({})", profile.getName(), profile.getId());
+				log.info("Creating profile: {}", profile.getId());
 			}
 
 			// synced profautoogile need to be fetched if outdated
@@ -808,7 +808,7 @@ public class ConfigManager
 
 				if (migrating && remoteProfile.getId() == 0L)
 				{
-					log.info("Using remote profile {} as the active profile", profile.getName());
+					log.info("Using remote profile {} as the active profile", profile.getId());
 					profile.setActive(true);
 				}
 			}
@@ -831,7 +831,7 @@ public class ConfigManager
 					continue;
 				}
 
-				log.warn("Lost remote profile for '{}'", localProfile.getName());
+				log.warn("Lost remote profile for {}", localProfile.getId());
 				// convert the profile to a non-synced profile
 				localProfile.setSync(false);
 				localProfile.setRev(-1);
@@ -865,11 +865,11 @@ public class ConfigManager
 
 		if (profile.getRev() == remoteProfile.getRev())
 		{
-			log.info("Profile '{}' is up to date", profile.getName());
+			log.info("Profile {} is up to date", profile.getId());
 		}
 		else
 		{
-			log.info("Loading remote configuration for profile '{}'", profile.getName());
+			log.info("Loading remote configuration for profile {}", profile.getId());
 
 			try
 			{
@@ -1545,7 +1545,7 @@ public class ConfigManager
 		ConfigProfile p = lock.findProfile(profile.getId());
 		if (p == null)
 		{
-			log.warn("Lost active profile {}!", profile.getName());
+			log.warn("Lost active profile {}!", profile.getId());
 
 			// We just recreate it, with the same id, so that the ConfigData stays valid
 			p = lock.createProfile(profile.getName(), profile.getId());
