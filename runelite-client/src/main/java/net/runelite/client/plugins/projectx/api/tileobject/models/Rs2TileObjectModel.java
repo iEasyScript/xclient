@@ -53,6 +53,8 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
 
     @Getter
     private final TileObjectType tileObjectType;
+    /** The game's own object this model wraps (a GameObject, WallObject, GroundObject, ...). */
+    @Getter
     private final TileObject tileObject;
     private String[] actions;
 

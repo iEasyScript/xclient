@@ -1775,6 +1775,13 @@ public class Rs2GameObject {
 
     public static boolean clickObject(TileObject object, String action) {
         if (object == null) return false;
+        // A queried model is a TileObject but never a GameObject, so the multi-tile scene correction
+        // below (instanceof GameObject) skipped it and sent the click to the object's centre tile, which
+        // the game ignores: e.g. the 2x1 Civitas bank tables never opened (House Thieving 1.1.0).
+        if (object instanceof net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel) {
+            object = ((net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel) object).getTileObject();
+            if (object == null) return false;
+        }
         // Use LocalPoint-based distance when the object is in the current scene (e.g. inside a
         // POH instance, where Rs2Player.getWorldLocation() returns the overworld-template tile
         // and distanceTo() against an instance world point yields Integer.MAX_VALUE, falsely
