@@ -241,7 +241,7 @@ public class Rs2GrandExchange {
                     //failed to set quantity
                     return false;
                 }
-                confirm();
+                if (!confirm()) break;
                 success = sleepUntil(() -> !isOfferSetupOpen());
                 break;
 
@@ -267,7 +267,7 @@ public class Rs2GrandExchange {
                     }
                 }
 
-                confirm();
+                if (!confirm()) break;
                 success = sleepUntil(() -> !isOfferSetupOpen());
                 break;
         }
@@ -580,14 +580,15 @@ public class Rs2GrandExchange {
      * such as "Your offer is much higher". If such a prompt is detected, it will automatically
      * click "Yes" to proceed with the offer.
      */
-    private static void confirm() {
+    private static boolean confirm() {
         if (!Rs2Widget.clickWidget(GrandExchangeWidget.getConfirm())) {
-            return;
+            return false;
         }
         sleepUntil(() -> Rs2Widget.hasWidget("Your offer is much"), 2000);
         if (Rs2Widget.hasWidget("Your offer is much")) {
             Rs2Widget.clickWidget("Yes");
         }
+        return true;
     }
 
     /**
