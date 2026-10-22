@@ -2517,7 +2517,7 @@ public class Rs2Bank {
 
     /**
      * Walks to a specified bank location with an option to toggle run energy.
-     * If the bank is already open, the method exits immediately.
+     * Returns false if bankLocation is null; otherwise exits immediately if the bank is already open.
      *
      * @param bankLocation the target bank location to walk to.
      * @param toggleRun    whether to toggle run energy during the walk.
