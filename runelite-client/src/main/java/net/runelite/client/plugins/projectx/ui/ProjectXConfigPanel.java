@@ -432,10 +432,10 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
 
             if (result == JOptionPane.YES_OPTION) {
                 configManager.setDefaultConfiguration(pluginConfig.getConfig(), true);
-                ProjectXConfigManager.resetProfilePluginProperties(pluginConfig.getPlugin().getClass());
                 // Reset non-config panel keys
                 Plugin plugin = pluginConfig.getPlugin();
                 if (plugin != null) {
+                    ProjectXConfigManager.resetProfilePluginProperties(plugin.getClass());
                     plugin.resetConfiguration();
                 }
 

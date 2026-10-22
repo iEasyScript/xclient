@@ -281,6 +281,10 @@ public class ProjectXPluginListPanel extends ProjectXPluginPanel {
     }
 
     void openConfigurationPanel(ProjectXPluginConfigurationDescriptor plugin) {
+        if (plugin.getConfigDescriptor() == null) {
+            return;
+        }
+
         ProjectXConfigPanel panel = configPanelProvider.get();
         panel.init(plugin);
         muxer.pushState(this);

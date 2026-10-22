@@ -316,18 +316,17 @@ public class ProjectXPluginHubPanel extends ProjectXPluginPanel {
             configure.setToolTipText("Configure");
             configure.setBorder(null);
             if (!loadedPlugins.isEmpty()) {
-                String search = null;
-                if (loadedPlugins.size() > 1) {
-                    search = manifest.getInternalName();
-                } else {
-                    Plugin plugin = loadedPlugins.iterator().next();
-                    configure.addActionListener(l -> topLevelConfigPanel.openConfigurationPanel(plugin));
-                }
+                configure.addActionListener(l -> {
+                    if (loadedPlugins.size() == 1) {
+                        Plugin plugin = loadedPlugins.iterator().next();
+                        if (pluginManager.getPluginConfigProxy(plugin) != null) {
+                            topLevelConfigPanel.openConfigurationPanel(plugin);
+                            return;
+                        }
+                    }
 
-                if (search != null) {
-                    final String _search = search;
-                    configure.addActionListener(l -> topLevelConfigPanel.openWithFilter(_search));
-                }
+                    topLevelConfigPanel.openWithFilter(manifest.getInternalName());
+                });
             } else {
                 configure.setVisible(false);
             }
