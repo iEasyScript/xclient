@@ -1008,6 +1008,8 @@ public class Rs2Player {
 			if (player == null) return null;
 			if (ProjectX.getClient().getTopLevelWorldView().getScene().isInstance()) {
 				LocalPoint l = LocalPoint.fromWorld(ProjectX.getClient().getTopLevelWorldView(), player.getWorldLocation());
+				if (l == null) l = player.getLocalLocation();
+				if (l == null) return player.getWorldLocation();
 				return WorldPoint.fromLocalInstance(ProjectX.getClient(), l);
 			}
 			return player.getWorldLocation();
