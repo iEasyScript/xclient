@@ -354,7 +354,18 @@ public class ClientUI
 
 			if (OSType.getOSType() == OSType.MacOS)
 			{
-				OSXFullScreenAdapter.install(frame);
+				try
+				{
+					OSXFullScreenAdapter.install(frame);
+				}
+				catch (IllegalAccessError e)
+				{
+					// Only happens when launched without the eawt exports (e.g. an IDE run config).
+					// The adapter just syncs the extended state on fullscreen toggle.
+					log.warn("macOS fullscreen listener unavailable, add to the VM options: " +
+						"--add-exports=java.desktop/com.apple.eawt=ALL-UNNAMED " +
+						"--add-exports=java.desktop/com.apple.eawt.event=ALL-UNNAMED");
+				}
 			}
 
 			final Client apiClient = (Client) this.client;
@@ -659,11 +670,11 @@ public class ClientUI
 			questIconOff = net.runelite.client.plugins.projectx.questhelper.tools.Icon.QUEST_ICON_OFF.getImage();
 			questHelperNavBtn = toolbarPanel.add(
 				NavigationButton.builder()
-					.icon(Boolean.TRUE.equals(configManager.getConfiguration(QuestHelperConfig.QUEST_HELPER_GROUP, "TurnOn", Boolean.class)) ? questIconOn : questIconOff)
-					.tooltip(Boolean.TRUE.equals(configManager.getConfiguration(QuestHelperConfig.QUEST_HELPER_GROUP, "TurnOn", Boolean.class)) ? "Disable 'Semi-Auto' Questing" : "Enable 'Semi-Auto' Questing")
+					.icon(isQuestHelperEnabled() ? questIconOn : questIconOff)
+					.tooltip(isQuestHelperEnabled() ? "Disable 'Semi-Auto' Questing" : "Enable 'Semi-Auto' Questing")
 					.onClick(() ->
 					{
-						boolean isEnabled = Boolean.TRUE.equals(configManager.getConfiguration(QuestHelperConfig.QUEST_HELPER_GROUP, "TurnOn", Boolean.class));
+						boolean isEnabled = isQuestHelperEnabled();
 						configManager.setConfiguration(QuestHelperConfig.QUEST_HELPER_GROUP, "TurnOn", !isEnabled);
 						questHelperNavBtn.setIcon(new ImageIcon(!isEnabled ? questIconOn : questIconOff ));
 						questHelperNavBtn.setToolTipText(!isEnabled ? "Disable 'Semi-Auto' Questing" : "Enable 'Semi-Auto' Questing");
@@ -1376,6 +1387,12 @@ public class ClientUI
 		{
 			client.requestFocusInWindow();
 		}
+	}
+
+	private boolean isQuestHelperEnabled()
+	{
+		// Unset until the QuestHelper config is first registered (fresh profile); its declared default is true
+		return !Boolean.FALSE.equals(configManager.getConfiguration(QuestHelperConfig.QUEST_HELPER_GROUP, "TurnOn", Boolean.class));
 	}
 
 	private void updateFrameConfig(boolean updateResizable)

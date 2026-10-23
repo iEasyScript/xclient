@@ -7,6 +7,7 @@ import net.runelite.client.plugins.projectx.ProjectX;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class VarpHandler extends AgentHandler {
 
@@ -39,6 +40,16 @@ public class VarpHandler extends AgentHandler {
 		try {
 			varpId = Integer.parseInt(idStr);
 		} catch (NumberFormatException e) {
+			sendJson(exchange, 400, errorResponse("Invalid varp id: " + idStr));
+			return;
+		}
+
+		Optional<Boolean> validId = ProjectX.getRs2PlayerStateCache().isValidVarpId(varpId);
+		if (!validId.isPresent()) {
+			sendJson(exchange, 503, errorResponse("Client thread unavailable"));
+			return;
+		}
+		if (!validId.get()) {
 			sendJson(exchange, 400, errorResponse("Invalid varp id: " + idStr));
 			return;
 		}

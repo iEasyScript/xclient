@@ -1321,7 +1321,11 @@ public class Rs2Npc {
 
     // Walks to the nearest NPC location with the given name
     public static boolean walkToNearestMonster(String name, int minClustering, boolean avoidWilderness) {
-        WorldPoint nearestNpcLocation = Rs2NpcManager.getClosestLocation(name,minClustering,avoidWilderness).getClosestToCenter();
+        MonsterLocation nearestLocation = Rs2NpcManager.getClosestLocation(name, minClustering, avoidWilderness);
+        if (nearestLocation == null) {
+            return false;
+        }
+        WorldPoint nearestNpcLocation = nearestLocation.getClosestToCenter();
         if (nearestNpcLocation == null) {
             return false;
         }

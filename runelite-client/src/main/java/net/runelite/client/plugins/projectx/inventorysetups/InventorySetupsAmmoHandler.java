@@ -5,6 +5,7 @@ import net.runelite.client.plugins.projectx.inventorysetups.ui.InventorySetupsRu
 import net.runelite.client.plugins.projectx.inventorysetups.ui.InventorySetupsSlot;
 import net.runelite.api.Client;
 import net.runelite.api.EnumComposition;
+import net.runelite.api.GameState;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.game.ItemManager;
@@ -145,10 +146,16 @@ public class InventorySetupsAmmoHandler
 		return InventorySetupsRunePouchType.NONE;
 	}
 
+	private boolean varbitsReadable()
+	{
+		return client.getGameState() == GameState.LOGGED_IN;
+	}
+
 	public List<InventorySetupsItem> getRunePouchDataIfInContainer(final List<InventorySetupsItem> container)
 	{
 		InventorySetupsRunePouchType runePouchType = getRunePouchTypeFromContainer(container);
-		return runePouchType != InventorySetupsRunePouchType.NONE ? getRunePouchData(runePouchType) : null;
+		return runePouchType != InventorySetupsRunePouchType.NONE && varbitsReadable()
+			? getRunePouchData(runePouchType) : null;
 	}
 
 	// Must be run on client thread!
@@ -183,7 +190,7 @@ public class InventorySetupsAmmoHandler
 
 	public List<InventorySetupsItem> getBoltPouchDataIfInContainer(final List<InventorySetupsItem> container)
 	{
-		return containerContainsBoltPouch(container) ? getBoltPouchData() : null;
+		return containerContainsBoltPouch(container) && varbitsReadable() ? getBoltPouchData() : null;
 	}
 
 	// Must be run on client thread!
@@ -224,7 +231,7 @@ public class InventorySetupsAmmoHandler
 
 	public List<InventorySetupsItem> getQuiverDataIfInSetup(final List<InventorySetupsItem> inv, final List<InventorySetupsItem> eq)
 	{
-		return setupContainsQuiver(inv, eq) ? getQuiverData() : null;
+		return varbitsReadable() && setupContainsQuiver(inv, eq) ? getQuiverData() : null;
 	}
 
 	// Must be run on client thread!
@@ -338,6 +345,10 @@ public class InventorySetupsAmmoHandler
 
 	public void updateSpecialContainersInSetup(final InventorySetup setup, final List<InventorySetupsItem> inv, final List<InventorySetupsItem> eqp)
 	{
+		if (!varbitsReadable())
+		{
+			return;
+		}
 		List<InventorySetupsItem> runePouchData = getRunePouchDataIfInContainer(inv);
 		List<InventorySetupsItem> boltPouchData = getBoltPouchDataIfInContainer(inv);
 		List<InventorySetupsItem> quiverData = getQuiverDataIfInSetup(inv, eqp);

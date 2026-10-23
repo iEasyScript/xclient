@@ -261,8 +261,8 @@ public class Rs2Widget {
      * @return True if the widget's text or any action matches the search criteria, false otherwise.
      */
     private static boolean matchesText(Widget widget, String text, boolean exact) {
-        String cleanText = Rs2UiHelper.stripColTags(widget.getText());
-        String cleanName = Rs2UiHelper.stripColTags(widget.getName());
+        String cleanText = cleanWidgetText(widget);
+        String cleanName = cleanWidgetName(widget);
 
         if (exact) {
             if (cleanText.equalsIgnoreCase(text) || cleanName.equalsIgnoreCase(text)) return true;
@@ -282,6 +282,22 @@ public class Rs2Widget {
             }
         }
         return false;
+    }
+
+    private static String cleanWidgetText(Widget widget) {
+        try {
+            return Rs2UiHelper.stripColTags(widget.getText());
+        } catch (NullPointerException e) {
+            return "";
+        }
+    }
+
+    private static String cleanWidgetName(Widget widget) {
+        try {
+            return Rs2UiHelper.stripColTags(widget.getName());
+        } catch (NullPointerException e) {
+            return "";
+        }
     }
 
     /**
@@ -823,9 +839,9 @@ public class Rs2Widget {
     private static boolean matchesWildCardText(Widget widget, String text, boolean exact, boolean onlyAction) {
         if (widget == null) return false;
         
-        String cleanText = Rs2UiHelper.stripColTags(widget.getText());
-        String cleanName = Rs2UiHelper.stripColTags(widget.getName());
-        
+        String cleanText = cleanWidgetText(widget);
+        String cleanName = cleanWidgetName(widget);
+
         if (!onlyAction) {
             if (exact) {
                 if ((cleanText != null && cleanText.equalsIgnoreCase(text)) || 

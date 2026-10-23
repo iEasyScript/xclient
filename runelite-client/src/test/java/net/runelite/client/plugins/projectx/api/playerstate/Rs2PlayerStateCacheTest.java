@@ -14,7 +14,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,6 +25,7 @@ public class Rs2PlayerStateCacheTest
 {
 	private static final int VARP_ID = 100;
 	private static final int VARBIT_ID = 200;
+	private static final int VARP_COUNT = 5996;
 
 	private Client client;
 	private EventBus eventBus;
@@ -42,7 +45,49 @@ public class Rs2PlayerStateCacheTest
 			return Optional.ofNullable(callable.call());
 		});
 
+		when(client.getVarps()).thenReturn(new int[VARP_COUNT]);
+
 		cache = new Rs2PlayerStateCache(eventBus, client, clientThread);
+	}
+
+	@Test
+	public void outOfRangeVarpReturnsZeroWithoutReadingClient()
+	{
+		when(client.getGameState()).thenReturn(GameState.LOGGED_IN);
+
+		assertEquals(0, cache.getVarpValue(VARP_COUNT));
+		assertEquals(0, cache.getVarpValue(8063));
+		assertEquals(0, cache.getVarpValue(-1));
+
+		verify(client, never()).getVarpValue(anyInt());
+	}
+
+	@Test
+	public void isValidVarpIdChecksVarpArrayBounds()
+	{
+		assertEquals(Optional.of(true), cache.isValidVarpId(0));
+		assertEquals(Optional.of(true), cache.isValidVarpId(VARP_COUNT - 1));
+		assertEquals(Optional.of(false), cache.isValidVarpId(VARP_COUNT));
+		assertEquals(Optional.of(false), cache.isValidVarpId(8063));
+		assertEquals(Optional.of(false), cache.isValidVarpId(-1));
+		assertEquals(Optional.of(false), cache.isValidVarpId(Integer.MIN_VALUE));
+	}
+
+	@Test
+	public void isValidVarpIdIsEmptyWhenClientThreadUnavailable()
+	{
+		ClientThread unavailable = mock(ClientThread.class);
+		when(unavailable.runOnClientThreadOptional(any())).thenReturn(Optional.empty());
+		Rs2PlayerStateCache stalled = new Rs2PlayerStateCache(eventBus, client, unavailable);
+
+		assertEquals(Optional.empty(), stalled.isValidVarpId(281));
+		assertEquals(Optional.of(false), stalled.isValidVarpId(-1));
+	}
+
+	@Test
+	public void isVarpIdInRangeRejectsMissingVarpArray()
+	{
+		assertFalse(Rs2PlayerStateCache.isVarpIdInRange(null, 0));
 	}
 
 	private void setGameState(GameState gameState)

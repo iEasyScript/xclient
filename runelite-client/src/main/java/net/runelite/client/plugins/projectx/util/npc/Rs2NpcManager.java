@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.shortestpath.ShortestPathPlugin;
+import net.runelite.client.plugins.projectx.shortestpath.pathfinder.PathfinderConfig;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
 import org.slf4j.event.Level;
 
@@ -285,8 +286,6 @@ public class Rs2NpcManager {
      * @param avoidWilderness Whether to avoid locations in the Wilderness.
      */
     public static MonsterLocation getClosestLocation(String npcName, int minClustering, boolean avoidWilderness) {
-        boolean originalUseBankItems = ShortestPathPlugin.getPathfinderConfig().isUseBankItems();
-        ShortestPathPlugin.getPathfinderConfig().setUseBankItems(true);
         ProjectX.log(Level.INFO,"Finding closest location for: " + npcName);
 
         List<MonsterLocation> allLocations = getNpcLocations(npcName);
@@ -318,8 +317,25 @@ public class Rs2NpcManager {
             return null;
         }
 
-        // 6) Find nearest and return
-        int idx = Rs2Walker.findNearestAccessibleTarget(centers, true);
+        // 6) Find nearest and return. Bank items count for reachability during this lookup only;
+        // the pathfinder config is null until the Shortest Path plugin has started.
+        PathfinderConfig pathfinderConfig = ShortestPathPlugin.getPathfinderConfig();
+        boolean originalUseBankItems = pathfinderConfig != null && pathfinderConfig.isUseBankItems();
+        int idx;
+        try {
+            if (pathfinderConfig != null) {
+                pathfinderConfig.setUseBankItems(true);
+            }
+            idx = Rs2Walker.findNearestAccessibleTarget(centers, true);
+        } finally {
+            if (pathfinderConfig != null) {
+                pathfinderConfig.setUseBankItems(originalUseBankItems);
+            }
+        }
+        if (idx < 0 || idx >= validLocations.size()) {
+            ProjectX.log(Level.INFO,"No reachable location for " + npcName);
+            return null;
+        }
         MonsterLocation closest = validLocations.get(idx);
         if (closest.getCoords().isEmpty()) {
             ProjectX.log(Level.INFO,"Closest location had no coords for " + npcName);
@@ -327,7 +343,6 @@ public class Rs2NpcManager {
         }
 
         ProjectX.log(Level.INFO,"Closest location for " + npcName + ": " + closest.getLocationName());
-        ShortestPathPlugin.getPathfinderConfig().setUseBankItems(originalUseBankItems);
         return closest;
     }
 

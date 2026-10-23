@@ -6,6 +6,7 @@ import net.runelite.api.GameState;
 import net.runelite.client.config.ConfigProfile;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.Script;
+import net.runelite.client.plugins.projectx.breakhandler.BreakPreparation;
 import net.runelite.client.plugins.projectx.util.discord.Rs2Discord;
 import net.runelite.client.plugins.projectx.util.math.Rs2Random;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
@@ -81,12 +82,19 @@ public class BreakHandlerV2Script extends Script {
     private static final int MAX_SAFETY_CHECK_ATTEMPTS = 60;
     private static final int SAFETY_CHECK_DELAY_MS = 5000; // 5 seconds between checks
 
-    public static String version = "2.0.1";
+    public static String version = "2.0.2";
+
+    // Cooperative break preparation (see BreakPreparation)
+    private static final long PREPARATION_DEFERRAL_LOG_INTERVAL_MS = 30_000L;
+    private long lastPreparationDeferralLogAt = 0L;
+    private boolean restoredPauseNeedsPreparation;
 
     /**
      * Run the break handler script
      */
     public boolean run(BreakHandlerV2Config config) {
+        BreakPreparation.finishBreak();
+        restoredPauseNeedsPreparation = false;
         this.config = config;
         BreakHandlerV2State.setState(BreakHandlerV2State.WAITING_FOR_BREAK);
 
@@ -205,6 +213,25 @@ public class BreakHandlerV2Script extends Script {
      * Initiates break based on configuration
      */
     private void handleBreakRequested() {
+        // An active no-logout break may finish even if a late participant registers and times out
+        boolean preparing = breakEndTime == null || restoredPauseNeedsPreparation;
+        if (preparing && cancelFailedPreparation()) {
+            return;
+        }
+        if (shouldDeferRequestedBreak(restoredPauseNeedsPreparation ? null : breakEndTime)) {
+            long now = System.currentTimeMillis();
+            if (now - lastPreparationDeferralLogAt >= PREPARATION_DEFERRAL_LOG_INTERVAL_MS) {
+                log.info("[BreakHandlerV2] Break deferred while a plugin prepares for it");
+                lastPreparationDeferralLogAt = now;
+            }
+            return;
+        }
+
+        lastPreparationDeferralLogAt = 0L;
+        if (restoredPauseNeedsPreparation) {
+            restoredPauseNeedsPreparation = false;
+            ProjectX.pauseAllScripts.set(true);
+        }
         stopConfiguredPluginIfNeeded();
 
         // If breakEndTime is already set, we're in a no-logout break waiting for it to end
@@ -243,7 +270,18 @@ public class BreakHandlerV2Script extends Script {
      * Handle INITIATING_BREAK state
      * Performs safety checks before logout with backoff retry
      */
+    /**
+     * Whether a requested break must wait for cooperative preparation. Never defers an
+     * already-active no-logout break whose completion must continue to be processed.
+     */
+    static boolean shouldDeferRequestedBreak(Instant activeBreakEndTime) {
+        return activeBreakEndTime == null && BreakPreparation.shouldDeferBreak();
+    }
+
     private void handleInitiatingBreak() {
+        if (cancelFailedPreparation() || BreakPreparation.shouldDeferBreak()) {
+            return;
+        }
         stopConfiguredPluginIfNeeded();
 
         if (!ProjectX.isLoggedIn()) {
@@ -826,6 +864,12 @@ public class BreakHandlerV2Script extends Script {
      * Stops a configured ProjectX plugin once per break cycle.
      */
     private void stopConfiguredPluginIfNeeded() {
+        // Participants get to reach safety before the configured plugin is stopped
+        if (BreakPreparation.hasParticipants()
+                && (BreakHandlerV2State.getCurrentState() == BreakHandlerV2State.WAITING_FOR_BREAK
+                || BreakPreparation.shouldDeferBreak())) {
+            return;
+        }
         if (pluginStopTriggered || config == null) {
             return;
         }
@@ -939,6 +983,9 @@ public class BreakHandlerV2Script extends Script {
      * Transition to a new state
      */
     private void transitionToState(BreakHandlerV2State newState) {
+        if (newState == BreakHandlerV2State.WAITING_FOR_BREAK) {
+            BreakPreparation.finishBreak();
+        }
         BreakHandlerV2State oldState = BreakHandlerV2State.getCurrentState();
         log.info("[BreakHandlerV2] State transition: {} -> {}", oldState, newState);
         BreakHandlerV2State.setState(newState);
@@ -1002,6 +1049,7 @@ public class BreakHandlerV2Script extends Script {
 
     @Override
     public void shutdown() {
+        BreakPreparation.finishBreak();
         super.shutdown();
         log.info("[BreakHandlerV2] Shutting down");
 
@@ -1064,7 +1112,10 @@ public class BreakHandlerV2Script extends Script {
                     transitionToState(BreakHandlerV2State.LOGGED_OUT);
                 }
             } else {
-                ProjectX.pauseAllScripts.set(true);
+                restoredPauseNeedsPreparation = ProjectX.isLoggedIn() && BreakPreparation.hasParticipants();
+                if (!restoredPauseNeedsPreparation) {
+                    ProjectX.pauseAllScripts.set(true);
+                }
                 transitionToState(BreakHandlerV2State.BREAK_REQUESTED);
             }
         } else {
@@ -1077,6 +1128,11 @@ public class BreakHandlerV2Script extends Script {
      */
     private void initializeBreakIfOutsideSchedule() {
         if (!isOutsidePlaySchedule()) {
+            return;
+        }
+
+        if (ProjectX.isLoggedIn() && BreakPreparation.hasParticipants()) {
+            transitionToState(BreakHandlerV2State.BREAK_REQUESTED);
             return;
         }
 
@@ -1119,6 +1175,22 @@ public class BreakHandlerV2Script extends Script {
         setBreakTimer(false);
         sendBreakStartedNotification(false);
         ProjectX.pauseAllScripts.set(true);
+    }
+
+    /** Cancels failed preparation and releases the pause so normal script processing can resume. */
+    private boolean cancelFailedPreparation() {
+        if (!BreakPreparation.isAborted()) {
+            return false;
+        }
+        log.warn("[BreakHandlerV2] Break preparation failed or timed out; cancelling this request");
+        restoredPauseNeedsPreparation = false;
+        breakEndTime = null;
+        safetyCheckAttempts = 0;
+        ProjectX.pauseAllScripts.set(false);
+        clearPersistedBreakState();
+        scheduleNextBreak();
+        transitionToState(BreakHandlerV2State.WAITING_FOR_BREAK);
+        return true;
     }
 
     private void beginLogoutBreak() {
