@@ -343,6 +343,7 @@ public class Rs2Antiban {
         if (Rs2AntibanSettings.universalAntiban)
 			ProjectX.pauseAllScripts.compareAndSet(false, true);
 
+        AntibanPlugin.resetCooldownBusyTicks();
         Rs2AntibanSettings.actionCooldownActive = true;
 
         if (Rs2AntibanSettings.moveMouseRandomly && Rs2Random.diceFractional(Rs2AntibanSettings.moveMouseRandomlyChance)) {

@@ -164,13 +164,40 @@ public class AntibanPlugin extends Plugin {
         lastMiningAction = Instant.now();
     }
 
+    /**
+     * Ticks a cooldown may wait for the player to stop being busy before it counts down anyway
+     * (about 12 seconds).
+     */
+    static final int MAX_BUSY_TICKS_PER_COOLDOWN = 20;
+    private static int busyTicksThisCooldown;
+
+    /**
+     * Whether the cooldown counts down this tick. It waits while the player is busy, but not for
+     * ever: with the universal antiban on, every script is paused for the cooldown, and an action
+     * that never ends by itself (mining guardian fragments at GOTR, which never run out) kept the
+     * player busy, so the cooldown never ran and the script never got control back to stop mining.
+     */
+    static boolean cooldownCountsDown(boolean busy, int busyTicksSoFar) {
+        return !busy || busyTicksSoFar >= MAX_BUSY_TICKS_PER_COOLDOWN;
+    }
+
+    /** A new cooldown starts with its full allowance of busy ticks. */
+    static void resetCooldownBusyTicks() {
+        busyTicksThisCooldown = 0;
+    }
+
     public static void performActionBreak() {
         if (Rs2AntibanSettings.actionCooldownActive) {
             if (Rs2Antiban.getTIMEOUT() > 0) {
-                if (!Rs2Antiban.getCategory().isBusy()) {
+                var category = Rs2Antiban.getCategory();
+                boolean busy = category != null && category.isBusy();
+                if (cooldownCountsDown(busy, busyTicksThisCooldown)) {
                     Rs2Antiban.TIMEOUT--;
+                } else {
+                    busyTicksThisCooldown++;
                 }
             } else {
+                busyTicksThisCooldown = 0;
                 Rs2AntibanSettings.actionCooldownActive = false;
                 if (Rs2AntibanSettings.universalAntiban && !Rs2AntibanSettings.microBreakActive)
 					ProjectX.pauseAllScripts.compareAndSet(true, false);
@@ -268,6 +295,7 @@ public class AntibanPlugin extends Plugin {
                     Rs2Antiban.TIMEOUT = 0;
                     Rs2AntibanSettings.actionCooldownActive = false;
                 }
+                busyTicksThisCooldown = 0;
                 fromLoginScreen = true;
                 sessionStart = null;
             case LOGGING_IN:
