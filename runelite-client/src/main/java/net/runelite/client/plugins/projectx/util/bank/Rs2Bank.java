@@ -351,6 +351,8 @@ public class Rs2Bank {
      * and so on...
      */
     private static int container = -1;
+    // Last X amount typed into the bank prompt, until BANK_REQUESTEDQUANTITY is seen to match it.
+    private static volatile int pendingRequestedQuantity = -1;
     // Array to store the counts of items in each tab
     private static final int[] bankTabCounts = new int[9];
 
@@ -1262,6 +1264,7 @@ public class Rs2Bank {
     private static boolean handleAmount(Rs2ItemModel rs2Item, int amount, boolean safe) {
 
         if (amount <= 0) return true;
+        boolean xConfirmed = awaitPendingRequestedQuantity();
         int selected = ProjectX.getVarbitValue(VarbitID.BANK_QUANTITY_TYPE);
         int configuredX = ProjectX.getVarbitValue(VarbitID.BANK_REQUESTEDQUANTITY);
         boolean hasX = configuredX > 0;
@@ -1285,7 +1288,7 @@ public class Rs2Bank {
             }
         }
 
-        if (hasX && configuredX == amount) {
+        if (xConfirmed && hasX && configuredX == amount) {
             final int before = Rs2Inventory.count();
             invokeMenu(xSetOffset, rs2Item);
             if (safe) return sleepUntilTrue(() -> Rs2Inventory.count() != before, 100, 2500);
@@ -1301,11 +1304,25 @@ public class Rs2Bank {
         Rs2Random.waitEx(1200, 100);
         Rs2Keyboard.typeString(String.valueOf(amount));
         Rs2Keyboard.enter();
-        sleepUntil(() -> ProjectX.getVarbitValue(VarbitID.BANK_REQUESTEDQUANTITY) == amount, 2400);
+        // BANK_REQUESTEDQUANTITY arrives in the same tick as the withdrawn items, so waiting for it
+        // here would make withdrawX return after the inventory changed. Wait at the next call instead.
+        pendingRequestedQuantity = amount;
 
         if (safe) return sleepUntilTrue(() -> isInventory != Rs2Inventory.hasItem(rs2Item.getId()), 100, 2500);
 
         return true;
+    }
+
+    /**
+     * Waits for BANK_REQUESTEDQUANTITY to reach the X amount typed last time, if any.
+     *
+     * @return false if it never did, so the value read next may be stale and the amount must be typed
+     */
+    private static boolean awaitPendingRequestedQuantity() {
+        final int pending = pendingRequestedQuantity;
+        if (pending <= 0) return true;
+        pendingRequestedQuantity = -1;
+        return sleepUntil(() -> ProjectX.getVarbitValue(VarbitID.BANK_REQUESTEDQUANTITY) == pending, 2400);
     }
 
     /**

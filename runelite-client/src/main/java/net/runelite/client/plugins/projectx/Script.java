@@ -14,10 +14,11 @@ import net.runelite.client.plugins.projectx.util.reliability.ScriptReliability;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -26,17 +27,32 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Slf4j
 public abstract class Script extends Global implements IScript {
-    protected ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(10,
-        new ThreadFactory() {
-            private final AtomicInteger threadNumber = new AtomicInteger(1);
-            @Override
-            public Thread newThread(@NotNull Runnable r) {
-                Thread t = new Thread(r);
-                t.setName(Script.this.getClass().getSimpleName() + "-" + threadNumber.getAndIncrement());
-                t.setDaemon(true);
-                return t;
-            }
-        });
+    static final long EXECUTOR_KEEP_ALIVE_SECONDS = 60;
+
+    protected ScheduledExecutorService scheduledExecutorService = newScriptExecutor();
+
+    /**
+     * Each script's own pool. Idle threads time out and cancelled tasks leave the queue, so a
+     * stopped script does not keep ten parked threads (and, through the thread factory, itself
+     * and its plugin classloader) alive for ever. The pool stays usable for a restart.
+     */
+    private ScheduledThreadPoolExecutor newScriptExecutor() {
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(10,
+            new ThreadFactory() {
+                private final AtomicInteger threadNumber = new AtomicInteger(1);
+                @Override
+                public Thread newThread(@NotNull Runnable r) {
+                    Thread t = new Thread(r);
+                    t.setName(Script.this.getClass().getSimpleName() + "-" + threadNumber.getAndIncrement());
+                    t.setDaemon(true);
+                    return t;
+                }
+            });
+        executor.setKeepAliveTime(EXECUTOR_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS);
+        executor.allowCoreThreadTimeOut(true);
+        executor.setRemoveOnCancelPolicy(true);
+        return executor;
+    }
     protected ScheduledFuture<?> scheduledFuture;
     protected ScheduledFuture<?> mainScheduledFuture;
 
