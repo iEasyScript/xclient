@@ -91,6 +91,8 @@ public class BreakHandlerScript extends Script {
     // Core break timing variables
     public static volatile int breakIn = -1;
     public static volatile int breakDuration = -1;
+    /** Whether the break under way is an antiban micro break, set when its length is chosen. */
+    private volatile boolean currentBreakIsMicro = false;
     public static volatile Duration setBreakDurationTime = Duration.ZERO;
     public static volatile int totalBreaks = 0;
     
@@ -704,8 +706,13 @@ public class BreakHandlerScript extends Script {
         // Reset config toggles
         resetConfigToggles();
         
-        // Return to waiting state
-        initializeNextBreakTimer();
+        // Return to waiting state. A micro break leaves the countdown to the next normal break
+        // where it was: restarting it after every micro break meant that, with micro breaks
+        // coming every few minutes, a normal break (and its logout) never came at all.
+        if (restartCountdownAfterBreak(currentBreakIsMicro, breakIn)) {
+            initializeNextBreakTimer();
+        }
+        currentBreakIsMicro = false;
         transitionToState(BreakHandlerState.WAITING_FOR_BREAK);
     }
 
@@ -749,6 +756,14 @@ public class BreakHandlerScript extends Script {
     }
 
     /**
+     * Whether the countdown to the next normal break starts again when a break ends: after a
+     * normal break yes, after a micro break only if the countdown had run out anyway.
+     */
+    static boolean restartCountdownAfterBreak(boolean wasMicroBreak, int secondsLeftUntilNormalBreak) {
+        return !wasMicroBreak || secondsLeftUntilNormalBreak <= 0;
+    }
+
+    /**
      * Initializes the timer for the next break.
      */
     private void initializeNextBreakTimer() {
@@ -763,6 +778,7 @@ public class BreakHandlerScript extends Script {
      * Sets the break duration based on configuration and break type.
      */
     private void setBreakDuration() {
+        currentBreakIsMicro = Rs2AntibanSettings.microBreakActive;
         if (Rs2AntibanSettings.microBreakActive) {
             // Micro break duration - use proper range and convert minutes to seconds
             breakDuration = Rs2Random.between(
