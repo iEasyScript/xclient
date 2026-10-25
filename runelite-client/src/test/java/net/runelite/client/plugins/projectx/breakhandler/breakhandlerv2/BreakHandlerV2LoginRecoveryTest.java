@@ -2,6 +2,7 @@ package net.runelite.client.plugins.projectx.breakhandler.breakhandlerv2;
 
 import net.runelite.api.Client;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.ConfigProfile;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.Script;
@@ -73,6 +74,9 @@ public class BreakHandlerV2LoginRecoveryTest {
         when(config.regionPreference()).thenReturn(RegionPreference.ANY_REGION);
         when(config.minPlaytime()).thenReturn(60);
         when(config.maxPlaytime()).thenReturn(60);
+        when(config.autoLogin()).thenReturn(true);
+        when(config.useActiveProfile()).thenReturn(true);
+        projectx.when(ProjectX::getConfigManager).thenReturn(mock(ConfigManager.class));
         script = new BreakHandlerV2Script();
         setField("config", config);
         ProjectX.pauseAllScripts.set(true);
@@ -200,6 +204,48 @@ public class BreakHandlerV2LoginRecoveryTest {
     }
 
     @Test
+    public void autoLoginTurnedOffDuringRetriesEndsTheBreak() throws Exception {
+        when(config.autoLogin()).thenReturn(false);
+        setField("activeProfile", profile());
+        setField("loginRetryCount", 5);
+        BreakHandlerV2State.setState(BreakHandlerV2State.LOGIN_REQUESTED);
+
+        invoke("handleLoginRequested");
+
+        assertEquals(BreakHandlerV2State.BREAK_ENDING, BreakHandlerV2State.getCurrentState());
+        loginManager.verify(() -> LoginManager.login(anyString(), anyString(), anyInt()), never());
+    }
+
+    @Test
+    public void autoLoginTurnedOffDuringExtendedSleepEndsTheBreak() throws Exception {
+        when(config.autoLogin()).thenReturn(false);
+        setField("extendedSleepEndsAt", Instant.now().minusSeconds(1));
+        BreakHandlerV2State.setState(BreakHandlerV2State.LOGIN_EXTENDED_SLEEP);
+
+        invoke("handleLoginExtendedSleep");
+
+        assertEquals(BreakHandlerV2State.BREAK_ENDING, BreakHandlerV2State.getCurrentState());
+        assertNull(getField("extendedSleepEndsAt"));
+    }
+
+    @Test
+    public void profileLoginDisabledEndsTheBreakInsteadOfRetrying() throws Exception {
+        when(config.useActiveProfile()).thenReturn(false);
+        setField("breakEndTime", Instant.now().minusSeconds(1));
+        BreakHandlerV2State.setState(BreakHandlerV2State.LOGGED_OUT);
+
+        invoke("handleLoggedOut");
+
+        assertEquals(BreakHandlerV2State.BREAK_ENDING, BreakHandlerV2State.getCurrentState());
+
+        BreakHandlerV2State.setState(BreakHandlerV2State.LOGIN_REQUESTED);
+        invoke("handleLoginRequested");
+
+        assertEquals(BreakHandlerV2State.BREAK_ENDING, BreakHandlerV2State.getCurrentState());
+        assertEquals(0, getField("loginRetryCount"));
+    }
+
+    @Test
     public void reloginAfterDisconnectKeepsThePendingBreak() throws Exception {
         Instant nextBreak = Instant.now().plus(Duration.ofMinutes(20));
         setField("nextBreakTime", nextBreak);
@@ -238,7 +284,7 @@ public class BreakHandlerV2LoginRecoveryTest {
 
     @Test
     public void loggedOutOutsideScheduleDoesNotRewriteTheBreakEveryTick() throws Exception {
-        PlaySchedule outside = findScheduleOutsideCurrentTime();
+        PlaySchedule outside = findScheduleFurthestFromStarting();
         when(config.usePlaySchedule()).thenReturn(true);
         when(config.playSchedule()).thenReturn(outside);
         Instant breakEnd = Instant.now().plus(outside.timeUntilNextSchedule());
@@ -280,13 +326,18 @@ public class BreakHandlerV2LoginRecoveryTest {
         return profile;
     }
 
-    private PlaySchedule findScheduleOutsideCurrentTime() {
+    private PlaySchedule findScheduleFurthestFromStarting() {
+        PlaySchedule furthest = null;
         for (PlaySchedule schedule : PlaySchedule.values()) {
-            if (schedule.isOutsideSchedule()) {
-                return schedule;
+            if (schedule.isOutsideSchedule()
+                    && (furthest == null || schedule.timeUntilNextSchedule().compareTo(furthest.timeUntilNextSchedule()) > 0)) {
+                furthest = schedule;
             }
         }
-        throw new IllegalStateException("No schedule is outside the current time");
+        if (furthest == null || furthest.timeUntilNextSchedule().compareTo(Duration.ofHours(1)) < 0) {
+            throw new IllegalStateException("No schedule starts more than an hour from now");
+        }
+        return furthest;
     }
 
     private void invokeNotification(boolean logoutBreak) throws Exception {
