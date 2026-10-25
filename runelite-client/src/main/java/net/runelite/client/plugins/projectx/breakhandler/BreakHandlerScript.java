@@ -49,7 +49,7 @@ import net.runelite.api.GameState;
  */
 @Slf4j
 public class BreakHandlerScript extends Script {
-    public static String version = "2.1.0";
+    public static String version = "2.1.1";
     
     // ban detection constants  
     private static final int BANNED_LOGIN_INDEX = 14;
@@ -179,6 +179,7 @@ public class BreakHandlerScript extends Script {
      */
     public boolean run(BreakHandlerConfig config) {
         BreakPreparation.finishBreak();
+        isBanned = false;
         this.config = config;        
         originalWindowTitle = ClientUI.getFrame().getTitle();        
         // Initialize state and timing
@@ -905,14 +906,8 @@ public class BreakHandlerScript extends Script {
         }        
         log.info("Break handler shutting down. Current state: {}", state);
         
-        // If we're in a break state, try to clean up gracefully
-        if (state == BreakHandlerState.LOGGED_OUT) {
-            log.info("Attempting to resume from logged out state");
-            transitionToState(BreakHandlerState.LOGIN_REQUESTED);
-        } else if (isBreakActive()) {
-            log.info("Attempting to end break gracefully");
-            transitionToState(BreakHandlerState.BREAK_ENDING);
-        }        
+        transitionToState(BreakHandlerState.WAITING_FOR_BREAK);
+        cleanupBreakState();
         resetWindowTitle();
         resumeFromBreak();
         super.shutdown();
