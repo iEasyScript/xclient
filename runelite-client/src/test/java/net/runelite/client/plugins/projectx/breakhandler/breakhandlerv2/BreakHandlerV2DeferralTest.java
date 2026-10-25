@@ -1,5 +1,7 @@
 package net.runelite.client.plugins.projectx.breakhandler.breakhandlerv2;
 
+import net.runelite.client.plugins.projectx.breakhandler.BreakHandlerScript;
+import net.runelite.client.plugins.projectx.breakhandler.BreakHandlerTickGuard;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.Script;
 import net.runelite.client.plugins.projectx.breakhandler.BreakPreparation;
@@ -9,7 +11,9 @@ import org.junit.Test;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -114,6 +118,39 @@ public class BreakHandlerV2DeferralTest {
         assertNull(getField("breakEndTime"));
         assertEquals(false, getField("restoredPauseNeedsPreparation"));
         assertNotNull(getField("nextBreakTime"));
+    }
+
+    @Test
+    public void stopClearsPreparationRequestedByARunningTick() throws Exception {
+        script = new BreakHandlerV2Script();
+        Field guardField = BreakHandlerV2Script.class.getDeclaredField("tickGuard");
+        guardField.setAccessible(true);
+        BreakHandlerTickGuard guard = (BreakHandlerTickGuard) guardField.get(script);
+        try (BreakPreparation.Handle handle = BreakPreparation.register("running-tick")) {
+            CountDownLatch entered = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            Thread tick = new Thread(() -> guard.runTick(() -> {
+                entered.countDown();
+                try {
+                    release.await(5, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                BreakPreparation.shouldDeferBreak();
+            }));
+            tick.start();
+            assertTrue(entered.await(2, TimeUnit.SECONDS));
+
+            Thread stopper = new Thread(script::shutdown);
+            stopper.start();
+            Thread.sleep(200);
+            release.countDown();
+            stopper.join(5000);
+            tick.join(5000);
+
+            assertFalse(stopper.isAlive());
+            assertFalse(handle.isRequested());
+        }
     }
 
     private void invokeBreakRequested() throws Exception {

@@ -1151,12 +1151,12 @@ public class BreakHandlerV2Script extends Script {
     @Override
     public void shutdown() {
         tickGuard.stop();
-        BreakPreparation.finishBreak();
         super.shutdown();
         log.info("[BreakHandlerV2] Shutting down");
         if (!tickGuard.awaitIdle(TICK_STOP_TIMEOUT_MS)) {
             log.warn("[BreakHandlerV2] Main loop still running after {}ms; resetting break state anyway", TICK_STOP_TIMEOUT_MS);
         }
+        BreakPreparation.finishBreak();
 
         // Reset state
         BreakHandlerV2State.setState(BreakHandlerV2State.WAITING_FOR_BREAK);
