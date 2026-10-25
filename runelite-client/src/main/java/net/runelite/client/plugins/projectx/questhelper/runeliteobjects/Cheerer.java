@@ -42,22 +42,29 @@ public class Cheerer
 {
 	private static final List<FakeNpc> cheerers = new ArrayList<>();
 
-	public static void createCheerers(RuneliteObjectManager runeliteObjectManager, Client client, ConfigManager configManager)
+	public static boolean createCheerers(RuneliteObjectManager runeliteObjectManager, Client client, ConfigManager configManager)
 	{
 		cheerers.clear();
 		if (client.getLocalPlayer() == null)
 		{
-			return;
+			return false;
 		}
-		createWOM(runeliteObjectManager, client);
-		createZoinkwiz(runeliteObjectManager, client);
+		Model wiseOldManModel = wiseOldManOutfit(client);
+		Model zoinkwizModel = zoinkwizOutfit(client);
+		if (wiseOldManModel == null || zoinkwizModel == null)
+		{
+			return false;
+		}
+		createWOM(runeliteObjectManager, client, wiseOldManModel);
+		createZoinkwiz(runeliteObjectManager, client, zoinkwizModel);
+		return true;
 	}
 
-	private static void createWOM(RuneliteObjectManager runeliteObjectManager, Client client)
+	private static void createWOM(RuneliteObjectManager runeliteObjectManager, Client client, Model model)
 	{
 		WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
 		WorldPoint pointAbovePlayer = new WorldPoint(playerPos.getX(), playerPos.getY() + 1, playerPos.getPlane());
-		FakeNpc wiseOldMan = runeliteObjectManager.createFakeNpc("global", wiseOldManOutfit(client), pointAbovePlayer, 862);
+		FakeNpc wiseOldMan = runeliteObjectManager.createFakeNpc("global", model, pointAbovePlayer, 862);
 		wiseOldMan.setName("Wise Old Man");
 		wiseOldMan.setExamine("Loves questing.");
 		wiseOldMan.addExamineAction(runeliteObjectManager);
@@ -73,6 +80,10 @@ public class Cheerer
 		short[] coloursToReplace = wom.getColorToReplace();
 		short[] coloursToReplaceWith = wom.getColorToReplaceWith();
 		ModelData mdf = createModel(client, models); // feet?
+		if (mdf == null)
+		{
+			return null;
+		}
 
 		if (coloursToReplace != null && coloursToReplaceWith != null && coloursToReplace.length == coloursToReplaceWith.length) {
 			for (int i=0; i < coloursToReplace.length; i++)
@@ -84,11 +95,11 @@ public class Cheerer
 			.light();
 	}
 
-	private static void createZoinkwiz(RuneliteObjectManager runeliteObjectManager, Client client)
+	private static void createZoinkwiz(RuneliteObjectManager runeliteObjectManager, Client client, Model model)
 	{
 		WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();
 		WorldPoint pointAbovePlayer = new WorldPoint(playerPos.getX(), playerPos.getY() + 1, playerPos.getPlane());
-		FakeNpc zoinkwiz = runeliteObjectManager.createFakeNpc("global", zoinkwizOutfit(client), pointAbovePlayer, 862);
+		FakeNpc zoinkwiz = runeliteObjectManager.createFakeNpc("global", model, pointAbovePlayer, 862);
 		zoinkwiz.setName("Zoinkwiz");
 		zoinkwiz.setExamine("Loves questing.");
 		zoinkwiz.addExamineAction(runeliteObjectManager);
@@ -102,12 +113,21 @@ public class Cheerer
 		short qpcDark = (short) -22440;
 		final int QUEST_CAPE_MALE = 18946;
 
-		ModelData cape = client.loadModelData(QUEST_CAPE_MALE).cloneColors()
+		ModelData capeData = client.loadModelData(QUEST_CAPE_MALE);
+		if (capeData == null)
+		{
+			return null;
+		}
+		ModelData cape = capeData.cloneColors()
 			.recolor((short) -8256, qpcDark) // Outside trim
 			.recolor((short) -11353, JagexColor.rgbToHSL(Color.WHITE.getRGB(), 1.0d)); // Inside trim
 
 		ModelData mdf = createModel(client,
 				46603, 46606, 46607, 46608, 7207);
+		if (mdf == null)
+		{
+			return null;
+		}
 		mdf = createModel(client, mdf, cape);
 
 		return mdf.cloneColors()
@@ -125,12 +145,20 @@ public class Cheerer
 		for (int i = 0; i < data.length; i++)
 		{
 			modelData[i] = client.loadModelData(data[i]);
+			if (modelData[i] == null)
+			{
+				return null;
+			}
 		}
 		return client.mergeModels(modelData);
 	}
 
 	public static void activateCheerer(Client client, ChatMessageManager chatMessageManager)
 	{
+		if (cheerers.isEmpty())
+		{
+			return;
+		}
 		Random generator = new Random();
 		FakeNpc cheerer = cheerers.get(generator.nextInt(cheerers.size()));
 		WorldPoint playerPos = client.getLocalPlayer().getWorldLocation();

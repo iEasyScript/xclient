@@ -38,8 +38,7 @@ public class GlobalFakeObjects
 	public static void createNpcs(Client client, RuneliteObjectManager runeliteObjectManager, ConfigManager configManager, QuestHelperConfig questHelperConfig)
 	{
 		if (initialized) return;
-		initialized = true;
-		Cheerer.createCheerers(runeliteObjectManager, client, configManager);
+		initialized = Cheerer.createCheerers(runeliteObjectManager, client, configManager);
 	}
 
 	public static void disableNpcs(RuneliteObjectManager runeliteObjectManager)
