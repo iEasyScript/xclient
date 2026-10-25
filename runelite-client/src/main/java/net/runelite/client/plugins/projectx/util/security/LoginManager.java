@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static net.runelite.client.plugins.projectx.util.Global.sleep;
+import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 
 /**
  * Centralised login manager used by automation scripts, break handler and utility classes.
@@ -38,6 +39,7 @@ import static net.runelite.client.plugins.projectx.util.Global.sleep;
 public final class LoginManager {
 
 	private static final int MAX_PLAYER_COUNT = 1950;
+	private static final int WORLD_CHANGE_TIMEOUT_MS = 3000;
 	private static final Object LOGIN_LOCK = new Object();
 	private static final AtomicBoolean LOGIN_ATTEMPT_ACTIVE = new AtomicBoolean(false);
 	private static final AtomicReference<Instant> LAST_LOGIN_ATTEMPT = new AtomicReference<>(null);
@@ -216,7 +218,10 @@ public final class LoginManager {
 
         try {
             handleDisconnectDialogs(client);
-            trySetWorld(worldId);
+            if (!trySetWorld(client, worldId)) {
+                log.warn("Login aborted - could not select world {}", worldId);
+                return false;
+            }
             triggerLoginScreen();
             setCredentials(client, username, encryptedPassword);
             submitLogin();
@@ -281,16 +286,20 @@ public final class LoginManager {
         sleep(600);
     }
 
-    private static void trySetWorld(int worldId) {
-        if (worldId <= 0) {
-            return;
+    private static boolean trySetWorld(Client client, int worldId) {
+        if (worldId <= 0 || isOnWorld(client, worldId)) {
+            return true;
         }
-        try {
-            setWorld(worldId);
-            sleep(600);
-        } catch (Exception e) {
-            log.warn("Changing world failed for {}", worldId, e);
+        if (!setWorld(worldId)) {
+            return false;
         }
+        return isOnWorld(client, worldId) || sleepUntil(() -> isOnWorld(client, worldId), WORLD_CHANGE_TIMEOUT_MS);
+    }
+
+    private static boolean isOnWorld(Client client, int worldId) {
+        return ProjectX.getClientThread()
+                .runOnClientThreadOptional(() -> client.getWorld() == worldId)
+                .orElse(false);
     }
 
     private static void setCredentials(Client client, String username, String encryptedPassword) {
@@ -499,21 +508,21 @@ public final class LoginManager {
         return isMemberWorld(client.getWorld());
     }
 
-    public static void setWorld(int worldNumber) {
+    public static boolean setWorld(int worldNumber) {
         try {
             if (ProjectX.getWorldService() == null || ProjectX.getClient() == null) {
                 log.warn("Cannot change world - client or world service unavailable");
-                return;
+                return false;
             }
             WorldResult worldResult = ProjectX.getWorldService().getWorlds();
             if (worldResult == null) {
                 log.warn("Cannot change world - world service returned no data");
-                return;
+                return false;
             }
             net.runelite.http.api.worlds.World world = worldResult.findWorld(worldNumber);
             if (world == null) {
                 log.warn("Failed to find world {}", worldNumber);
-                return;
+                return false;
             }
             boolean changed = ProjectX.getClientThread()
                     .runOnClientThreadOptional(() -> changeWorld(ProjectX.getClient(), world))
@@ -521,8 +530,10 @@ public final class LoginManager {
             if (!changed) {
                 log.warn("Failed to change to world {}", worldNumber);
             }
+            return changed;
         } catch (Exception ex) {
             log.warn("Failed to set target world {}", worldNumber, ex);
+            return false;
         }
     }
 
