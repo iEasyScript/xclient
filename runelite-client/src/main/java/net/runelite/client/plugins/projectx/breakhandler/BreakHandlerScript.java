@@ -49,7 +49,7 @@ import net.runelite.api.GameState;
  */
 @Slf4j
 public class BreakHandlerScript extends Script {
-    public static String version = "2.1.1";
+    public static String version = "2.1.2";
     
     // ban detection constants  
     private static final int BANNED_LOGIN_INDEX = 14;
@@ -61,6 +61,7 @@ public class BreakHandlerScript extends Script {
     
     // Constants for configuration and timing
     private static final int SCHEDULER_INTERVAL_MS = 1000;
+    private static final long TICK_STOP_TIMEOUT_MS = 2000;
     private static final int MINUTES_TO_SECONDS = 60;
     
     // Configuration-dependent timing values (accessed through helper methods)
@@ -124,6 +125,7 @@ public class BreakHandlerScript extends Script {
     // UI and configuration
     private String originalWindowTitle = "";
     private BreakHandlerConfig config;
+    private final BreakHandlerTickGuard tickGuard = new BreakHandlerTickGuard();
 
     // Track world state across breaks
     private int preBreakWorld = -1;
@@ -178,6 +180,7 @@ public class BreakHandlerScript extends Script {
      * Main entry point for the break handler script.
      */
     public boolean run(BreakHandlerConfig config) {
+        tickGuard.start();
         BreakPreparation.finishBreak();
         isBanned = false;
         this.config = config;        
@@ -187,7 +190,7 @@ public class BreakHandlerScript extends Script {
         stateChangeTime.set(Instant.now());
         retryCount.set(0);        
         initializeNextBreakTimer();        
-        mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
+        mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> tickGuard.runTick(() -> {
             try {
                 super.run();
                 
@@ -202,7 +205,7 @@ public class BreakHandlerScript extends Script {
             } catch (Exception ex) {
                 log.error("Error in break handler main loop", ex);
             }
-        }, 0, SCHEDULER_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        }), 0, SCHEDULER_INTERVAL_MS, TimeUnit.MILLISECONDS);
         
         return true;
     }
@@ -899,18 +902,22 @@ public class BreakHandlerScript extends Script {
 
     @Override
     public void shutdown() {
+        tickGuard.stop();
         BreakPreparation.finishBreak();
         BreakHandlerState state = currentState.get();
         if(scheduledFuture != null && !scheduledFuture.isDone()) {
             scheduledFuture.cancel(true);
         }        
         log.info("Break handler shutting down. Current state: {}", state);
-        
+        super.shutdown();
+        if (!tickGuard.awaitIdle(TICK_STOP_TIMEOUT_MS)) {
+            log.warn("Break handler loop still running after {}ms; resetting break state anyway", TICK_STOP_TIMEOUT_MS);
+        }
+
         transitionToState(BreakHandlerState.WAITING_FOR_BREAK);
         cleanupBreakState();
         resetWindowTitle();
         resumeFromBreak();
-        super.shutdown();
     }
 
     /**

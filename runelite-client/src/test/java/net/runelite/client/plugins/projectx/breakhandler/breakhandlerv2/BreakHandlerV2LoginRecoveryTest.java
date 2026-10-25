@@ -4,6 +4,7 @@ import net.runelite.api.Client;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.ConfigProfile;
+import net.runelite.client.game.WorldService;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.Script;
 import net.runelite.client.plugins.projectx.breakhandler.BreakPreparation;
@@ -13,6 +14,7 @@ import net.runelite.client.plugins.projectx.util.security.LoginManager;
 import net.runelite.client.plugins.projectx.util.world.RegionPreference;
 import net.runelite.client.plugins.projectx.util.world.Rs2WorldUtil;
 import net.runelite.client.plugins.projectx.util.world.WorldSelectionMode;
+import net.runelite.http.api.worlds.WorldResult;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -186,6 +188,42 @@ public class BreakHandlerV2LoginRecoveryTest {
 
         loginManager.verify(() -> LoginManager.login(eq("player"), eq("secret"), eq(308)));
         assertEquals(BreakHandlerV2State.LOGGING_IN, BreakHandlerV2State.getCurrentState());
+    }
+
+    @Test
+    public void availableWorldListSkipsAnInaccessibleCurrentWorld() throws Exception {
+        stubAvailableWorldList();
+        setField("activeProfile", profile());
+        when(client.getWorld()).thenReturn(308);
+        worldUtil.when(() -> Rs2WorldUtil.canAccessWorld(308)).thenReturn(false);
+        BreakHandlerV2State.setState(BreakHandlerV2State.LOGIN_REQUESTED);
+
+        invoke("handleLoginRequested");
+
+        loginManager.verify(() -> LoginManager.login(anyString(), anyString(), anyInt()), never());
+        assertEquals(1, getField("loginRetryCount"));
+        assertEquals(BreakHandlerV2State.LOGIN_REQUESTED, BreakHandlerV2State.getCurrentState());
+    }
+
+    @Test
+    public void availableWorldListFallsBackToAnAccessibleCurrentWorld() throws Exception {
+        stubAvailableWorldList();
+        setField("activeProfile", profile());
+        when(client.getWorld()).thenReturn(308);
+        worldUtil.when(() -> Rs2WorldUtil.canAccessWorld(308)).thenReturn(true);
+        loginManager.when(() -> LoginManager.login(anyString(), anyString(), anyInt())).thenReturn(true);
+        BreakHandlerV2State.setState(BreakHandlerV2State.LOGIN_REQUESTED);
+
+        invoke("handleLoginRequested");
+
+        loginManager.verify(() -> LoginManager.login(eq("player"), eq("secret"), eq(308)));
+        assertEquals(BreakHandlerV2State.LOGGING_IN, BreakHandlerV2State.getCurrentState());
+    }
+
+    private void stubAvailableWorldList() {
+        WorldService worldService = mock(WorldService.class);
+        when(worldService.getWorlds()).thenReturn(mock(WorldResult.class));
+        projectx.when(ProjectX::getWorldService).thenReturn(worldService);
     }
 
     @Test

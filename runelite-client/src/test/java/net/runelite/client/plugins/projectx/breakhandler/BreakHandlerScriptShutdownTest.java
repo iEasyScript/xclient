@@ -12,11 +12,14 @@ import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -66,6 +69,46 @@ public class BreakHandlerScriptShutdownTest
         }
 
         assertFalse(BreakHandlerScript.isBanned);
+    }
+
+    @Test
+    public void stopWaitsForATickThatIsStillWritingState() throws Exception
+    {
+        BreakHandlerScript stopped = new BreakHandlerScript();
+        BreakHandlerTickGuard guard = tickGuard(stopped);
+        setState(BreakHandlerState.LOGGED_OUT);
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        Thread tick = new Thread(() -> guard.runTick(() -> {
+            entered.countDown();
+            try
+            {
+                release.await(5, TimeUnit.SECONDS);
+                setState(BreakHandlerState.LOGIN_REQUESTED);
+            }
+            catch (Exception e)
+            {
+                throw new IllegalStateException(e);
+            }
+        }));
+        tick.start();
+        assertTrue(entered.await(2, TimeUnit.SECONDS));
+
+        Thread stopper = new Thread(stopped::shutdown);
+        stopper.start();
+        Thread.sleep(200);
+        release.countDown();
+        stopper.join(5000);
+        tick.join(5000);
+
+        assertEquals(BreakHandlerState.WAITING_FOR_BREAK, BreakHandlerScript.getCurrentState());
+    }
+
+    private static BreakHandlerTickGuard tickGuard(BreakHandlerScript script) throws Exception
+    {
+        Field field = BreakHandlerScript.class.getDeclaredField("tickGuard");
+        field.setAccessible(true);
+        return (BreakHandlerTickGuard) field.get(script);
     }
 
     private void assertShutdownClearsBreak(BreakHandlerState state) throws Exception

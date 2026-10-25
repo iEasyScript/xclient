@@ -6,6 +6,7 @@ import net.runelite.api.GameState;
 import net.runelite.client.config.ConfigProfile;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.Script;
+import net.runelite.client.plugins.projectx.breakhandler.BreakHandlerTickGuard;
 import net.runelite.client.plugins.projectx.breakhandler.BreakPreparation;
 import net.runelite.client.plugins.projectx.util.discord.Rs2Discord;
 import net.runelite.client.plugins.projectx.util.math.Rs2Random;
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 @Slf4j
 public class BreakHandlerV2Script extends Script {
+    private static final long TICK_STOP_TIMEOUT_MS = 2000L;
 
     // Instance tracking for debugging
     private static int instanceCounter = 0;
@@ -93,11 +95,13 @@ public class BreakHandlerV2Script extends Script {
     private static final long PREPARATION_DEFERRAL_LOG_INTERVAL_MS = 30_000L;
     private long lastPreparationDeferralLogAt = 0L;
     private boolean restoredPauseNeedsPreparation;
+    private final BreakHandlerTickGuard tickGuard = new BreakHandlerTickGuard();
 
     /**
      * Run the break handler script
      */
     public boolean run(BreakHandlerV2Config config) {
+        tickGuard.start();
         BreakPreparation.finishBreak();
         restoredPauseNeedsPreparation = false;
         this.config = config;
@@ -111,7 +115,7 @@ public class BreakHandlerV2Script extends Script {
         restorePersistedBreakState();
         initializeBreakIfOutsideSchedule();
         originalWindowTitle = ClientUI.getFrame().getTitle();
-        mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
+        mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> tickGuard.runTick(() -> {
             try {
                 if (!super.run() && !config.autoLogin() && BreakHandlerV2State.getCurrentState() != BreakHandlerV2State.LOGIN_REQUESTED) return;
 
@@ -162,7 +166,7 @@ public class BreakHandlerV2Script extends Script {
             } catch (Exception ex) {
                 log.error("[BreakHandlerV2] Error in main loop", ex);
             }
-        }, 0, 1000, TimeUnit.MILLISECONDS);
+        }), 0, 1000, TimeUnit.MILLISECONDS);
 
         return true;
     }
@@ -805,7 +809,7 @@ public class BreakHandlerV2Script extends Script {
 
 		if (targetWorld == -1) {
 			int currentWorld = getCurrentWorld();
-			if (currentWorld > 0) {
+			if (currentWorld > 0 && (!isWorldListAvailable() || Rs2WorldUtil.canAccessWorld(currentWorld))) {
 				log.warn("[BreakHandlerV2] No world found for mode {}; logging in to the current world {}",
 				         config.worldSelectionMode(), currentWorld);
 				return currentWorld;
@@ -816,6 +820,10 @@ public class BreakHandlerV2Script extends Script {
 		         targetWorld, config.worldSelectionMode(), membersOnly);
 
 		return targetWorld;
+	}
+
+	private static boolean isWorldListAvailable() {
+		return ProjectX.getWorldService() != null && ProjectX.getWorldService().getWorlds() != null;
 	}
 
 	private static int getCurrentWorld() {
@@ -1142,9 +1150,13 @@ public class BreakHandlerV2Script extends Script {
 
     @Override
     public void shutdown() {
+        tickGuard.stop();
         BreakPreparation.finishBreak();
         super.shutdown();
         log.info("[BreakHandlerV2] Shutting down");
+        if (!tickGuard.awaitIdle(TICK_STOP_TIMEOUT_MS)) {
+            log.warn("[BreakHandlerV2] Main loop still running after {}ms; resetting break state anyway", TICK_STOP_TIMEOUT_MS);
+        }
 
         // Reset state
         BreakHandlerV2State.setState(BreakHandlerV2State.WAITING_FOR_BREAK);
