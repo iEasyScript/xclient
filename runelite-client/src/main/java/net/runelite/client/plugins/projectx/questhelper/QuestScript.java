@@ -552,6 +552,10 @@ public class QuestScript extends Script {
 					sleepUntil(Rs2GrandExchange::isOpen, 15_000);
 					if (Rs2GrandExchange.isOpen()) {
 						collectPurchasedItemsViaBank(missing);
+						if (Rs2GrandExchange.getAvailableSlotsCount() <= 0) {
+							stopQuesterWithReason(
+									"Could not collect finished Grand Exchange offers (bank full?). Collect them manually and restart.");
+						}
 					}
 					return true;
 				}
