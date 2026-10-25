@@ -77,14 +77,13 @@ public class Rs2WorldUtil {
             ConfigProfile activeProfile = LoginManager.getActiveProfile();            
             if(!ProjectX.isLoggedIn() ){
                 if(activeProfile != null){                    
-                    return isWorldAccessible(targetWorld, isMemberAccount, false);
+                    return isWorldAccessible(targetWorld, isMemberAccount, isClientOnSeasonalWorld());
                 }
                 log.warn("Cannot determine world accessibility - not logged in and no active profile");
                 return false;// Cannot determine accessibility if not logged in and no profile
             }
             if(ProjectX.getClient() != null &&  ProjectX.getClient().getLocalPlayer() != null){                
-                boolean isInSeasonalWorld = ProjectX.getClient().getWorldType().contains(net.runelite.api.WorldType.SEASONAL);
-                return isWorldAccessible(targetWorld, isMemberAccount, isInSeasonalWorld);                
+                return isWorldAccessible(targetWorld, isMemberAccount, isClientOnSeasonalWorld());
             }
             log.warn("Cannot determine world accessibility - client or local player is null");
             return false;                                    
@@ -94,6 +93,16 @@ public class Rs2WorldUtil {
             return false;
         }
     }
+    private static boolean isClientOnSeasonalWorld() {
+        if (ProjectX.getClient() == null || ProjectX.getClientThread() == null) {
+            return false;
+        }
+        return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            java.util.EnumSet<net.runelite.api.WorldType> worldTypes = ProjectX.getClient().getWorldType();
+            return worldTypes != null && worldTypes.contains(net.runelite.api.WorldType.SEASONAL);
+        }).orElse(false);
+    }
+
     /*
      * Membership as the game last reported it for the active profile.
      *
