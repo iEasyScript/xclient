@@ -135,8 +135,6 @@ public class ProjectXPlugin extends Plugin
 	@Inject
 	private net.runelite.client.plugins.projectx.externalplugins.ProjectXSessionTracker sessionTracker;
 
-	@Inject
-	private net.runelite.client.plugins.projectx.externalplugins.ProjectXWhatsNew whatsNew;
 	private GameChatAppender gameChatAppender;
 
 	@Inject
@@ -156,7 +154,6 @@ public class ProjectXPlugin extends Plugin
 		// First, so a problem report can include everything from start-up on.
 		ProjectXLogBuffer.install();
 		sessionTracker.start();
-		whatsNew.start();
 		log.info("ProjectX: {} - {}", RuneLiteProperties.getProjectXVersion(), RuneLiteProperties.getProjectXCommit());
 		log.info("JVM: {} {}", System.getProperty("java.vendor"), System.getProperty("java.runtime.version"));
 
@@ -262,7 +259,6 @@ public class ProjectXPlugin extends Plugin
 		clientToolbar.removeNavigation(homeButton);
 		gameChatAttachment.remove();
 		sessionTracker.stop();
-		whatsNew.stop();
 		projectxVersionChecker.shutdown();
 	}
 
