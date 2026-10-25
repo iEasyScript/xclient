@@ -1252,6 +1252,9 @@ public abstract class Rs2Tile implements Tile {
     }
 
     private static List<Tile> fullPathToInternal(Tile source, Tile other) {
+        if (source == null || other == null) {
+            return null;
+        }
         int z = source.getPlane();
         if (z != other.getPlane()) {
             return null;
@@ -1482,6 +1485,10 @@ public abstract class Rs2Tile implements Tile {
     }
 
     private static List<Tile> pathToInternal(Tile source, Tile other) {
+        if (source == null || other == null)
+        {
+            return null;
+        }
         int z = source.getPlane();
         if (z != other.getPlane())
         {
