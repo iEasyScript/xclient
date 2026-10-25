@@ -501,6 +501,22 @@ public class QuestScript extends Script {
 			}
 		}
 
+		if (!toBuy.isEmpty()) {
+			int freeSlots = Rs2GrandExchange.getAvailableSlotsCount();
+			if (freeSlots <= 0) {
+				Rs2Bank.closeBank();
+				stopQuesterWithReason(
+						"No free Grand Exchange slots for missing quest items. Free a slot and restart.");
+				return true;
+			}
+			int missingCount = toBuy.size();
+			if (trimToGrandExchangeSlots(toBuy, freeSlots)) {
+				ProjectX.log(String.format(
+						"Quest helper: %d missing quest items but only %d free Grand Exchange slots; buying %d now and the rest afterwards",
+						missingCount, freeSlots, toBuy.size()), Level.INFO);
+			}
+		}
+
 		long totalBuyCost = 0L;
 		Map<ItemRequirement, Integer> offerPrices = new HashMap<>();
 		Map<ItemRequirement, Integer> buyQuantities = new HashMap<>();
@@ -539,17 +555,6 @@ public class QuestScript extends Script {
 					"Not enough gp to buy missing quest items (need %,d gp, have %,d gp)",
 					totalBuyCost, availableGp));
 			return true;
-		}
-
-		if (!toBuy.isEmpty()) {
-			int freeSlots = Rs2GrandExchange.getAvailableSlotsCount();
-			if (freeSlots < toBuy.size()) {
-				Rs2Bank.closeBank();
-				stopQuesterWithReason(String.format(
-						"Not enough free Grand Exchange slots for missing quest items (need %d, have %d)",
-						toBuy.size(), freeSlots));
-				return true;
-			}
 		}
 
 		if (!Rs2Bank.setWithdrawAsItem()) {
@@ -1657,6 +1662,14 @@ public class QuestScript extends Script {
 
 	private String chooseCorrectItemOption(QuestStep step, int itemId) {
 		return chooseItemAction(step.getText(), Rs2Inventory.get(itemId).getInventoryActions());
+	}
+
+	static boolean trimToGrandExchangeSlots(List<?> toBuy, int freeSlots) {
+		if (toBuy.size() <= freeSlots) {
+			return false;
+		}
+		toBuy.subList(Math.max(0, freeSlots), toBuy.size()).clear();
+		return true;
 	}
 
 	static String chooseItemAction(List<String> stepText, String[] actions) {
