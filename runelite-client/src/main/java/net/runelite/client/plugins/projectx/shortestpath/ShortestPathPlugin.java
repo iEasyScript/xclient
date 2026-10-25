@@ -315,8 +315,12 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
         overlayManager.remove(pathMapOverlay);
         overlayManager.remove(pathMapTooltipOverlay);
         overlayManager.remove(debugOverlayPanel);
-        clientToolbar.removeNavigation(navButton);
-        clientToolbar.removeNavigation(pohNavButton);
+        if (navButton != null) {
+            clientToolbar.removeNavigation(navButton);
+        }
+        if (pohNavButton != null) {
+            clientToolbar.removeNavigation(pohNavButton);
+        }
         navButton = null;
         pohNavButton = null;
         if (panel != null) {
@@ -326,7 +330,10 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
         PohPanel.instance = null;
         pohPanel = null;
 
-        shortestPathScript.shutdown();
+        if (shortestPathScript != null) {
+            shortestPathScript.shutdown();
+            shortestPathScript = null;
+        }
 
         exit();
     }
