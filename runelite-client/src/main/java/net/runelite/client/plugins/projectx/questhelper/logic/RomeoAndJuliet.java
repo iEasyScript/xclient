@@ -104,7 +104,7 @@ public class RomeoAndJuliet extends BaseQuest {
             return true;
         }
         if (Rs2Walker.walkTo(3266, 3374, 0, 10)) {
-            Rs2GameObject.interact(new int[] {ObjectID.FAI_VARROCK_CADAVABUSH_2, ObjectID.FAI_VARROCK_CADAVABUSH_1, ObjectID.FAI_VARROCK_CADAVABUSH_0}, "take");
+            Rs2GameObject.interact(new int[] {ObjectID.FAI_VARROCK_CADAVABUSH_2, ObjectID.FAI_VARROCK_CADAVABUSH_1, ObjectID.FAI_VARROCK_CADAVABUSH_0}, "Pick-from");
             Rs2Player.waitForWalking();
             Rs2Inventory.waitForInventoryChanges(2000);
         }
