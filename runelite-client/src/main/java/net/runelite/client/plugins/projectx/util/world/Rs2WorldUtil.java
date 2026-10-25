@@ -77,13 +77,13 @@ public class Rs2WorldUtil {
             ConfigProfile activeProfile = LoginManager.getActiveProfile();            
             if(!ProjectX.isLoggedIn() ){
                 if(activeProfile != null){                    
-                    return isWorldAccessible(targetWorld, isMemberAccount, isClientOnSeasonalWorld());
+                    return isAccessibleFromClientWorld(targetWorld, isMemberAccount);
                 }
                 log.warn("Cannot determine world accessibility - not logged in and no active profile");
                 return false;// Cannot determine accessibility if not logged in and no profile
             }
             if(ProjectX.getClient() != null &&  ProjectX.getClient().getLocalPlayer() != null){                
-                return isWorldAccessible(targetWorld, isMemberAccount, isClientOnSeasonalWorld());
+                return isAccessibleFromClientWorld(targetWorld, isMemberAccount);
             }
             log.warn("Cannot determine world accessibility - client or local player is null");
             return false;                                    
@@ -93,14 +93,26 @@ public class Rs2WorldUtil {
             return false;
         }
     }
-    private static boolean isClientOnSeasonalWorld() {
-        if (ProjectX.getClient() == null || ProjectX.getClientThread() == null) {
+    private static boolean isAccessibleFromClientWorld(World targetWorld, boolean isMemberAccount) {
+        java.util.Optional<Boolean> isInSeasonalWorld = readClientOnSeasonalWorld();
+        if (!isInSeasonalWorld.isPresent()) {
+            log.warn("Cannot determine accessibility of world {} - client world type could not be read", targetWorld.getId());
             return false;
+        }
+        return isWorldAccessible(targetWorld, isMemberAccount, isInSeasonalWorld.get());
+    }
+
+    private static java.util.Optional<Boolean> readClientOnSeasonalWorld() {
+        if (ProjectX.getClient() == null) {
+            return java.util.Optional.of(false);
+        }
+        if (ProjectX.getClientThread() == null) {
+            return java.util.Optional.empty();
         }
         return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
             java.util.EnumSet<net.runelite.api.WorldType> worldTypes = ProjectX.getClient().getWorldType();
             return worldTypes != null && worldTypes.contains(net.runelite.api.WorldType.SEASONAL);
-        }).orElse(false);
+        });
     }
 
     /*

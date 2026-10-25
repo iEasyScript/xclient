@@ -23,6 +23,7 @@ import java.util.concurrent.Callable;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +35,7 @@ public class Rs2WorldUtilSeasonalAccessTest {
     private MockedStatic<ProjectX> projectx;
     private MockedStatic<LoginManager> loginManager;
     private Client client;
+    private ClientThread clientThread;
 
     @Before
     public void setUp() {
@@ -48,7 +50,7 @@ public class Rs2WorldUtilSeasonalAccessTest {
         WorldService worldService = mock(WorldService.class);
         when(worldService.getWorlds()).thenReturn(worldResult);
 
-        ClientThread clientThread = mock(ClientThread.class);
+        clientThread = mock(ClientThread.class);
         when(clientThread.runOnClientThreadOptional(any())).thenAnswer(inv -> {
             Callable<?> callable = inv.getArgument(0);
             return Optional.ofNullable(callable.call());
@@ -91,6 +93,15 @@ public class Rs2WorldUtilSeasonalAccessTest {
         when(client.getWorldType()).thenReturn(null);
 
         assertTrue(Rs2WorldUtil.canAccessWorld(NORMAL_WORLD));
+        assertFalse(Rs2WorldUtil.canAccessWorld(SEASONAL_WORLD));
+    }
+
+    @Test
+    public void loggedOutRejectsEveryWorldWhenTheWorldTypeCannotBeRead() {
+        when(client.getWorldType()).thenReturn(EnumSet.of(net.runelite.api.WorldType.MEMBERS, net.runelite.api.WorldType.SEASONAL));
+        doReturn(Optional.empty()).when(clientThread).runOnClientThreadOptional(any());
+
+        assertFalse(Rs2WorldUtil.canAccessWorld(NORMAL_WORLD));
         assertFalse(Rs2WorldUtil.canAccessWorld(SEASONAL_WORLD));
     }
 
