@@ -10670,11 +10670,11 @@ public class Rs2Walker {
             String destination = values[1].trim().toLowerCase();
 
             if (transport.getDisplayInfo().toLowerCase().contains("slayer ring")) {
-                Rs2Equipment.invokeMenu(rs2Item, "teleport");
+                if (!Rs2Equipment.invokeMenu(rs2Item, "teleport")) return false;
                 Rs2Dialogue.sleepUntilSelectAnOption();
                 Rs2Dialogue.clickOption(destination);
             } else {
-                Rs2Equipment.invokeMenu(rs2Item, destination);
+                if (!Rs2Equipment.invokeMenu(rs2Item, destination)) return false;
                 if (transport.getDisplayInfo().toLowerCase().contains("burning amulet")) {
                     Rs2Dialogue.sleepUntilInDialogue();
                     Rs2Dialogue.clickOption("Okay, teleport to level");

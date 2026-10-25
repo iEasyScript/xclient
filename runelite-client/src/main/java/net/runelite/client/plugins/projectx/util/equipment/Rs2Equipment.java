@@ -231,8 +231,7 @@ public class Rs2Equipment {
     // TODO: can only be made public if we ensure item really is an equipment item
     private static boolean interact(Rs2ItemModel item, String action) {
         if (item == null) return false;
-        invokeMenu(item, action);
-        return true;
+        return invokeMenu(item, action);
     }
 
     /**
@@ -324,13 +323,13 @@ public class Rs2Equipment {
         return interact(names, action, false);
     }
 
-    public static void invokeMenu(Rs2ItemModel rs2Item, String action) {
-        if (action == null || action.isEmpty()) return;
-        if (rs2Item == null) return;
+    public static boolean invokeMenu(Rs2ItemModel rs2Item, String action) {
+        if (action == null || action.isEmpty()) return false;
+        if (rs2Item == null) return false;
 
         if (!Rs2Tab.switchTo(InterfaceTab.EQUIPMENT)) {
             ProjectX.log("Failed to switch to equipment tab", Level.ERROR);
-            return;
+            return false;
         }
         ProjectX.status = action + " " + rs2Item.getName();
 
@@ -355,12 +354,12 @@ public class Rs2Equipment {
                 Map.Entry<String, Integer> subMenuEntry = rs2Item.getIndexOfSubAction(action);
                 if (subMenuEntry == null) {
                     ProjectX.log("Item=" + rs2Item.getName() + " does not have a subaction=" + action, Level.ERROR);
-                    return;
+                    return false;
                 }
                 int mainMenuIndex = actions.indexOf(subMenuEntry.getKey());
                 if (mainMenuIndex < 0) {
                     ProjectX.log("Cannot find action=%s, in main actions=%s, mainMenuIndex=%s", subMenuEntry.getKey(), String.join(", ", actions), mainMenuIndex, Level.ERROR);
-                    return;
+                    return false;
                 }
                 target = "";
                 identifier = NewMenuEntry.findIdentifier(subMenuEntry.getValue() + 1, mainMenuIndex + 2);
@@ -383,6 +382,7 @@ public class Rs2Equipment {
                 ,
                 rectangle);
         //Rs2Reflection.invokeMenu(param0, param1, menuAction.getId(), identifier, rs2Item.id, action, target, -1, -1);
+        return true;
     }
 
     private static Rectangle getSafeBounds(int interfaceId, int childId) {
