@@ -3,7 +3,6 @@ package net.runelite.client.plugins.projectx.util.security;
 import net.runelite.client.config.ConfigProfile;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.util.keyboard.Rs2Keyboard;
-import net.runelite.client.util.WorldUtil;
 import net.runelite.http.api.worlds.World;
 import net.runelite.http.api.worlds.WorldRegion;
 import net.runelite.http.api.worlds.WorldResult;
@@ -189,20 +188,6 @@ public class Login {
     }
 
     public void setWorld(int worldNumber) {
-        try {
-            net.runelite.http.api.worlds.World world = ProjectX.getWorldService().getWorlds().findWorld(worldNumber);
-            final net.runelite.api.World rsWorld = ProjectX.getClient().createWorld();
-            rsWorld.setActivity(world.getActivity());
-            rsWorld.setAddress(world.getAddress());
-            rsWorld.setId(world.getId());
-            rsWorld.setPlayerCount(world.getPlayers());
-            if (world.getRegion() != null) {
-                rsWorld.setLocation(world.getRegion().getId());
-            }
-            rsWorld.setTypes(WorldUtil.toWorldTypes(world.getTypes()));
-            ProjectX.getClient().changeWorld(rsWorld);
-        } catch (Exception ex) {
-            System.out.println("Failed to find world");
-        }
+        LoginManager.setWorld(worldNumber);
     }
 }
