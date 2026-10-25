@@ -501,22 +501,6 @@ public class QuestScript extends Script {
 			}
 		}
 
-		if (!toBuy.isEmpty()) {
-			int freeSlots = Rs2GrandExchange.getAvailableSlotsCount();
-			if (freeSlots <= 0) {
-				Rs2Bank.closeBank();
-				stopQuesterWithReason(
-						"No free Grand Exchange slots for missing quest items. Free a slot and restart.");
-				return true;
-			}
-			int missingCount = toBuy.size();
-			if (trimToGrandExchangeSlots(toBuy, freeSlots)) {
-				ProjectX.log(String.format(
-						"Quest helper: %d missing quest items but only %d free Grand Exchange slots; buying %d now and the rest afterwards",
-						missingCount, freeSlots, toBuy.size()), Level.INFO);
-			}
-		}
-
 		long totalBuyCost = 0L;
 		Map<ItemRequirement, Integer> offerPrices = new HashMap<>();
 		Map<ItemRequirement, Integer> buyQuantities = new HashMap<>();
@@ -555,6 +539,36 @@ public class QuestScript extends Script {
 					"Not enough gp to buy missing quest items (need %,d gp, have %,d gp)",
 					totalBuyCost, availableGp));
 			return true;
+		}
+
+		if (!toBuy.isEmpty()) {
+			int freeSlots = Rs2GrandExchange.getAvailableSlotsCount();
+			if (freeSlots <= 0) {
+				Rs2Bank.closeBank();
+				if (Rs2GrandExchange.hasBoughtOffer()) {
+					ProjectX.status = "Quest helper: collecting finished Grand Exchange offers";
+					Rs2GrandExchange.walkToGrandExchange();
+					Rs2GrandExchange.openExchange();
+					sleepUntil(Rs2GrandExchange::isOpen, 15_000);
+					if (Rs2GrandExchange.isOpen()) {
+						collectPurchasedItemsViaBank(missing);
+					}
+					return true;
+				}
+				stopQuesterWithReason(
+						"No free Grand Exchange slots for missing quest items. Free a slot and restart.");
+				return true;
+			}
+			int missingCount = toBuy.size();
+			if (trimToGrandExchangeSlots(toBuy, freeSlots)) {
+				ProjectX.log(String.format(
+						"Quest helper: %d missing quest items but only %d free Grand Exchange slots; buying %d now and the rest afterwards",
+						missingCount, freeSlots, toBuy.size()), Level.INFO);
+				totalBuyCost = 0L;
+				for (ItemRequirement ir : toBuy) {
+					totalBuyCost += (long) offerPrices.get(ir) * buyQuantities.get(ir);
+				}
+			}
 		}
 
 		if (!Rs2Bank.setWithdrawAsItem()) {

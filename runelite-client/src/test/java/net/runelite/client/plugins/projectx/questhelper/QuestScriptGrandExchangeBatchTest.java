@@ -37,10 +37,10 @@ public class QuestScriptGrandExchangeBatchTest
 	}
 
 	@Test
-	public void secondPassBuysTheRemainder()
+	public void singleFreeSlotBuysOneItemAtATime()
 	{
-		List<String> remaining = new ArrayList<>(Arrays.asList("d", "e", "f"));
-		assertFalse(QuestScript.trimToGrandExchangeSlots(remaining, 3));
-		assertEquals(Arrays.asList("d", "e", "f"), remaining);
+		List<String> toBuy = new ArrayList<>(Arrays.asList("a", "b"));
+		assertTrue(QuestScript.trimToGrandExchangeSlots(toBuy, 1));
+		assertEquals(Arrays.asList("a"), toBuy);
 	}
 }
