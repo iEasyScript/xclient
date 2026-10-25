@@ -1792,6 +1792,11 @@ public class Rs2GameObject {
             object = ((net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel) object).getTileObject();
             if (object == null) return false;
         }
+        WorldView objectWorldView = object.getWorldView();
+        if (objectWorldView == null) {
+            ProjectX.log("Failed to interact with object " + object.getId() + " - object is no longer in a loaded world view");
+            return false;
+        }
         // Use LocalPoint-based distance when the object is in the current scene (e.g. inside a
         // POH instance, where Rs2Player.getWorldLocation() returns the overworld-template tile
         // and distanceTo() against an instance world point yields Integer.MAX_VALUE, falsely
@@ -1904,7 +1909,7 @@ public class Rs2GameObject {
 
             int worldViewId = WorldView.TOPLEVEL;
 
-            if (!object.getWorldView().isTopLevel()) {
+            if (!objectWorldView.isTopLevel()) {
                 var worldView =ProjectX.getClientThread().invoke(() ->  ProjectX.getClient().getLocalPlayer().getWorldView());
                 if (worldView == null) {
                     worldViewId = ProjectX.getClient().getTopLevelWorldView().getId();
@@ -1933,6 +1938,7 @@ public class Rs2GameObject {
 
         } catch (Exception ex) {
             ProjectX.log("Failed to interact with object " + ex.getMessage());
+            return false;
         }
 
         return true;
