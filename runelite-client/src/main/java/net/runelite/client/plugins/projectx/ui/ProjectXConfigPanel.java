@@ -47,6 +47,7 @@ import net.runelite.client.plugins.projectx.breakhandler.breakhandlerv2.PluginSt
 import net.runelite.client.plugins.projectx.inventorysetups.InventorySetup;
 import net.runelite.client.plugins.projectx.inventorysetups.MInventorySetupsPlugin;
 import net.runelite.client.plugins.projectx.mouserecorder.MouseMacroRecorderPlugin;
+import net.runelite.client.plugins.projectx.util.config.ConfigButtonActions;
 import net.runelite.client.plugins.projectx.util.reliability.ReliabilitySettings;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.DynamicGridLayout;
@@ -847,6 +848,9 @@ class ProjectXConfigPanel extends ProjectXPluginPanel {
             if (ProjectXConfig.configGroup.equals(cd.getGroup().value())
                     && ProjectXConfig.keyReliabilityResetDefaults.equals(cid.getItem().keyName())) {
                 resetReliabilitySettings(button);
+                return;
+            }
+            if (ConfigButtonActions.run(cd.getGroup().value(), cid.getItem().keyName(), button)) {
                 return;
             }
             ConfigButton next = new ConfigButton(UUID.randomUUID().toString());
