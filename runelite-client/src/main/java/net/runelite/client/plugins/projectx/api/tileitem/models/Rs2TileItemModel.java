@@ -214,8 +214,33 @@ public class Rs2TileItemModel implements TileItem, IEntity {
      * @return true if the interaction was dispatched successfully
      */
     public boolean pickup() {
-        return click("Take");
+        WorldPoint where = getWorldLocation();
+        long now = System.currentTimeMillis();
+        synchronized (Rs2TileItemModel.class) {
+            // Scripts call this every loop, and a walk of a few tiles outlasts a loop, so the same
+            // item used to be clicked again mid-walk (a visible double click). While the player is
+            // still walking to the item clicked last, that click stands.
+            if (getId() == lastPickupId && where != null && where.equals(lastPickupTile)
+                    && now - lastPickupAt < PICKUP_WALK_MAX_MS && Rs2Player.isMoving()) {
+                return true;
+            }
+        }
+        boolean sent = click("Take");
+        if (sent) {
+            synchronized (Rs2TileItemModel.class) {
+                lastPickupId = getId();
+                lastPickupTile = where;
+                lastPickupAt = now;
+            }
+        }
+        return sent;
     }
+
+    /** However long the walk, a repeat "Take" on the same item goes out again after this. */
+    private static final long PICKUP_WALK_MAX_MS = 15_000;
+    private static int lastPickupId = -1;
+    private static WorldPoint lastPickupTile;
+    private static long lastPickupAt;
 
     public boolean click(String action) {
         if (action == null) return false;

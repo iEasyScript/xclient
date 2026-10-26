@@ -213,13 +213,62 @@ public class Rs2GroundItem {
      * @param groundItem The ground item to monitor for despawn
      * @return true if the ground item despawns, false otherwise
      */
-    public static boolean waitForGroundItemDespawn(Runnable actionWhileWaiting,GroundItem groundItem){
-        sleepUntil(() ->  {
+    public static boolean waitForGroundItemDespawn(Runnable actionWhileWaiting, GroundItem groundItem) {
+        // The action used to be repeated every 0.6-2.1 s until the pile changed. A walk of a few
+        // tiles takes longer than that, so the second click landed mid-walk: a visible double
+        // click on every distant drop. Now each click gets a wait that covers the walk, and the
+        // click is only repeated once the player has stopped and nothing was picked up.
+        for (int attempt = 0; attempt < PICKUP_ATTEMPTS && !Thread.currentThread().isInterrupted(); attempt++) {
             actionWhileWaiting.run();
-            sleepUntil(() -> groundItem != getGroundItems().get(groundItem.getLocation(), groundItem.getId()), Rs2Random.between(600, 2100));
-            return groundItem != getGroundItems().get(groundItem.getLocation(), groundItem.getId());
-        });
+            if (waitForPickup(groundItem)) {
+                return true;
+            }
+        }
+        return isGone(groundItem);
+    }
+
+    /** Clicks a pickup may take before the item is given up on. */
+    private static final int PICKUP_ATTEMPTS = 3;
+    /** Room for a click to register and the pickup to land when the item is already in reach. */
+    private static final int PICKUP_BASE_WAIT_MS = 2400;
+    /** Extra time per tile of distance, so a long walk is not cut short. */
+    private static final int PICKUP_PER_TILE_MS = 700;
+    /** However far away, one click never waits longer than this. */
+    private static final int PICKUP_MAX_WAIT_MS = 15000;
+    /** Once the player has stopped, the click has worked or it won't; this covers the pickup tick. */
+    private static final int PICKUP_SETTLE_MS = 1800;
+
+    private static boolean isGone(GroundItem groundItem) {
         return groundItem != getGroundItems().get(groundItem.getLocation(), groundItem.getId());
+    }
+
+    /**
+     * One click's wait. True when the pile changed (taken, by us or into a herb sack or seed box,
+     * or by someone else); false once the player has been standing still with nothing happening.
+     */
+    private static boolean waitForPickup(GroundItem groundItem) {
+        WorldPoint start = Rs2Player.getWorldLocation();
+        WorldPoint where = groundItem.getLocation();
+        int tiles = start == null || where == null ? 0 : start.distanceTo(where);
+
+        long clickedAt = System.currentTimeMillis();
+        long hardLimit = clickedAt + PICKUP_MAX_WAIT_MS;
+        long deadline = Math.min(hardLimit, clickedAt + PICKUP_BASE_WAIT_MS + (long) tiles * PICKUP_PER_TILE_MS);
+        while (!Thread.currentThread().isInterrupted()) {
+            if (isGone(groundItem)) {
+                return true;
+            }
+            long now = System.currentTimeMillis();
+            if (Rs2Player.isMoving()) {
+                // Still walking to it: keep waiting, and do not click again.
+                deadline = Math.min(hardLimit, Math.max(deadline, now + PICKUP_SETTLE_MS));
+            }
+            if (now >= deadline) {
+                return false;
+            }
+            sleepUntil(() -> isGone(groundItem), Rs2Random.between(80, 140));
+        }
+        return false;
     }
 
     public static boolean coreLoot(GroundItem groundItem) {
@@ -234,7 +283,12 @@ public class Rs2GroundItem {
         final int quantFinal = quantity;
         return runWhilePaused(() -> {
             for (int i = 0; i < quantFinal; i++) {
-                waitForGroundItemDespawn(() -> interact(groundItem), groundItem);
+                // Looked up fresh each time: the pile is replaced when its count changes, and the
+                // old copy would read as "already taken" and click the next item at once.
+                GroundItem pile = i == 0 ? groundItem : getGroundItems().get(groundItem.getLocation(), groundItem.getId());
+                if (pile == null || !waitForGroundItemDespawn(() -> interact(pile), pile)) {
+                    break;
+                }
             }
             return true;
         });
