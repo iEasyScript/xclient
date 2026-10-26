@@ -3866,13 +3866,13 @@
 # Paterdomus											
 3405 3506 0	3405 9906 0	Climb-down;Trapdoor;1581									
 3405 9906 0	3405 3506 0	Climb-up;Ladder;17385								2	
-3405 9895 0	3405 9894 0	Open;Gate;3444									
-3405 9894 0	3405 9895 0	Open;Gate;3444									
+3405 9895 0	3405 9894 0	Open;Gate;3444				Priest in Peril					
+3405 9894 0	3405 9895 0	Open;Gate;3444				Priest in Peril					
 3431 9897 0	3432 9897 0	Open;Gate;3445									
 3432 9897 0	3431 9897 0	Open;Gate;3445									
 3360 9904 0	3440 9899 0	Climb-up;Ladder;12764								2	
 3440 9899 0	3360 9904 0	Climb-down;Trapdoor;12762									
-3440 9887 0	3423 3485 0	Pass-through;Holy barrier;3443									
+3440 9887 0	3423 3485 0	Pass-through;Holy barrier;3443				Priest in Peril					
 3423 3485 0	3440 9887 0	Climb-down;Trapdoor;3433									
 3422 3484 0	3440 9887 0	Climb-down;Trapdoor;3433									
 3408 3489 0	3409 3489 0	Open;Large door;3489									
