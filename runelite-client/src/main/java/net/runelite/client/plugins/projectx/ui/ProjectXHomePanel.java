@@ -68,14 +68,12 @@ public class ProjectXHomePanel extends PluginPanel
 
     private final JLabel signedIn = new JLabel();
     private final JLabel balance = new JLabel();
-    private final JPanel scriptList = new JPanel();
+    private final MyScriptsWindow myScripts;
     private final JLabel scriptCount = new JLabel();
     private final Timer timer;
 
     /** Opens the Scripts tab; set by whoever owns it. */
     private Runnable openScripts = () -> { };
-    /** What the list shows now, so it is rebuilt only when something changed. Null until first built. */
-    private List<String> shown;
 
     @Inject
     ProjectXHomePanel(PluginManager pluginManager, ProjectXPluginManager projectxPluginManager,
@@ -89,6 +87,7 @@ public class ProjectXHomePanel extends PluginPanel
         this.entitlements = entitlements;
         this.account = account;
         this.executor = executor;
+        this.myScripts = new MyScriptsWindow(pluginManager, projectxPluginManager, pluginListPanel, entitlements);
 
         // The sidebar's own grey (obsidian, via ColorScheme), so the tab and the space below it are one.
         setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -116,6 +115,15 @@ public class ProjectXHomePanel extends PluginPanel
         actions.add(button("Control Panel", false, () -> browse(ProjectXSite.controlPanel())));
         actions.setMaximumSize(new Dimension(Integer.MAX_VALUE, 64));
         add(left(actions));
+        add(gap(6));
+        JButton myScriptsButton = button("My Scripts", true, () -> myScripts.show(this));
+        myScriptsButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        myScriptsButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        add(myScriptsButton);
+        add(gap(4));
+        scriptCount.setFont(FontManager.getRunescapeSmallFont());
+        scriptCount.setForeground(ProjectXTheme.INK_FAINT);
+        add(left(scriptCount));
         add(gap(8));
         JLabel footer = new JLabel("Project X " + Objects.toString(RuneLiteProperties.getProjectXVersion(), "") + "  ·  xclient.dev");
         footer.setFont(FontManager.getRunescapeSmallFont());
@@ -131,22 +139,6 @@ public class ProjectXHomePanel extends PluginPanel
         });
         add(left(footer));
         add(gap(16));
-
-        // Your scripts last: however many there are, the buttons above stay in reach.
-        JPanel scriptsHeading = new JPanel(new BorderLayout());
-        scriptsHeading.setOpaque(false);
-        scriptsHeading.add(eyebrow("My scripts"), BorderLayout.WEST);
-        scriptCount.setFont(FontManager.getRunescapeSmallFont());
-        scriptCount.setForeground(ProjectXTheme.INK_FAINT);
-        scriptsHeading.add(scriptCount, BorderLayout.EAST);
-        scriptsHeading.setMaximumSize(new Dimension(Integer.MAX_VALUE, 18));
-        add(left(scriptsHeading));
-        add(gap(6));
-
-        scriptList.setLayout(new BoxLayout(scriptList, BoxLayout.Y_AXIS));
-        scriptList.setOpaque(false);
-        add(left(scriptList));
-        add(gap(14));
 
         timer = new Timer(REFRESH_MS, e -> refresh());
         timer.setInitialDelay(0);
@@ -259,160 +251,13 @@ public class ProjectXHomePanel extends PluginPanel
         balance.setText(cents == null ? "—" : ProjectXSite.formatX(cents));
     }
 
-    /** One installed store script, as the list shows it. */
-    private static final class Row
-    {
-        final Plugin plugin;
-        final String internalName;
-        final String name;
-        final boolean running;
-        final String detail;
-        final Color detailColor;
-        final boolean needsAccess;
-
-        Row(Plugin plugin, String internalName, String name, boolean running, String detail, Color detailColor, boolean needsAccess)
-        {
-            this.plugin = plugin;
-            this.internalName = internalName;
-            this.name = name;
-            this.running = running;
-            this.detail = detail;
-            this.detailColor = detailColor;
-            this.needsAccess = needsAccess;
-        }
-
-        String key()
-        {
-            return internalName + "|" + running + "|" + detail + "|" + needsAccess;
-        }
-    }
-
     private void updateScripts()
     {
-        List<Row> rows = new ArrayList<>();
-        for (Plugin plugin : projectxPluginManager.getInstalledPlugins())
+        String summary = myScripts.summary();
+        if (!summary.equals(scriptCount.getText()))
         {
-            String internalName = plugin.getClass().getSimpleName();
-            ProjectXPluginManifest manifest = projectxPluginManager.getManifestMap().get(internalName);
-            if (manifest == null)
-            {
-                // RuneLite Plugin Hub plugins (117 HD and the like) are external too; only store scripts belong here.
-                continue;
-            }
-            String name = manifest.getDisplayName() != null ? manifest.getDisplayName() : descriptorName(plugin);
-            boolean running = pluginManager.isPluginActive(plugin);
-
-            String access;
-            Color color = ProjectXTheme.INK_FAINT;
-            boolean needsAccess = false;
-            if (manifest.isBroken())
-            {
-                access = "Not working right now";
-                color = ProjectXTheme.DANGER;
-            }
-            else if (entitlements.isPaid(internalName))
-            {
-                Optional<Instant> ends = entitlements.accessEndsAt(internalName);
-                if (ends.isPresent() && entitlements.isEntitled(internalName))
-                {
-                    String left = timeLeft(ends.get());
-                    access = entitlements.isOnTrial(internalName) ? "Trial · " + left + " left" : left + " left";
-                    color = Duration.between(Instant.now(), ends.get()).toDays() < 3 ? ProjectXTheme.MOLTEN_HI : ProjectXTheme.GOLD;
-                }
-                else
-                {
-                    access = "No access";
-                    color = ProjectXTheme.MOLTEN_HI;
-                    needsAccess = true;
-                }
-            }
-            else
-            {
-                access = "Free";
-            }
-
-            String detail = (running ? "Running" : "Stopped") + " · " + access;
-            rows.add(new Row(plugin, internalName, name, running, detail, color, needsAccess));
+            scriptCount.setText(summary);
         }
-        rows.sort(Comparator.comparing((Row r) -> !r.running).thenComparing(r -> r.name.toLowerCase()));
-
-        List<String> keys = new ArrayList<>();
-        rows.forEach(r -> keys.add(r.key()));
-        if (keys.equals(shown))
-        {
-            return;
-        }
-        shown = keys;
-
-        long running = rows.stream().filter(r -> r.running).count();
-        scriptCount.setText(rows.isEmpty() ? "" : running > 0 ? running + " running" : rows.size() + " installed");
-
-        scriptList.removeAll();
-        if (rows.isEmpty())
-        {
-            JPanel empty = card();
-            empty.setLayout(new BorderLayout(0, 8));
-            JLabel text = new JLabel("<html><div style='width:150px'>You haven't added any scripts yet. "
-                + "Most are free, and paid ones come with a free trial.</div></html>");
-            text.setForeground(ProjectXTheme.INK_DIM);
-            empty.add(text, BorderLayout.CENTER);
-            empty.add(button("Browse scripts", true, () -> openScripts.run()), BorderLayout.SOUTH);
-            empty.setMaximumSize(new Dimension(Integer.MAX_VALUE, 110));
-            scriptList.add(left(empty));
-        }
-        for (Row row : rows)
-        {
-            scriptList.add(left(scriptRow(row)));
-            scriptList.add(Box.createVerticalStrut(4));
-        }
-        scriptList.revalidate();
-        scriptList.repaint();
-    }
-
-    private JPanel scriptRow(Row row)
-    {
-        JPanel line = card();
-        line.setLayout(new BorderLayout(6, 0));
-        if (row.running)
-        {
-            line.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 3, 0, 0, ProjectXTheme.RUNNING),
-                BorderFactory.createEmptyBorder(6, 6, 6, 6)));
-        }
-
-        JPanel words = new JPanel();
-        words.setLayout(new BoxLayout(words, BoxLayout.Y_AXIS));
-        words.setOpaque(false);
-        JLabel name = new JLabel(row.name);
-        name.setForeground(ProjectXTheme.INK);
-        words.add(name);
-        JLabel detail = new JLabel(row.detail);
-        detail.setFont(FontManager.getRunescapeSmallFont());
-        detail.setForeground(row.running ? ProjectXTheme.RUNNING : row.detailColor);
-        words.add(detail);
-        line.add(words, BorderLayout.CENTER);
-
-        JButton action;
-        if (row.running)
-        {
-            action = button("Stop", false, () -> pluginListPanel.stopPlugin(row.plugin));
-        }
-        else if (row.needsAccess)
-        {
-            action = button("Get", true, () -> ProjectXStoreDialog.show(this, row.internalName));
-        }
-        else
-        {
-            action = button("Start", true, () -> pluginListPanel.startPlugin(row.plugin));
-        }
-        action.setPreferredSize(new Dimension(58, 24));
-        JPanel holder = new JPanel(new GridLayout(1, 1));
-        holder.setOpaque(false);
-        holder.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
-        holder.add(action);
-        line.add(holder, BorderLayout.EAST);
-        line.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
-        return line;
     }
 
     // ---- small helpers
@@ -447,7 +292,7 @@ public class ProjectXHomePanel extends PluginPanel
         LinkBrowser.browse(url.toString());
     }
 
-    private static JPanel card()
+    static JPanel card()
     {
         JPanel card = new JPanel();
         card.setBackground(ProjectXTheme.OBSIDIAN_2);
@@ -464,7 +309,7 @@ public class ProjectXHomePanel extends PluginPanel
     }
 
     /** A gold (primary) or ghost button in the site's style. */
-    private static JButton button(String text, boolean primary, Runnable action)
+    static JButton button(String text, boolean primary, Runnable action)
     {
         JButton b = new JButton(text);
         b.setFocusPainted(false);

@@ -121,6 +121,7 @@ public class ProjectXPluginManager {
     /** Jars that could not be deleted, so the same file is only complained about once. */
     private final Set<String> undeletableJars = ConcurrentHashMap.newKeySet();
     private final Set<Class<?>> devPluginClasses = ConcurrentHashMap.newKeySet();
+    private final Map<Class<?>, String> devJarNames = new ConcurrentHashMap<>();
     private final AtomicBoolean devPluginsLoaded = new AtomicBoolean();
     private volatile boolean sideloadPhaseDone;
 
@@ -1064,6 +1065,7 @@ public class ProjectXPluginManager {
             return;
         }
         devPluginClasses.addAll(loaded.stream().map(Plugin::getClass).collect(Collectors.toSet()));
+        loaded.forEach(p -> devJarNames.put(p.getClass(), jar.getName()));
         for (Plugin p : loaded) {
             log.info("Loaded local dev plugin {} (Local) from {}. Replacing the jar needs a client restart.",
                 p.getClass().getSimpleName(), jar.getName());
@@ -1945,6 +1947,17 @@ public class ProjectXPluginManager {
      * @return
      * @apiNote
      */
+    public List<Plugin> getDevPlugins() {
+        return pluginManager.getPlugins().stream()
+                .filter(p -> devPluginClasses.contains(p.getClass()))
+                .collect(Collectors.toList());
+    }
+
+    /** @return the jar file name a local dev plugin was loaded from, or null if it is not one. */
+    public String getDevJarName(Plugin plugin) {
+        return devJarNames.get(plugin.getClass());
+    }
+
     public List<Plugin> getInstalledPlugins() {
         Predicate<Plugin> isExternalPluginPredicate = plugin ->
                 plugin.getClass().getAnnotation(PluginDescriptor.class).isExternal();
