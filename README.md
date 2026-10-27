@@ -20,22 +20,41 @@ context does not rot when implementation details move.
 
 ## Writing scripts
 
-Scripts are RuneLite plugins built against this client.
+Scripts are RuneLite plugins built against this client, and they use one simple API: a single
+import, `net.runelite.client.plugins.projectx.bot.*`.
 
+```java
+var rock = Objects.query().nameEquals("Copper rocks").nearestReachable();
+if (rock != null) rock.interact("Mine");
+
+Npcs.query("Cow").nearest().interact("Attack");
+```
+
+- **Read this first:** [`docs/SCRIPTING.md`](docs/SCRIPTING.md) is the guide, with a copper miner
+  you can copy. It needs client 1.0.79 (plugin API 2.7.0); set `minClientVersion = "2.7.0"` in your
+  `@PluginDescriptor`.
+- The old `Rs2*` names still work but are deprecated. [`docs/api-migration.tsv`](docs/api-migration.tsv)
+  maps every old name to its new one.
 - Start from the template: [xclient-script-template](https://github.com/iEasyScript/xclient-script-template)
 - The rules that matter (threading, caches, anti-ban): [`plugins/projectx/AGENTS.md`](runelite-client/src/main/java/net/runelite/client/plugins/projectx/AGENTS.md)
-- Query game state: [`api/QUERYABLE_API.md`](runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md)
 - Drive a running client while developing: [`docs/PROJECTX_CLI.md`](docs/PROJECTX_CLI.md)
+
+### Build and try it
 
 Build the jar your plugin compiles against with `./gradlew :client:assemble`, or take it from
 [Releases](https://github.com/iEasyScript/xclient/releases).
+
+To run your own script without publishing it, copy its jar into
+`%USERPROFILE%\.runelite\projectx-plugins\dev\` and restart the client (1.0.77 and later). Since
+1.0.78 the My Scripts window shows it under the Local tab. A jar that reuses a store script's name,
+package or hash is refused.
 
 ## Start Here
 - Install or run a release: `docs/installation.md`
 - Set up a development environment: `docs/development.md`
 - Understand the runtime: `docs/ARCHITECTURE.md`
 - Build scripts safely: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/AGENTS.md`
-- Use entity caches/queryables: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md`
+- Script API guide: `docs/SCRIPTING.md`
 - Drive a running client: `docs/PROJECTX_CLI.md`
 
 ## Common Commands
