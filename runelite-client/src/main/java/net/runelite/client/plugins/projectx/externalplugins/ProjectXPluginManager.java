@@ -1541,20 +1541,6 @@ public class ProjectXPluginManager {
 
             Set<String> needsReload = new HashSet<>(needsDownload);
 
-            // Another client on this machine shares the plugins folder. When it downloads an update
-            // first, the jar on disk already matches the store and nothing above asks for a reload,
-            // so this client kept running the build it loaded at start-up. Reload anything whose
-            // running version is not the one the store now serves.
-            for (Plugin loaded : loadedExternalPlugins) {
-                ProjectXPluginManifest m = getPluginManifest(loaded);
-                PluginDescriptor d = loaded.getClass().getAnnotation(PluginDescriptor.class);
-                if (m == null || d == null || m.getVersion() == null || !userManifestMap.containsKey(m.getInternalName())) {
-                    continue;
-                }
-                if (!m.getVersion().equals(d.version()) && needsReload.add(m.getInternalName())) {
-                    log.info("{} is running {} but the store has {}; reloading it", m.getInternalName(), d.version(), m.getVersion());
-                }
-            }
 
             Set<File> keepFiles = userManifestMap.keySet().stream()
                     .map(this::getPluginJarFile)
