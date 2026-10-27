@@ -315,6 +315,9 @@ public class Rs2Walker {
     /** After scene-object transport {@link #handleObject} — landing poll timeout + matching warn (cf. {@link #SHIP_NPC_BOAT_LANDING_WAIT_MS}). */
     private static final int POST_HANDLE_OBJECT_LANDING_WAIT_MS = 5_000;
     private static final int POST_HANDLE_OBJECT_FAILED_SETTLE_MS = 800;
+    private static final int ADJACENT_TRANSPORT_APPROACH_MAX_MS = 20_000;
+    private static final int ADJACENT_TRANSPORT_APPROACH_IDLE_MS = 1_800;
+    private static final int ADJACENT_TRANSPORT_OPEN_WAIT_MS = 1_500;
 
     /** Teleport “already near destination” skip in path loop — same semantics as prior {@code distanceTo2D &lt; 3}. */
     private static final int TELEPORT_NEAR_SKIP_CHEBYSHEV = 3;
@@ -9416,7 +9419,12 @@ public class Rs2Walker {
                     List<TileObject> objects = matched.stream()
                             .sorted(Comparator
                                     .comparingInt((TileObject o) -> resolveTransportObjectAction(o, transportActions).isPresent() ? 0 : 1)
-                                    .thenComparingInt(o -> o.getWorldLocation().distanceTo(transport.getOrigin())))
+                                    // Nearest the origin first; ties broken by distance to the destination (the
+                                    // low digits). A zigzag of identical holes (Fremennik Slayer Dungeon "Strange
+                                    // floor") puts two same-id objects one tile from the origin, one toward the
+                                    // destination and one away. Take the one between the two.
+                                    .thenComparingInt(o -> o.getWorldLocation().distanceTo(transport.getOrigin()) * 1000
+                                            + Math.min(999, o.getWorldLocation().distanceTo(transport.getDestination()))))
                             .collect(Collectors.toList());
 
                     long objectScanMs = System.currentTimeMillis() - objectScanStartedAt;
@@ -9480,7 +9488,7 @@ public class Rs2Walker {
                         }
                         sleepUntil(() -> !Rs2Player.isAnimating());
                         WorldPoint destWait = transport.getDestination();
-                        int maxInclusive = isAdjacentSamePlaneTransport(transport) ? 0 : OFFSET;
+                        int maxInclusive = isAdjacentSamePlaneTransport(transport) ? 0 : shortJumpLandingRadius(transport, OFFSET);
                         if (destWait == null) {
                             return false;
                         }
@@ -9716,9 +9724,10 @@ public class Rs2Walker {
         if (tdObj.getPlane() == plObj.getPlane()) {
             if (transport.getType() == TransportType.AGILITY_SHORTCUT) {
                 Rs2Player.waitForAnimation();
+                final int shortcutLandingRadius = shortJumpLandingRadius(transport, 2);
                 sleepUntil(() -> {
                     WorldPoint now = Rs2Player.getWorldLocation();
-                    return isPlayerWithinChebyshevInclusive(tdObj, 2)
+                    return isPlayerWithinChebyshevInclusive(tdObj, shortcutLandingRadius)
                             || isSettledNearAdjacentSamePlaneLanding(transport, now, tdObj, 0);
                 }, 10000);
             } else if (transport.getType() == TransportType.MINECART) {
@@ -9734,6 +9743,12 @@ public class Rs2Walker {
                 Rs2Player.waitForWalking();
                 Rs2Dialogue.clickOption("Yes please"); //shillo village cart
                 if (isAdjacentSamePlaneTransport(transport)) {
+                    // A ranged dispatch clicks the gate from up to a dozen tiles away and the server walks
+                    // the player there; Rs2Player.waitForWalking() gives up after a few seconds. Sending the
+                    // minimap click to the far side while the player was still walking to the gate cancelled
+                    // the pending "Open" (the server can only path to the near side of a CLOSED gate), so the
+                    // gate never opened and the walker re-clicked it in a loop (Mort Myre swamp gate).
+                    waitForAdjacentTransportApproach(transport);
                     sleepUntil(() -> {
                         WorldPoint now = Rs2Player.getWorldLocation();
                         return now != null && (now.equals(transport.getDestination())
@@ -9742,6 +9757,13 @@ public class Rs2Walker {
                     }, 2000);
                     WorldPoint afterOpen = Rs2Player.getWorldLocation();
                     if (afterOpen != null && !afterOpen.equals(transport.getDestination())) {
+                        // Let the gate actually swing open before asking the server to path through it.
+                        final int closedObjectId = transport.getObjectId();
+                        final WorldPoint closedObjectTile = transport.getOrigin();
+                        if (closedObjectId > 0 && closedObjectTile != null) {
+                            sleepUntil(() -> Rs2GameObject.getTileObject(closedObjectId, closedObjectTile, 1) == null,
+                                    ADJACENT_TRANSPORT_OPEN_WAIT_MS);
+                        }
                         boolean clicked = walkMiniMap(transport.getDestination());
                         if (!clicked) {
                             clicked = walkFastCanvas(transport.getDestination());
@@ -9799,6 +9821,66 @@ public class Rs2Walker {
                     System.currentTimeMillis() - planeChangeStartedAt, tileObject.getId());
             return planeChanged;
         }
+    }
+
+    /**
+     * Waits until the player has finished walking to an adjacent (door/gate) transport's origin after the
+     * click that was sent to it, or has clearly stopped somewhere else (click cancelled, blocked path).
+     */
+    private static void waitForAdjacentTransportApproach(Transport transport) {
+        WorldPoint origin = transport.getOrigin();
+        WorldPoint dest = transport.getDestination();
+        if (origin == null || dest == null) {
+            return;
+        }
+        final long[] idleSince = {0L};
+        sleepUntil(() -> {
+            WorldPoint now = Rs2Player.getWorldLocation();
+            if (now == null) {
+                return false;
+            }
+            if (now.equals(dest)) {
+                return true;
+            }
+            boolean nearOrigin = now.getPlane() == origin.getPlane() && now.distanceTo2D(origin) <= 1;
+            if (Rs2Player.isMoving()) {
+                idleSince[0] = 0L;
+                return false;
+            }
+            if (nearOrigin) {
+                return true;
+            }
+            // Not moving and not at the gate: give the server a moment to start the walk, then give up.
+            long t = System.currentTimeMillis();
+            if (idleSince[0] == 0L) {
+                idleSince[0] = t;
+            }
+            return t - idleSince[0] >= ADJACENT_TRANSPORT_APPROACH_IDLE_MS;
+        }, ADJACENT_TRANSPORT_APPROACH_MAX_MS);
+    }
+
+    /**
+     * Landing radius for a short same-plane agility jump (origin two or three tiles from the destination,
+     * e.g. the Fremennik Slayer Dungeon strange floor, 2775,10003 to 2773,10003). The generic radius
+     * (2 for the shortcut wait, {@link #OFFSET} for the landing check) already contains the ORIGIN tile for
+     * such a hop, so both waits returned the instant the click was sent, before the jump animation moved
+     * the player; the walker then re-clicked the hole mid-jump, which queued a second jump straight back.
+     * The radius is tightened so that the player must actually be off the origin and next to the
+     * destination. Everything else keeps {@code defaultRadius}.
+     */
+    static int shortJumpLandingRadius(Transport transport, int defaultRadius) {
+        if (transport == null
+                || transport.getType() != TransportType.AGILITY_SHORTCUT
+                || transport.getOrigin() == null
+                || transport.getDestination() == null
+                || transport.getOrigin().getPlane() != transport.getDestination().getPlane()) {
+            return defaultRadius;
+        }
+        int hop = transport.getOrigin().distanceTo2D(transport.getDestination());
+        if (hop < 2 || hop > 3) {
+            return defaultRadius;
+        }
+        return Math.min(defaultRadius, hop - 1);
     }
 
     private static boolean isAdjacentSamePlaneTransport(Transport transport) {

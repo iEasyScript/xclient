@@ -229,6 +229,49 @@ public class Rs2WalkerUnitTest {
     }
 
     @Test
+    public void shortJumpLandingRadius_tightensTwoTileAgilityHop() {
+        Transport strangeFloor = new Transport(
+                new WorldPoint(2775, 10003, 0),
+                new WorldPoint(2773, 10003, 0),
+                "Jump-over",
+                TransportType.AGILITY_SHORTCUT,
+                false,
+                "Jump-over",
+                "Strange floor",
+                16544);
+
+        // The origin is two tiles from the destination, so the old radius of 2 (wait) / 10 (landing)
+        // already contained the origin and the walker never waited for the jump to finish.
+        assertEquals(1, Rs2Walker.shortJumpLandingRadius(strangeFloor, 2));
+        assertEquals(1, Rs2Walker.shortJumpLandingRadius(strangeFloor, Rs2Walker.OFFSET));
+    }
+
+    @Test
+    public void shortJumpLandingRadius_leavesOtherTransportsAlone() {
+        Transport longShortcut = new Transport(
+                new WorldPoint(2775, 10003, 0),
+                new WorldPoint(2765, 10003, 0),
+                "Jump-over",
+                TransportType.AGILITY_SHORTCUT,
+                false,
+                "Jump-over",
+                "Strange floor",
+                16544);
+        Transport gate = new Transport(
+                new WorldPoint(3443, 3458, 0),
+                new WorldPoint(3443, 3457, 0),
+                "Open",
+                TransportType.TRANSPORT,
+                false,
+                "Open",
+                "Gate",
+                3507);
+
+        assertEquals(2, Rs2Walker.shortJumpLandingRadius(longShortcut, 2));
+        assertEquals(10, Rs2Walker.shortJumpLandingRadius(gate, 10));
+    }
+
+    @Test
     public void isSettledNearAdjacentSamePlaneLanding_rejectsOriginTile() {
         Transport door = new Transport(
                 new WorldPoint(3152, 3363, 0),
