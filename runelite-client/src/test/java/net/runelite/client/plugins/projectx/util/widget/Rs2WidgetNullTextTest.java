@@ -23,7 +23,7 @@ import static org.mockito.Mockito.when;
 
 public class Rs2WidgetNullTextTest {
 
-    private MockedStatic<ProjectX> microbot;
+    private MockedStatic<ProjectX> projectX;
 
     @Before
     public void setUp() throws Exception {
@@ -31,14 +31,14 @@ public class Rs2WidgetNullTextTest {
         ClientThread clientThread = mock(ClientThread.class);
         when(clientThread.runOnClientThreadOptional(any())).thenAnswer(inv ->
                 Optional.ofNullable(((Callable<?>) inv.getArgument(0)).call()));
-        microbot = Mockito.mockStatic(ProjectX.class);
-        microbot.when(ProjectX::getClient).thenReturn(client);
-        microbot.when(ProjectX::getClientThread).thenReturn(clientThread);
+        projectX = Mockito.mockStatic(ProjectX.class);
+        projectX.when(ProjectX::getClient).thenReturn(client);
+        projectX.when(ProjectX::getClientThread).thenReturn(clientThread);
     }
 
     @After
     public void tearDown() {
-        microbot.close();
+        projectX.close();
     }
 
     private static Widget brokenTextWidget() {
