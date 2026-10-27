@@ -41,10 +41,13 @@ import java.util.concurrent.Future;
  * {@link ShortestPathPlugin}'s members remain public and binary-compatible for out-of-tree callers.
  * Do not add logic here — if a call needs new behaviour, put it behind the plugin and expose it
  * through a matching delegate.</p>
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.PathApi} instead: same methods, shorter name. This name keeps working.
  */
-public final class Rs2PathApi
+@Deprecated
+public class Rs2PathApi
 {
-	private Rs2PathApi()
+	protected Rs2PathApi()
 	{
 	}
 

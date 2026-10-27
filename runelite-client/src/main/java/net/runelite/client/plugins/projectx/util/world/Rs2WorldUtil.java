@@ -40,9 +40,12 @@ import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
  * </ul>
  * <p>
  * All methods are static and thread-safe for use across plugins and scripts.
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Worlds} instead: same methods, shorter name. This name keeps working.
  */
 
 @Slf4j
+@Deprecated
 public class Rs2WorldUtil {
     
     /**

@@ -28,8 +28,11 @@ import java.util.stream.Stream;
 
 import static net.runelite.api.Perspective.LOCAL_TILE_SIZE;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Npcs} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
-@Deprecated(since = "2.1.0 - Use Rs2NpcCache/Rs2NpcQuery instead", forRemoval = true)
+@Deprecated(since = "2.1.0 - Use Rs2NpcCache/Rs2NpcQuery instead")
 public class Rs2Npc {
     /**
      * Retrieves an NPC by its index, returning an {@link Rs2NpcModel}.

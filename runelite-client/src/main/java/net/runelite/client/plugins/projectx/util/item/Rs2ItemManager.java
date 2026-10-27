@@ -14,7 +14,11 @@ import java.util.Map;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Items} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2ItemManager {
 
 

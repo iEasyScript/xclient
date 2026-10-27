@@ -2,6 +2,7 @@
 - [Decision Records](decisions/)
 - [Development Setup](development.md)
 - [Installation](installation.md)
+- [Scripting Guide](SCRIPTING.md) (start here: the short script API and old-to-new names)
 - [API Overview](../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/README.md)
 - [Queryable API Guide](../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md)
 - [Runtime CLI](PROJECTX_CLI.md)

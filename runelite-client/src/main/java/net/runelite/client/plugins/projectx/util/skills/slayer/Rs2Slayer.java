@@ -23,7 +23,11 @@ import org.slf4j.event.Level;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Slayer} instead: same methods, shorter name. This name keeps working.
+ */
 
+@Deprecated
 public class Rs2Slayer {
 
     /**

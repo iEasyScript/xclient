@@ -28,7 +28,10 @@ import java.util.stream.IntStream;
 /**
  * Utility class to manage and interact with the player's Rune Pouch.
  * Includes methods for reading, loading, and depositing rune pouch contents.
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.RunePouch} instead: same methods, shorter name. This name keeps working.
  */
+@Deprecated
 public class Rs2RunePouch
 {
 	private static final int NUM_SLOTS = 4;

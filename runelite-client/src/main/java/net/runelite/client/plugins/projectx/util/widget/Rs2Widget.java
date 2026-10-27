@@ -21,7 +21,11 @@ import java.util.stream.Stream;
 
 import static net.runelite.client.plugins.projectx.util.Global.*;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Widgets} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2Widget {
 
     public static boolean sleepUntilHasWidgetText(String text, int widgetId, int childId, boolean exact, int sleep) {

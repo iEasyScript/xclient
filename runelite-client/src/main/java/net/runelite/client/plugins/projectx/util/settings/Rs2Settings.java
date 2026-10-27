@@ -22,8 +22,12 @@ import java.util.Map;
 import static net.runelite.client.plugins.projectx.util.Global.sleepGaussian;
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.GameSettings} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
 @NoArgsConstructor
+@Deprecated
 public class Rs2Settings
 {
 

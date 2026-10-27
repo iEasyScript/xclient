@@ -25,7 +25,11 @@ import static net.runelite.client.plugins.projectx.ProjectX.updateItemContainer;
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntilOnClientThread;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Shop} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2Shop {
     public static final int SHOP_INVENTORY_ITEM_CONTAINER = 19660800;
     public static final int SHOP_CLOSE_BUTTON = 196960801;

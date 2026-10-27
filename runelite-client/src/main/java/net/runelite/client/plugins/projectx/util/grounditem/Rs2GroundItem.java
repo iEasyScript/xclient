@@ -27,9 +27,11 @@ import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 
 /**
  * Todo: rework this class to not be dependant on the grounditem plugin
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.GroundItems} instead: same methods, shorter name. This name keeps working.
  */
 @Slf4j
-@Deprecated(since = "2.1.0 - Use Rs2TileItemCache/Rs2TileItemQuery instead", forRemoval = true)
+@Deprecated(since = "2.1.0 - Use Rs2TileItemCache/Rs2TileItemQuery instead")
 public class Rs2GroundItem {
     private static final int DESPAWN_DELAY_THRESHOLD_TICKS = 150;
 

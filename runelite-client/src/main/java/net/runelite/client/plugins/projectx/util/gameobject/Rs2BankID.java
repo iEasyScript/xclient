@@ -4,6 +4,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.BankIds} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2BankID {
     public static Integer[] bankIds = new Integer[]{
             75, 76, 103, 104, 170, 171, 172, 173, 375, 376, 377, 378, 379, 590, 591, 961,

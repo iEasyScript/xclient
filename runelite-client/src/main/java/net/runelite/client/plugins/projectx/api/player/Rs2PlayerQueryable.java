@@ -7,6 +7,10 @@ import net.runelite.client.plugins.projectx.api.player.models.Rs2PlayerModel;
 
 import java.util.stream.Stream;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.PlayerQuery} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public final class Rs2PlayerQueryable extends AbstractEntityQueryable<Rs2PlayerQueryable, Rs2PlayerModel>
         implements IEntityQueryable<Rs2PlayerQueryable, Rs2PlayerModel> {
 

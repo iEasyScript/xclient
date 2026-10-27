@@ -95,9 +95,12 @@ import java.util.concurrent.ThreadLocalRandom;
  *   <li>{@code systemWait(long time)}: Invokes a system-level wait for the specified time in milliseconds.</li>
  *   <li>{@code rotatePoint(Point point, double angle, double originX, double originY)}: Rotates a point around an origin by a specified angle.</li>
  * </ul>
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Rand} instead: same methods, shorter name. This name keeps working.
  */
 
 @Slf4j
+@Deprecated
 public class Rs2Random {
 
     private static final double GAUSS_CUTOFF = 4.0;

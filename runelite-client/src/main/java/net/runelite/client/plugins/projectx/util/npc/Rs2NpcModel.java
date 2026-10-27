@@ -205,4 +205,21 @@ public class Rs2NpcModel extends ActorModel implements NPC
 
 		return null;
 	}
+
+	/**
+	 * Clicks this NPC with the given menu action, for example {@code npc.interact("Attack")}.
+	 * Same as {@link Rs2Npc#interact(Rs2NpcModel, String)}.
+	 *
+	 * @return true if the click was sent
+	 */
+	public boolean interact(String action)
+	{
+		return Rs2Npc.interact(this, action);
+	}
+
+	/** Clicks this NPC's left-click option. Same as {@link Rs2Npc#interact(Rs2NpcModel)}. */
+	public boolean interact()
+	{
+		return Rs2Npc.interact(this);
+	}
 }

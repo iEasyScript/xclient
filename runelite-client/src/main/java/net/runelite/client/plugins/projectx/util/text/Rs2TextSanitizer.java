@@ -15,10 +15,13 @@ import net.runelite.client.util.Text;
  *
  * Scope: removes RuneLite-style markup tags (e.g. {@code <col=...>}) and decodes the small set of entities/escapes we
  * actively see in chat/widget strings. Not a general-purpose HTML sanitizer.
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.TextSanitizer} instead: same methods, shorter name. This name keeps working.
  */
-public final class Rs2TextSanitizer
+@Deprecated
+public class Rs2TextSanitizer
 {
-	private Rs2TextSanitizer()
+	protected Rs2TextSanitizer()
 	{
 	}
 

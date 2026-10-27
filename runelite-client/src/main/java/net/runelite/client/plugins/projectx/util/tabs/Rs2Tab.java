@@ -17,7 +17,11 @@ import java.util.Map;
 
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Tabs} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2Tab {
     private static final int TAB_SWITCH_SCRIPT = 915;
     private static volatile InterfaceTab cachedTab = InterfaceTab.NOTHING_SELECTED;

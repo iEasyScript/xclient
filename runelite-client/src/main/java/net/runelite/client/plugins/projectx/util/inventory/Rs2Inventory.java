@@ -44,6 +44,10 @@ import java.util.stream.Stream;
 import static net.runelite.client.plugins.projectx.ProjectX.log;
 import static net.runelite.client.plugins.projectx.util.Global.*;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Inventory} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2Inventory {
     // The maximum capacity of the inventory
     private static final int COLUMNS = 4;

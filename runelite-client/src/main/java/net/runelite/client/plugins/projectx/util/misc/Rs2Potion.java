@@ -5,10 +5,13 @@ import java.util.List;
 
 /**
  * A utility class for returning various Runescape potion names and variants.
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Potions} instead: same methods, shorter name. This name keeps working.
  */
+@Deprecated
 public class Rs2Potion
 {
-    private Rs2Potion()
+    protected Rs2Potion()
     {
         // Utility class; prevent instantiation
     }

@@ -38,7 +38,10 @@ import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
  * Utility class for managing inventory setups in the ProjectX plugin.
  * Handles loading inventory and equipment setups, verifying matches, and ensuring
  * the correct items are equipped and in the inventory.
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Loadout} instead: same methods, shorter name. This name keeps working.
  */
+@Deprecated
 public class Rs2InventorySetup {
 
     /**

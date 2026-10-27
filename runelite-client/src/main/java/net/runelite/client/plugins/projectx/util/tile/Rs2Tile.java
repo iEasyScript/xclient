@@ -29,6 +29,10 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Tiles} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public abstract class Rs2Tile implements Tile {
     private static final Map<WorldPoint, Integer> dangerousGraphicsObjectTilesInternal = new ConcurrentHashMap<>();
     @Getter

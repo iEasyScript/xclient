@@ -29,7 +29,11 @@ import java.util.stream.Collectors;
 
 import static net.runelite.client.plugins.projectx.util.Global.*;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.DepositBox} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2DepositBox {
 
     private static final int DEPOSITBOX_PARENT_WIDGET_ID = 192;

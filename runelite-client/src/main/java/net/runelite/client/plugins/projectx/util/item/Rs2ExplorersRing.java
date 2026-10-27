@@ -17,6 +17,10 @@ import net.runelite.client.plugins.projectx.util.widget.Rs2Widget;
 
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.ExplorersRing} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2ExplorersRing {
 
     // Array of Explorer's Rings (1-4) item IDs

@@ -22,6 +22,10 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Equipment} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2Equipment {
     private static volatile List<Rs2ItemModel> equipmentItems = Collections.emptyList();
 

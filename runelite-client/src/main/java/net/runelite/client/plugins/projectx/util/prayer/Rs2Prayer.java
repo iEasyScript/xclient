@@ -22,7 +22,11 @@ import java.util.stream.Stream;
 
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Prayers} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2Prayer {
     
     @Component

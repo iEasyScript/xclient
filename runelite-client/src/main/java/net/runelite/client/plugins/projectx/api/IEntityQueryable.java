@@ -8,13 +8,20 @@ import java.util.function.Predicate;
 
 public interface IEntityQueryable<Q extends IEntityQueryable<Q, E>, E extends IEntity> {
     Q fromWorldView();
-    Q where(Predicate<E> predicate);
+    Q where(Predicate<? super E> predicate);
 
     Q within(int distance);
 
     Q within(WorldPoint anchor, int distance);
 
     Q withName(String name);
+
+    /**
+     * Keeps entities whose name is exactly {@code name} (ignoring case). Same as {@link #withName(String)}.
+     */
+    default Q nameEquals(String name) {
+        return withName(name);
+    }
 
     Q withNameContains(String substring);
 
@@ -36,6 +43,13 @@ public interface IEntityQueryable<Q extends IEntityQueryable<Q, E>, E extends IE
     E nearest(WorldPoint anchor, int maxDistance);
 
     List<E> toList();
+
+    /**
+     * Every match, as a list. Same as {@link #toList()}.
+     */
+    default List<E> list() {
+        return toList();
+    }
 
     int count();
 

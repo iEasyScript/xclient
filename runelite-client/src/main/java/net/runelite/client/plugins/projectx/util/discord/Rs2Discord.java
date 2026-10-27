@@ -16,6 +16,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Discord} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2Discord {
 
     private static final OkHttpClient httpClient = new OkHttpClient();

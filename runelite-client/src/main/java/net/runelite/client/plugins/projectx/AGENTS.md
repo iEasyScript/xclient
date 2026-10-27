@@ -11,7 +11,8 @@ Config UI uses the custom `ProjectXConfigPanel` (`plugins/projectx/ui`), not Run
 - Widget methods like `isHidden()`, `getBounds()`, menu entry access → client thread only.
 
 ## Cache / Queryable API (mandatory)
-- Use singletons via `ProjectX.getRs2XxxCache()` (NPCs, objects, ground items, inventory, bank, varbits, players, widgets, …).
+- Scripts: use the short names in `projectx.bot` — `Objects.query("Oak tree")`, `Npcs.query()`, `GroundItems.query()`, `Players.query()`, `Inventory`, `Bank`, … (guide: `docs/SCRIPTING.md`, old-to-new map: `docs/api-migration.tsv`). The `Rs2*` names and `ProjectX.getRs2XxxCache()` are deprecated aliases kept for compiled scripts.
+- Client internals: singletons via `ProjectX.getRs2XxxCache()` (NPCs, objects, ground items, inventory, bank, varbits, players, widgets, …).
 - Query with `.query().<filters>.first() / .all() / .stream()` — not direct cache instantiation, not raw client iteration.
 - Caches are event-driven; treat returned entities as snapshots, re-query before acting on stale refs.
 - Full reference: `runelite-client/.../projectx/api/QUERYABLE_API.md`.

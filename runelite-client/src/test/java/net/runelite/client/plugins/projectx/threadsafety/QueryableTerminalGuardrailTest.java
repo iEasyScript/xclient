@@ -84,17 +84,21 @@ public class QueryableTerminalGuardrailTest
 		"net/runelite/client/plugins/projectx/api/npc/Rs2NpcQueryable",
 		"net/runelite/client/plugins/projectx/api/player/Rs2PlayerQueryable",
 		"net/runelite/client/plugins/projectx/api/tileitem/Rs2TileItemQueryable",
-		"net/runelite/client/plugins/projectx/api/tileobject/Rs2TileObjectQueryable"
+		"net/runelite/client/plugins/projectx/api/tileobject/Rs2TileObjectQueryable",
+		"net/runelite/client/plugins/projectx/bot/NpcQuery",
+		"net/runelite/client/plugins/projectx/bot/ObjectQuery",
+		"net/runelite/client/plugins/projectx/bot/GroundItemQuery",
+		"net/runelite/client/plugins/projectx/bot/PlayerQuery"
 	);
 
 	private static final Set<String> NAME_BASED_FILTERS = Set.of(
-		"withName", "withNameContains", "withNames"
+		"withName", "withNameContains", "withNames", "nameEquals"
 	);
 
 	private static final Set<String> UNSAFE_TERMINAL_NAMES = Set.of(
 		"first", "firstReachable",
 		"nearest", "nearestReachable",
-		"toList", "count"
+		"toList", "list", "count"
 	);
 
 	private static final String BASELINE_RESOURCE = "/threadsafety/queryable-terminal-guardrail-baseline.txt";

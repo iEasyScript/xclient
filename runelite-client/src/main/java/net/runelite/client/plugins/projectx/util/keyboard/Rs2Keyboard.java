@@ -12,7 +12,10 @@ import static java.awt.event.KeyEvent.CHAR_UNDEFINED;
 
 /**
  * Utility class for simulating keyboard input.
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Keyboard} instead: same methods, shorter name. This name keeps working.
  */
+@Deprecated
 public class Rs2Keyboard
 {
 

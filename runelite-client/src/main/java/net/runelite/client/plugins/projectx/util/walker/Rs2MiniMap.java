@@ -20,6 +20,10 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Minimap} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2MiniMap {
 
     /**

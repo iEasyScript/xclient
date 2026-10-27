@@ -17,7 +17,11 @@ import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Camera} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2Camera {
     private static final NpcTracker NPC_TRACKER = new NpcTracker();
     private static final int LEGACY_ANGLE_UNITS = 2048;

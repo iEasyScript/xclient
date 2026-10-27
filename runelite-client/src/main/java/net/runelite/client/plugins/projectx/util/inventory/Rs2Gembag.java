@@ -18,6 +18,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.GemBag} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2Gembag {
     @Getter
     private static final List<Rs2ItemModel> gemBagContents = new ArrayList<>();

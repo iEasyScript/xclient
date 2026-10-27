@@ -8,6 +8,10 @@ import net.runelite.client.plugins.projectx.ProjectX;
 
 import static net.runelite.api.Constants.CHUNK_SIZE;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.LocalPoints} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2LocalPoint {
     /**
      * Converts a template (real-world) point inside an instance to its scene tile. One template

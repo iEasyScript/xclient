@@ -85,10 +85,13 @@ import static net.runelite.api.AnimationID.*;
  *   <li><code>deactivateAntiban()</code>: Deactivates the antiban system.</li>
  *   <li><code>resetAntibanSettings()</code>: Resets all antiban settings to their default values.</li>
  * </ul>
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Antiban} instead: same methods, shorter name. This name keeps working.
  */
 
 @Getter
 @Setter
+@Deprecated
 public class Rs2Antiban {
     public static final ImmutableSet<Integer> MINING_ANIMATION_IDS = ImmutableSet.of(
             MINING_BRONZE_PICKAXE, MINING_MOTHERLODE_BRONZE, MINING_CRASHEDSTAR_BRONZE,

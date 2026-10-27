@@ -41,6 +41,10 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Pvp} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2Pvp {
     private static final Polygon NOT_WILDERNESS_BLACK_KNIGHTS = new Polygon( // this is black knights castle
             new int[]{2994, 2995, 2996, 2996, 2994, 2994, 2997, 2998, 2998, 2999, 3000, 3001, 3002, 3003, 3004, 3005, 3005,

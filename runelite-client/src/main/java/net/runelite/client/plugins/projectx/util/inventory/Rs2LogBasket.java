@@ -20,8 +20,11 @@ import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 /**
  * General utility for log basket operations
  * Can be used by any plugin that needs log basket functionality
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.LogBasket} instead: same methods, shorter name. This name keeps working.
  */
 @Slf4j
+@Deprecated
 public class Rs2LogBasket {
 
     public static final int LOG_BASKET_CAPACITY = 28;

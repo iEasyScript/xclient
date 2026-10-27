@@ -16,7 +16,11 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.UiHelper} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2UiHelper {
 
     public static boolean isRectangleWithinViewport(Rectangle rectangle) {

@@ -7,6 +7,10 @@ import net.runelite.client.plugins.projectx.api.npc.models.Rs2NpcModel;
 
 import java.util.stream.Stream;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.NpcQuery} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public final class Rs2NpcQueryable extends AbstractEntityQueryable<Rs2NpcQueryable, Rs2NpcModel>
         implements IEntityQueryable<Rs2NpcQueryable, Rs2NpcModel> {
 

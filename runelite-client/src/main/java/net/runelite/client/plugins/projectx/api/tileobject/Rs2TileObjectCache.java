@@ -9,6 +9,7 @@ import net.runelite.api.Tile;
 import net.runelite.api.WorldView;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.bot.SceneObject;
 import net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel;
 
 import java.util.ArrayList;
@@ -66,18 +67,18 @@ public final class Rs2TileObjectCache {
                             for (GameObject gameObject : tile.getGameObjects()) {
                                 if (gameObject == null) continue;
                                 if (gameObject.getSceneMinLocation().equals(tile.getSceneLocation())) {
-                                    result.add(new Rs2TileObjectModel(gameObject));
+                                    result.add(new SceneObject(gameObject));
                                 }
                             }
                         }
                         if (tile.getGroundObject() != null) {
-                            result.add(new Rs2TileObjectModel(tile.getGroundObject()));
+                            result.add(new SceneObject(tile.getGroundObject()));
                         }
                         if (tile.getWallObject() != null) {
-                            result.add(new Rs2TileObjectModel(tile.getWallObject()));
+                            result.add(new SceneObject(tile.getWallObject()));
                         }
                         if (tile.getDecorativeObject() != null) {
-                            result.add(new Rs2TileObjectModel(tile.getDecorativeObject()));
+                            result.add(new SceneObject(tile.getDecorativeObject()));
                         }
                     }
                 }

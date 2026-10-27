@@ -9,7 +9,7 @@ RuneLite fork with a hidden always-on plugin hosting automation scripts. Composi
 - Tests (opt-in): `:client:runUnitTests`, `:client:runTests`, `:client:runIntegrationTest` (needs running game)
 
 ## Non-negotiable rules
-- Never instantiate caches/queryables directly — use `ProjectX.getRs2XxxCache().query()` / `.getStream()`. See `runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md`.
+- Never instantiate caches/queryables directly — scripts use the short entry points `Objects.query()`, `Npcs.query()`, `GroundItems.query()`, `Players.query()` (package `projectx.bot`, guide `docs/SCRIPTING.md`); client internals may use `ProjectX.getRs2XxxCache().query()` / `.getStream()`. See `runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md`.
 - Never block/sleep on the client thread.
 - Never use static sleeps to wait for game state — use `sleepUntil(condition, timeoutMs)`.
 - Keep `ProjectXPlugin` hidden/always-on; don't break its config panel wiring.

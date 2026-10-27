@@ -62,8 +62,12 @@ import static net.runelite.client.plugins.projectx.util.Global.*;
 import static net.runelite.client.plugins.projectx.util.gameobject.Rs2GameObject.hoverOverObject;
 import static net.runelite.client.plugins.projectx.util.npc.Rs2Npc.hoverOverActor;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Bank} instead: same methods, shorter name. This name keeps working.
+ */
 @SuppressWarnings("unused")
 @Slf4j
+@Deprecated
 public class Rs2Bank {
     /**
      * 12:12

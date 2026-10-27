@@ -9,6 +9,7 @@ import net.runelite.api.TileItem;
 import net.runelite.api.WorldView;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.bot.FloorItem;
 import net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel;
 
 import java.util.ArrayList;
@@ -75,7 +76,7 @@ public final class Rs2TileItemCache {
 
                         for (TileItem item : items) {
                             if (item != null) {
-                                result.add(new Rs2TileItemModel(tile, item));
+                                result.add(new FloorItem(tile, item));
                             }
                         }
                     }

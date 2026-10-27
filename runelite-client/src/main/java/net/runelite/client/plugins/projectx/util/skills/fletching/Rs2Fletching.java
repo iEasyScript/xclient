@@ -20,8 +20,11 @@ import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 /**
  * General utility for fletching operations
  * Compatible with existing fletching plugin and reusable across plugins
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Fletching} instead: same methods, shorter name. This name keeps working.
  */
 @Slf4j
+@Deprecated
 public class Rs2Fletching {
 
     private static ScheduledFuture<?> fletchingWhileMovingTask;

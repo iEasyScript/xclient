@@ -23,7 +23,11 @@ import java.awt.*;
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 import java.util.Arrays;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.SceneObject} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2TileObjectModel implements TileObject, IEntity {
 
     public Rs2TileObjectModel(GameObject gameObject) {

@@ -114,8 +114,11 @@ import static net.runelite.client.plugins.projectx.util.Global.*;
  * 1. fix teleports starting from inside the POH
  * <p>
  * Seasonal handlers ({@link Rs2LeaguesTransport#tryHandleLeaguesAreaTransport}, MoA) must not run on the client thread — same contract as {@link Rs2LeaguesTransport#leaguesTeleport}.
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Walker} instead: same methods, shorter name. This name keeps working.
  */
 @Slf4j
+@Deprecated
 public class Rs2Walker {
     @Setter
     public static ShortestPathConfig config;

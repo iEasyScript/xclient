@@ -6,6 +6,7 @@ import net.runelite.api.Client;
 import net.runelite.api.WorldView;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.bot.Npc;
 import net.runelite.client.plugins.projectx.api.npc.models.Rs2NpcModel;
 
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ public final class Rs2NpcCache {
                 result.addAll(worldView.npcs()
                         .stream()
                         .filter(Objects::nonNull)
-                        .map(Rs2NpcModel::new)
+                        .map(Npc::new)
                         .collect(Collectors.toList()));
             }
 

@@ -40,6 +40,10 @@ import java.util.stream.Stream;
 import static net.runelite.client.plugins.projectx.ProjectX.log;
 import static net.runelite.client.plugins.projectx.util.Global.*;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Magic} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2Magic {
     //use this boolean to do one time checks
     private static boolean checkedSpellBook = false;

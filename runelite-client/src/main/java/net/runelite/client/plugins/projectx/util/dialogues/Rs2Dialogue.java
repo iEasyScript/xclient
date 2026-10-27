@@ -18,6 +18,10 @@ import java.util.stream.Collectors;
 
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntilTrue;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Dialogue} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2Dialogue {
     private static final String CLICK_HERE_TO_CONTINUE = "Click here to continue";
 

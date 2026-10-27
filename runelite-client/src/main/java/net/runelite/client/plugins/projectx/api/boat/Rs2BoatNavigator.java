@@ -49,9 +49,12 @@ import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
  * block until the boat gets there.
  *
  * <p>All methods are for script threads, not the client thread.
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.BoatNavigator} instead: same methods, shorter name. This name keeps working.
  */
 @Slf4j
-public final class Rs2BoatNavigator {
+@Deprecated
+public class Rs2BoatNavigator {
     /** Main-world x coordinates stay below this; boats and instances live above it. */
     private static final int MAIN_WORLD_MAX_X = 6400;
     /** A boat turns wide: never call it arrived closer than this. */
@@ -94,7 +97,7 @@ public final class Rs2BoatNavigator {
     // The sea-lane network, built for one Sailing level at a time.
     private static LaneGraph lanes;
 
-    private Rs2BoatNavigator() {
+    protected Rs2BoatNavigator() {
     }
 
     // ------------------------------------------------------------------ where things are

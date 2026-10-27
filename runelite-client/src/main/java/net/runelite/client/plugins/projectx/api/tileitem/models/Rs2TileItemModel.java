@@ -16,7 +16,11 @@ import java.awt.*;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.FloorItem} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2TileItemModel implements TileItem, IEntity {
 
     @Getter

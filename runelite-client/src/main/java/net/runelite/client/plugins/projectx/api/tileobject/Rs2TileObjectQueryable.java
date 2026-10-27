@@ -7,6 +7,10 @@ import net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectM
 
 import java.util.stream.Stream;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.ObjectQuery} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public final class Rs2TileObjectQueryable extends AbstractEntityQueryable<Rs2TileObjectQueryable, Rs2TileObjectModel>
         implements IEntityQueryable<Rs2TileObjectQueryable, Rs2TileObjectModel> {
 

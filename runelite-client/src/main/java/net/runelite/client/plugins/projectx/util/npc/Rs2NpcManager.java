@@ -22,8 +22,11 @@ import java.util.stream.Collectors;
 /**
  * This class is responsible for managing NPCs in the game.
  * It provides utility methods for loading NPC data from JSON files and retrieving NPC stats.
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.NpcData} instead: same methods, shorter name. This name keeps working.
  */
 
+@Deprecated
 public class Rs2NpcManager {
     private static final Set<Integer> blacklistXpMultiplier = Set.of(8026, 8058, 8059, 8060, 8061, 7850, 7852, 7853, 7884, 7885, 7849, 7851, 7854, 7855, 7882, 7883, 7886, 7887, 7888, 7889, 494, 6640, 6656, 2042, 2043, 2044);
     public static Map<Integer, String> attackStyleMap;

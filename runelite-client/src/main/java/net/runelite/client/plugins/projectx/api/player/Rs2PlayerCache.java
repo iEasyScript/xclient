@@ -6,6 +6,7 @@ import net.runelite.api.Client;
 import net.runelite.api.WorldView;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.bot.PlayerModel;
 import net.runelite.client.plugins.projectx.api.player.models.Rs2PlayerModel;
 
 import java.util.ArrayList;
@@ -55,7 +56,7 @@ public final class Rs2PlayerCache {
                 result.addAll(worldView.players()
                         .stream()
                         .filter(Objects::nonNull)
-                        .map(Rs2PlayerModel::new)
+                        .map(PlayerModel::new)
                         .collect(Collectors.toList()));
             }
 

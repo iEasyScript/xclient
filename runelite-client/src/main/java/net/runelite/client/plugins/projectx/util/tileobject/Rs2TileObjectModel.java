@@ -162,6 +162,16 @@ public class Rs2TileObjectModel implements TileObject {
     }
 
     /**
+     * Clicks this object with the given menu action, for example {@code rock.interact("Mine")}.
+     * Same as {@link #click(String)}.
+     *
+     * @return true if the click was sent
+     */
+    public boolean interact(String action) {
+        return click(action);
+    }
+
+    /**
      * Clicks on the specified tile object with no specific action.
      * Delegates to Rs2GameObject.clickObject.
      *

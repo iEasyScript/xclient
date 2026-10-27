@@ -202,32 +202,86 @@ public class ProjectX {
     @Getter
     private static final BlockingEventManager blockingEventManager = new BlockingEventManager();
 
-    @Getter
     private static Rs2ItemManager rs2ItemManager = new Rs2ItemManager();
+
+    /**
+     * @deprecated Scripts use the static methods of {@link net.runelite.client.plugins.projectx.bot.Items} instead. Kept, and kept working, for scripts
+     * compiled against it.
+     */
+    @Deprecated
+    public static Rs2ItemManager getRs2ItemManager()
+    {
+        return rs2ItemManager;
+    }
 
     @Inject
     @Getter
     private static Rs2PlayerStateCache rs2PlayerStateCache;
 
     @Inject
-    @Getter
     private static Rs2NpcCache rs2NpcCache;
 
+    /**
+     * @deprecated Scripts use {@link net.runelite.client.plugins.projectx.bot.Npcs#query()} / {@link net.runelite.client.plugins.projectx.bot.Npcs#stream()} instead. Kept, and kept working, for scripts
+     * compiled against it.
+     */
+    @Deprecated
+    public static Rs2NpcCache getRs2NpcCache()
+    {
+        return rs2NpcCache;
+    }
+
     @Inject
-    @Getter
     private static Rs2PlayerCache rs2PlayerCache;
 
+    /**
+     * @deprecated Scripts use {@link net.runelite.client.plugins.projectx.bot.Players#query()} / {@link net.runelite.client.plugins.projectx.bot.Players#stream()} instead. Kept, and kept working, for scripts
+     * compiled against it.
+     */
+    @Deprecated
+    public static Rs2PlayerCache getRs2PlayerCache()
+    {
+        return rs2PlayerCache;
+    }
+
     @Inject
-    @Getter
     private static Rs2TileItemCache rs2TileItemCache;
 
-    @Inject
-    @Getter
-    private static Rs2TileObjectCache rs2TileObjectCache;
+    /**
+     * @deprecated Scripts use {@link net.runelite.client.plugins.projectx.bot.GroundItems#query()} / {@link net.runelite.client.plugins.projectx.bot.GroundItems#stream()} instead. Kept, and kept working, for scripts
+     * compiled against it.
+     */
+    @Deprecated
+    public static Rs2TileItemCache getRs2TileItemCache()
+    {
+        return rs2TileItemCache;
+    }
 
     @Inject
-    @Getter
+    private static Rs2TileObjectCache rs2TileObjectCache;
+
+    /**
+     * @deprecated Scripts use {@link net.runelite.client.plugins.projectx.bot.Objects#query()} / {@link net.runelite.client.plugins.projectx.bot.Objects#stream()} instead. Kept, and kept working, for scripts
+     * compiled against it.
+     */
+    @Deprecated
+    public static Rs2TileObjectCache getRs2TileObjectCache()
+    {
+        return rs2TileObjectCache;
+    }
+
+    @Inject
     private static Rs2BoatCache rs2BoatCache;
+
+    /**
+     * @deprecated Scripts use {@link net.runelite.client.plugins.projectx.bot.Boats#local()} instead. Kept, and kept working, for scripts
+     * compiled against it.
+     */
+    @Deprecated
+    public static Rs2BoatCache getRs2BoatCache()
+    {
+        return rs2BoatCache;
+    }
 
     @Inject
     @Getter

@@ -21,8 +21,12 @@ import java.util.Arrays;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Npc} instead: same methods, shorter name. This name keeps working.
+ */
 @Getter
 @Slf4j
+@Deprecated
 public class Rs2NpcModel extends Rs2ActorModel implements IEntity
 {
 

@@ -66,7 +66,7 @@ public abstract class AbstractEntityQueryable<
 
     @SuppressWarnings("unchecked")
     @Override
-    public Q where(Predicate<E> predicate) {
+    public Q where(Predicate<? super E> predicate) {
         source = source.filter(predicate);
         return (Q) this;
     }

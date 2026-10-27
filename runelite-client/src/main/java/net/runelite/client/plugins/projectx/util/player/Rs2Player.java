@@ -54,6 +54,10 @@ import java.util.stream.Stream;
 import static net.runelite.api.MenuAction.CC_OP;
 import static net.runelite.client.plugins.projectx.util.Global.*;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Player} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2Player {
     static int VENOM_VALUE_CUTOFF = -38;
     private static int antiFireTime = -1;

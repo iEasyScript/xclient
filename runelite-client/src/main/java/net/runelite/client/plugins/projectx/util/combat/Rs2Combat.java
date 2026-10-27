@@ -25,7 +25,11 @@ import static net.runelite.client.plugins.projectx.ProjectX.log;
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntilTrue;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Combat} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2Combat {
 
     private static final Map<Integer, Weapon> WEAPONS_MAP = WeaponsGenerator.generate();

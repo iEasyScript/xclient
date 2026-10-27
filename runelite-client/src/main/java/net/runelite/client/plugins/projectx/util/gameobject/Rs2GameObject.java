@@ -37,8 +37,10 @@ import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 
 /**
  * TODO: This class should be cleaned up, less methods by passing filters instead of multiple parameters
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Objects} instead: same methods, shorter name. This name keeps working.
  */
-@Deprecated(since = "2.1.0 - Use Rs2TileObjectQueryable instead", forRemoval = true)
+@Deprecated(since = "2.1.0 - Use Rs2TileObjectQueryable instead")
 public class Rs2GameObject {
 	private static final Map<String, List<Integer>> NAME_TO_IDS_CACHE = new ConcurrentHashMap<>();
 

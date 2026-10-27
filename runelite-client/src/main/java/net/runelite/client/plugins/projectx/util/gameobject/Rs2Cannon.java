@@ -13,6 +13,10 @@ import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import static net.runelite.client.plugins.projectx.util.Global.sleep;
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.Cannon} instead: same methods, shorter name. This name keeps working.
+ */
+@Deprecated
 public class Rs2Cannon {
 
     public static boolean repair() {

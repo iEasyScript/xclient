@@ -90,9 +90,12 @@ import net.runelite.client.plugins.projectx.util.antiban.enums.ActivityIntensity
  * // Set the micro break chance to 20%
  * Rs2AntibanSettings.microBreakChance = 0.2;
  * </pre>
+ *
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.AntibanSettings} instead: same methods, shorter name. This name keeps working.
  */
 
 @Slf4j
+@Deprecated
 public class Rs2AntibanSettings {
     private static final String CONFIG_GROUP = "ProjectXAntiban";
     private static final String CONFIG_KEY = "settings";
@@ -117,7 +120,7 @@ public class Rs2AntibanSettings {
      */
     private static boolean applyingUserChange;
 
-    private Rs2AntibanSettings() {
+    protected Rs2AntibanSettings() {
         throw new IllegalStateException("Utility class");
     }
 

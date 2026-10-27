@@ -15,12 +15,16 @@ import java.util.stream.Collectors;
 import static net.runelite.api.TileItem.OWNERSHIP_SELF;
 import static net.runelite.client.plugins.projectx.util.grounditem.Rs2GroundItem.*;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.LootEngine} instead: same methods, shorter name. This name keeps working.
+ */
 // import static your.package.OwnershipConstants.OWNERSHIP_SELF;
 
-public final class Rs2LootEngine {
+@Deprecated
+public class Rs2LootEngine {
     private static final int DESPAWN_DELAY_THRESHOLD_TICKS = 150;
 
-    private Rs2LootEngine() {}
+    protected Rs2LootEngine() {}
 
     public static Builder with(LootingParameters params) {
         return new Builder(params);

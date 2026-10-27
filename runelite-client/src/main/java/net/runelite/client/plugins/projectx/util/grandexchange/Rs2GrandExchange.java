@@ -49,7 +49,11 @@ import java.util.stream.IntStream;
 import static net.runelite.client.plugins.projectx.util.Global.sleep;
 import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.GrandExchange} instead: same methods, shorter name. This name keeps working.
+ */
 @Slf4j
+@Deprecated
 public class Rs2GrandExchange {
     @Component
     private static final int COLLECT_ALL_BUTTON = 30474246;

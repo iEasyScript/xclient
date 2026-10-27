@@ -13,7 +13,11 @@ import net.runelite.client.plugins.projectx.api.boat.Rs2BoatCache;
 import net.runelite.client.plugins.projectx.api.player.data.SalvagingAnimations;
 import net.runelite.client.plugins.projectx.util.ActorModel;
 
+/**
+ * @deprecated Use {@link net.runelite.client.plugins.projectx.bot.PlayerModel} instead: same methods, shorter name. This name keeps working.
+ */
 @Getter
+@Deprecated
 public class Rs2PlayerModel extends Rs2ActorModel implements IEntity {
 
     private final Player player;
