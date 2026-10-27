@@ -89,6 +89,8 @@ import java.util.stream.Collectors;
 @Singleton
 public class ProjectXPluginManager {
     private static final File PLUGIN_DIR = new File(RuneLite.RUNELITE_DIR, "projectx-plugins");
+    /** The developer folder. Never touched by the store refresh or the old-file cleanup. */
+    private static final File DEV_DIR = new File(PLUGIN_DIR, "dev");
     private static final String INSTALLED_VERSION_GROUP = "projectxPluginVersions";
     private static final String INSTALLED_VERSION_KEY_PREFIX = "plugin.";
     private static final String UPDATE_NOTIFICATION_GROUP = "projectxPluginUpdateNotifications";
@@ -118,6 +120,9 @@ public class ProjectXPluginManager {
     private final Map<String, URLClassLoader> loaders = new ConcurrentHashMap<>();
     /** Jars that could not be deleted, so the same file is only complained about once. */
     private final Set<String> undeletableJars = ConcurrentHashMap.newKeySet();
+    private final Set<Class<?>> devPluginClasses = ConcurrentHashMap.newKeySet();
+    private final AtomicBoolean devPluginsLoaded = new AtomicBoolean();
+    private volatile boolean sideloadPhaseDone;
 
     /**
      * Jars that downloaded cleanly but yielded no usable plugin, against the
@@ -521,10 +526,12 @@ public class ProjectXPluginManager {
                 carryOverRenamedState();
                 renameJarsToSimpleNames();
                 eventBus.post(new ExternalPluginsChanged());
+                loadDevPluginsIfReady();
             } else {
                 log.debug("Plugin manifests unchanged ({} entries), skipping event.", manifestMap.size());
                 // A jar that was loaded last time may have been stopped since.
                 renameJarsToSimpleNames();
+                loadDevPluginsIfReady();
             }
         } catch (Exception e) {
             log.error("Failed to fetch plugin manifests", e);
@@ -843,6 +850,8 @@ public class ProjectXPluginManager {
             log.trace("Error creating directory for projectx-plugins!", e);
         }
 
+        DEV_DIR.mkdirs();
+
         return PLUGIN_DIR.listFiles();
     }
 
@@ -980,9 +989,114 @@ public class ProjectXPluginManager {
                 System.out.println("Error loading side-loaded plugin: " + internalName);
             }
         }
+        sideloadPhaseDone = true;
+        loadDevPluginsIfReady();
         eventBus.post(new ExternalPluginsChanged());
     }
 
+
+    /**
+     * Loads the developer's own jars from {@code projectx-plugins/dev}. These are never unloaded
+     * or deleted by the store refresh. Waits for the published catalogue so the piracy guard has
+     * something to compare with; called again after each catalogue load until it has run.
+     */
+    private void loadDevPluginsIfReady() {
+        if (safeMode) {
+            return;
+        }
+        if (!sideloadPhaseDone) {
+            return;
+        }
+        if (manifestMap.isEmpty()) {
+            log.debug("Local dev plugins wait for the store catalogue before loading");
+            return;
+        }
+        if (!devPluginsLoaded.compareAndSet(false, true)) {
+            return;
+        }
+        File[] files = DEV_DIR.listFiles((dir, name) -> name.endsWith(".jar"));
+        if (files == null) {
+            return;
+        }
+        boolean startNow = !SplashScreen.isOpen();
+        for (File jar : files) {
+            try {
+                loadDevJar(jar, startNow);
+            } catch (Throwable t) {
+                log.warn("Could not load local dev plugin file {}", jar.getName(), t);
+            }
+        }
+        eventBus.post(new ExternalPluginsChanged());
+    }
+
+    private void loadDevJar(File jar, boolean startNow) throws Exception {
+        String sha = sha256Of(jar);
+        PluginJarClassLoader classLoader = new PluginJarClassLoader(jar, getClass().getClassLoader());
+        List<Class<?>> allowed = new ArrayList<>();
+        for (ClassPath.ClassInfo classInfo : ClassPath.from(classLoader).getAllClasses()) {
+            Class<?> clazz;
+            try {
+                clazz = classLoader.loadClass(classInfo.getName());
+            } catch (Throwable t) {
+                log.trace("Could not load {} from {}", classInfo.getName(), jar.getName(), t);
+                continue;
+            }
+            if (!clazz.isAnnotationPresent(PluginDescriptor.class) || clazz.getSuperclass() != Plugin.class) {
+                continue;
+            }
+            String refusal = ProjectXDevPluginGuard.refusal(
+                clazz.getSimpleName(), clazz.getPackage() == null ? null : clazz.getPackage().getName(),
+                sha, manifestMap.values());
+            if (refusal != null) {
+                log.warn("Refused local dev plugin {} from {}: {}. Dev jars cannot stand in for store scripts.",
+                    clazz.getSimpleName(), jar.getName(), refusal);
+                continue;
+            }
+            allowed.add(clazz);
+        }
+        if (allowed.isEmpty()) {
+            closeQuietly(classLoader);
+            return;
+        }
+        List<Plugin> loaded = loadPlugins(allowed, null);
+        if (loaded.isEmpty()) {
+            closeQuietly(classLoader);
+            return;
+        }
+        devPluginClasses.addAll(loaded.stream().map(Plugin::getClass).collect(Collectors.toSet()));
+        for (Plugin p : loaded) {
+            log.info("Loaded local dev plugin {} (Local) from {}. Replacing the jar needs a client restart.",
+                p.getClass().getSimpleName(), jar.getName());
+        }
+        if (startNow) {
+            pluginManager.loadDefaultPluginConfiguration(loaded);
+            SwingUtilities.invokeAndWait(() -> {
+                try {
+                    for (Plugin p : loaded) {
+                        pluginManager.startPlugin(p);
+                    }
+                } catch (PluginInstantiationException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+    }
+
+    private static String sha256Of(File file) throws IOException, NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (InputStream in = new FileInputStream(file)) {
+            byte[] buffer = new byte[8192];
+            int n;
+            while ((n = in.read(buffer)) != -1) {
+                digest.update(buffer, 0, n);
+            }
+        }
+        StringBuilder hex = new StringBuilder();
+        for (byte b : digest.digest()) {
+            hex.append(String.format("%02x", b));
+        }
+        return hex.toString();
+    }
     /**
      * Topologically sort a graph. Uses Kahn's algorithm.
      *
@@ -1416,7 +1530,7 @@ public class ProjectXPluginManager {
 
             Optional.ofNullable(PLUGIN_DIR.listFiles((dir, name) -> name.endsWith(".jar"))).stream()
                     .flatMap(Arrays::stream)
-                    .filter(file -> !keepFiles.contains(file) && file.lastModified() < keepAfter.toEpochMilli())
+                    .filter(file -> file.isFile() && !keepFiles.contains(file) && file.lastModified() < keepAfter.toEpochMilli())
                     .forEach(file -> {
                         if (file.delete()) {
                             log.info("Cleaned up old plugin file (>3 days): {}", file.getName());
@@ -1455,6 +1569,7 @@ public class ProjectXPluginManager {
                     .collect(Collectors.toSet());
 
             List<Plugin> toRemove = loadedExternalPlugins.stream()
+                    .filter(p -> !devPluginClasses.contains(p.getClass())) // local dev plugins are never removed
                     .filter(p -> {
                         ProjectXPluginManifest m = getPluginManifest(p);
                         if (m == null) return true; // unknown → remove
