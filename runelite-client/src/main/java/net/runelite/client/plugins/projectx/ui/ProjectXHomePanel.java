@@ -120,6 +120,14 @@ public class ProjectXHomePanel extends PluginPanel
         myScriptsButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         myScriptsButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
         add(myScriptsButton);
+        add(gap(6));
+        // Pulls new purchases and script updates now instead of waiting for the timer.
+        JButton[] refreshHolder = new JButton[1];
+        JButton refreshButton = button("Refresh scripts", false, () -> refreshScriptsNow(refreshHolder[0]));
+        refreshHolder[0] = refreshButton;
+        refreshButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        refreshButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        add(refreshButton);
         add(gap(4));
         scriptCount.setFont(FontManager.getRunescapeSmallFont());
         scriptCount.setForeground(ProjectXTheme.INK_FAINT);
@@ -249,6 +257,18 @@ public class ProjectXHomePanel extends PluginPanel
         signedIn.setText("Signed in as " + identity.displayName());
         Integer cents = identity.balanceCents();
         balance.setText(cents == null ? "—" : ProjectXSite.formatX(cents));
+    }
+
+    private void refreshScriptsNow(JButton button)
+    {
+        button.setEnabled(false);
+        button.setText("Checking for updates...");
+        projectxPluginManager.syncNow(() -> SwingUtilities.invokeLater(() ->
+        {
+            button.setText("Refresh scripts");
+            button.setEnabled(true);
+            updateScripts();
+        }));
     }
 
     private void updateScripts()

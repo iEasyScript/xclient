@@ -223,6 +223,25 @@ public class ProjectXPluginManager {
      * one pass is retried by the next rather than reported to the user, because
      * the ordinary cause is a network that came back a minute later.
      */
+    /**
+     * Runs a full store sync now -- the same pass the timer runs every few minutes: account,
+     * access, catalogue, new purchases, updates. For the side panel's Refresh button, so a
+     * player does not have to wait for the timer after an update is published.
+     *
+     * @param whenDone run on the sync thread afterwards, whether or not the sync worked
+     */
+    public void syncNow(@Nullable Runnable whenDone) {
+        executor.submit(() -> {
+            try {
+                reconcile();
+            } finally {
+                if (whenDone != null) {
+                    whenDone.run();
+                }
+            }
+        });
+    }
+
     private void reconcile() {
         if (safeMode || isShuttingDown.get()) {
             return;
@@ -1521,6 +1540,21 @@ public class ProjectXPluginManager {
             needsDownload.addAll(needsRedownload);
 
             Set<String> needsReload = new HashSet<>(needsDownload);
+
+            // Another client on this machine shares the plugins folder. When it downloads an update
+            // first, the jar on disk already matches the store and nothing above asks for a reload,
+            // so this client kept running the build it loaded at start-up. Reload anything whose
+            // running version is not the one the store now serves.
+            for (Plugin loaded : loadedExternalPlugins) {
+                ProjectXPluginManifest m = getPluginManifest(loaded);
+                PluginDescriptor d = loaded.getClass().getAnnotation(PluginDescriptor.class);
+                if (m == null || d == null || m.getVersion() == null || !userManifestMap.containsKey(m.getInternalName())) {
+                    continue;
+                }
+                if (!m.getVersion().equals(d.version()) && needsReload.add(m.getInternalName())) {
+                    log.info("{} is running {} but the store has {}; reloading it", m.getInternalName(), d.version(), m.getVersion());
+                }
+            }
 
             Set<File> keepFiles = userManifestMap.keySet().stream()
                     .map(this::getPluginJarFile)
