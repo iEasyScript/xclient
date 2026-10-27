@@ -1,6 +1,8 @@
 # Rs2Combat Class Documentation
 
-## [Back](development.md)
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Combat` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 
 ## Overview
 The `Rs2Combat` class provides methods for controlling combat settings in the game, such as setting attack styles, managing auto retaliate, and handling special attacks.

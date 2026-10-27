@@ -1,5 +1,8 @@
 # Rs2GameObject Class Documentation
-## [Back](development.md)
+
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2GameObject` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 
 > **Deprecated:** `Rs2GameObject` is deprecated and marked for removal. Use the **Queryable API** via `ProjectX.getRs2TileObjectCache().query()` instead. It provides a fluent, type-safe interface with better performance through tick-based caching.
 >

@@ -1,6 +1,6 @@
 # NewMenuEntry Class Documentation
 
-## [Back](development.md)
+## [Back](../development.md)
 
 ## Overview
 The `NewMenuEntry` class implements the `MenuEntry` interface and serves as a builder for creating and configuring menu entries. It allows for fluent chaining of methods to set properties like option, target, identifier, type, and more.

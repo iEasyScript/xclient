@@ -1,6 +1,8 @@
 # Rs2HuntKit Class Documentation
 
-## [Back](development.md)
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2HuntKit` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 
 ## Overview
 

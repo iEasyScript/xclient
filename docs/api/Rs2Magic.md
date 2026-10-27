@@ -1,5 +1,8 @@
 # Rs2Magic Class Documentation
-## [Back](development.md)
+
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Magic` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 ## Overview
 The `Rs2Magic` class facilitates magic-related operations in the ProjectX client, allowing for casting spells on various entities and performing alchemy. It handles interactions with the game's magic interface and provides utility functions for different spell actions.
 

@@ -1,6 +1,6 @@
 # Queryable API Documentation
 
-This is the long-form guide for the ProjectX entity cache/query layer. Use singleton caches from `ProjectX.getRs2XxxCache()`; do not instantiate caches or queryables directly.
+This is the long-form guide for the ProjectX entity cache/query layer. Scripts reach it through `Objects.query()`, `Npcs.query()`, `GroundItems.query()` and `Players.query()` in `projectx.bot` (plugin API 2.7.0, see [docs/SCRIPTING.md](../../../../../../../../../../docs/SCRIPTING.md)); the examples below use the older `Rs2*` cache names, which still work and are what client internals use via `ProjectX.getRs2XxxCache()`. Do not instantiate caches or queryables directly.
 
 ## Table of Contents
 

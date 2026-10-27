@@ -1,6 +1,8 @@
 # Rs2Tab Class Documentation
 
-## [Back](development.md)
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Tab` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 
 ## Overview
 The `Rs2Tab` class manages interface tabs in the game, such as Inventory, Combat, Skills, and others. It provides methods to switch between tabs and check the currently active tab.

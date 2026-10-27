@@ -1,6 +1,8 @@
 # Rs2Farming Class Documentation
 
-## [Back](development.md)
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Farming` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 
 ## Overview
 The `Rs2Farming` class provides utility methods for farming operations, including retrieving farming patches, checking patch states, and managing farming-related tasks.

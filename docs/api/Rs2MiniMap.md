@@ -1,5 +1,8 @@
 # Rs2MiniMap Class Documentation
-## [Back](development.md)
+
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2MiniMap` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 ## Overview
 The `Rs2MiniMap` class provides methods for translating in-game coordinates into mini-map points in the ProjectX client. This functionality is essential for navigation and pathfinding tasks that require mini-map interaction.
 

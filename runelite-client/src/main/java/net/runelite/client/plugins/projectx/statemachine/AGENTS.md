@@ -22,7 +22,7 @@ Skip it for one-shot, event-driven, or single-linear-sequence scripts.
 - Transition order = priority. Put high-priority exits (inventory full, death, errors) first.
 - Always supply `because()` and a readable condition string — these surface in logs and the agent server.
 - Do state-changing work in `onState()`, never in guards.
-- Use the Queryable API (`ProjectX.getRs2XxxCache()`) inside `onState()`.
+- Use the Queryable API (`Objects.query()`, `Npcs.query()`, ... from `projectx.bot`) inside `onState()`.
 
 ## Known limitations (v1)
 - No built-in blocking-state support (timeouts, pause states) — handle inline.

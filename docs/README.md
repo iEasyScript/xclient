@@ -7,7 +7,8 @@ This is the documentation entry point. Keep it short: it should route readers to
 - Gallery: [gallery.md](gallery.md)
 
 ## For Developers
-- Local setup and build commands: [development.md](development.md)
+- Script API guide (start here): [SCRIPTING.md](SCRIPTING.md); old to new names: [api-migration.tsv](api-migration.tsv)
+- Local setup, build, dev-folder testing and releasing: [development.md](development.md)
 - Runtime architecture: [ARCHITECTURE.md](ARCHITECTURE.md)
 - Queryable cache guide: [../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md](../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md)
 - Entity utility gotchas: [entity-guides/README.md](entity-guides/README.md)

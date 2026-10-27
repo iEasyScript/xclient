@@ -1,5 +1,8 @@
 # Rs2Npc Class Documentation
-## [Back](development.md)
+
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Npc` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 
 > **Deprecated:** `Rs2Npc` is deprecated and marked for removal. Use the **Queryable API** via `ProjectX.getRs2NpcCache().query()` instead. It provides a fluent, type-safe interface with better performance through tick-based caching.
 >

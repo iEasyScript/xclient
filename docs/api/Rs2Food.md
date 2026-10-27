@@ -1,5 +1,8 @@
 # Rs2Food Enumeration Documentation
-## [Back](development.md)
+
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Food` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 ## Overview
 The `Rs2Food` enumeration defines constants for various food items used in the game. Each food item is associated with an identifier (ID), the amount it heals (heal), and a descriptive name.
 

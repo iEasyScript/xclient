@@ -1,6 +1,8 @@
 # Rs2Antiban Class Documentation
 
-## [Back](development.md)
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Antiban` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 
 ## Overview
 The `Rs2Antiban` class provides a comprehensive anti-ban system that simulates human-like behavior during various in-game activities. This system includes features such as mouse fatigue, random intervals, micro-breaks, action cooldowns, and contextually aware mouse movements, all aimed at reducing the risk of detection.

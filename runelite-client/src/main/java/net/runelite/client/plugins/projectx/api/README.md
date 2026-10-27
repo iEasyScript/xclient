@@ -2,7 +2,7 @@
 
 This package owns the cache/query layer for live game entities. It is the preferred way for scripts and utilities to find NPCs, players, ground items, tile objects, boats, and player state.
 
-Scripts reach it through the short entry points in `projectx.bot` (`Objects.query()`, `Npcs.query()`, `GroundItems.query()`, `Players.query()`); see [docs/SCRIPTING.md](../../../../../../../../../../docs/SCRIPTING.md). Client code may use the singleton caches exposed by `ProjectX`. Do not instantiate caches or queryables directly.
+Scripts reach it through the short entry points in `projectx.bot` (`Objects.query()`, `Npcs.query()`, `GroundItems.query()`, `Players.query()`; plugin API 2.7.0+); see [docs/SCRIPTING.md](../../../../../../../../../../docs/SCRIPTING.md). Client code may use the singleton caches exposed by `ProjectX`. Do not instantiate caches or queryables directly.
 
 ## Quick Start
 

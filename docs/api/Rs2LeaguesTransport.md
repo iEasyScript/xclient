@@ -1,5 +1,7 @@
 # Rs2LeaguesTransport
 
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2LeaguesTransport` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 **Source:** `runelite-client/.../projectx/util/leaguetransport/Rs2LeaguesTransport.java`  
 **Related:** `LeaguesRegion`, `LeagueTransportWidgets`
 

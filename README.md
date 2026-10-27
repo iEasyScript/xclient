@@ -11,7 +11,7 @@
 
 ---
 
-Project X is a RuneLite fork with an always-on Project X plugin for learning, building and
+Project X is a RuneLite fork (base 1.13.4, client 1.0.79, plugin API 2.7.0) with an always-on Project X plugin for learning, building and
 running automation scripts. This repository is the **client**: the engine and the API that
 scripts are written against. It is open source; scripts sold on the marketplace are not.
 
@@ -36,6 +36,7 @@ Npcs.query("Cow").nearest().interact("Attack");
 - The old `Rs2*` names still work but are deprecated. [`docs/api-migration.tsv`](docs/api-migration.tsv)
   maps every old name to its new one.
 - Start from the template: [xclient-script-template](https://github.com/iEasyScript/xclient-script-template)
+- Developer portal and web docs: https://xclient.dev/osrs/developer/docs
 - The rules that matter (threading, caches, anti-ban): [`plugins/projectx/AGENTS.md`](runelite-client/src/main/java/net/runelite/client/plugins/projectx/AGENTS.md)
 - Drive a running client while developing: [`docs/PROJECTX_CLI.md`](docs/PROJECTX_CLI.md)
 

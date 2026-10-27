@@ -1,5 +1,8 @@
 # Rs2Reflection Class Documentation
-## [Back](development.md)
+
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Reflection` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 The `Rs2Reflection` class provides utility methods for manipulating game elements through Java reflection. This allows for operations that are normally inaccessible through standard API calls, such as obtaining and modifying game entity attributes and invoking hidden actions within the game's client.
 
 ## Methods

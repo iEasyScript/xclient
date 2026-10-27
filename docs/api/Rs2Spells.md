@@ -1,6 +1,8 @@
 # Rs2Spells Class Documentation
 
-## [Back](development.md)
+> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Spells` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
+## [Back](../development.md)
 
 ## Overview
 The `Rs2Spells` enum defines all supported spells from Modern, Ancient, Lunar, and Arceuus spellbooks. Each enum constant represents a spell and contains information about its required runes, level, and spellbook.
