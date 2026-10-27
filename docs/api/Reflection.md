@@ -1,16 +1,12 @@
-# Rs2Reflection Class Documentation
+# Reflection Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Reflection` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Reflection`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
-The `Rs2Reflection` class provides utility methods for manipulating game elements through Java reflection. This allows for operations that are normally inaccessible through standard API calls, such as obtaining and modifying game entity attributes and invoking hidden actions within the game's client.
+The `Reflection` class provides utility methods for manipulating game elements through Java reflection. This allows for operations that are normally inaccessible through standard API calls, such as obtaining and modifying game entity attributes and invoking hidden actions within the game's client.
 
 ## Methods
-
-### `getAnimation(NPC npc)`
-- **Parameters**: `NPC npc` - The NPC whose animation value is to be retrieved.
-- **Returns**: `int` - The animation identifier of the NPC, or `-1` if not found.
-- **Description**: Retrieves the animation identifier of a given NPC by dynamically identifying the animation field via reflection.
 
 ### `getGroundItemActions(ItemComposition item)`
 - **Parameters**: `ItemComposition item` - The item composition to analyze.
@@ -36,9 +32,10 @@ The `Rs2Reflection` class provides utility methods for manipulating game element
 
 ## Usage Example
 
-This example demonstrates how to use `getAnimation` to retrieve the animation of an NPC and print it:
+This example reads the ground-item actions of an item definition:
 
 ```java
-NPC someNpc = ... // obtain NPC instance from the game client
-int animationId = Rs2Reflection.getAnimation(someNpc);
-System.out.println("Current NPC Animation ID: " + animationId);
+net.runelite.api.ItemComposition def = Items.getItemComposition(995);
+String[] actions = Reflection.getGroundItemActions(def);
+System.out.println("Ground actions: " + String.join(", ", actions));
+```

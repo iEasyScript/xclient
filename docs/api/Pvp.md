@@ -1,11 +1,12 @@
-# Rs2Pvp Class Documentation
+# Pvp Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Pvp` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Pvp`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2Pvp` class provides utility methods for player-vs-player (PVP) related checks, such as wilderness levels, attackability of other players, and risk calculation.
+The `Pvp` class provides utility methods for player-vs-player (PVP) related checks, such as wilderness levels, attackability of other players, and risk calculation.
 
 ## Methods
 

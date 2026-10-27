@@ -2,6 +2,8 @@
 
 Per-entity gotchas, footguns, and patterns for LLMs (and humans) writing or modifying ProjectX code.
 
+These guides are about the implementation classes under `util/`, so the code references in them use the source class names (`Rs2Bank`, `Rs2Inventory`, ...). Scripts reach the same classes under their short `projectx.bot` names (`Bank`, `Inventory`, ...); see [SCRIPTING.md](../SCRIPTING.md).
+
 Each guide lists known pitfalls when working with one specific game entity type. **Read the relevant guide before implementing or modifying any code that interacts with that entity** — these documents capture lessons learned from real bugs that escaped review because the assumption was invisible at the call site.
 
 ## Guides

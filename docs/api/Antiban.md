@@ -1,11 +1,12 @@
-# Rs2Antiban Class Documentation
+# Antiban Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Antiban` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Antiban`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2Antiban` class provides a comprehensive anti-ban system that simulates human-like behavior during various in-game activities. This system includes features such as mouse fatigue, random intervals, micro-breaks, action cooldowns, and contextually aware mouse movements, all aimed at reducing the risk of detection.
+The `Antiban` class provides a comprehensive anti-ban system that simulates human-like behavior during various in-game activities. This system includes features such as mouse fatigue, random intervals, micro-breaks, action cooldowns, and contextually aware mouse movements, all aimed at reducing the risk of detection.
 
 ## Methods
 
@@ -83,8 +84,8 @@ The `Rs2Antiban` class provides a comprehensive anti-ban system that simulates h
 
 ## Your settings and a script's settings
 
-Scripts write `Rs2AntibanSettings` fields directly. The user's own settings are kept separately, and change only through the panel (`Rs2AntibanSettings.userChange`). That separation means:
+Scripts write `AntibanSettings` fields directly. The user's own settings are kept separately, and change only through the panel (`AntibanSettings.userChange`). That separation means:
 
 - The panel shows whether a script's values are live, and a script's values are never saved as the user's.
-- The user's settings come back when a script plugin stops (`Rs2AntibanSettings.restoreUserSettings`).
+- The user's settings come back when a script plugin stops (`AntibanSettings.restoreUserSettings`).
 - With "Override every script" on, the user's settings are put back every game tick and before every `actionCooldown`, `takeMicroBreakByChance` and `setActivity`. Scripts still set the activity.

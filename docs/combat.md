@@ -7,10 +7,10 @@ Lets try to make a script that attacks a man.
 ---
 
 
-To attack an npc we'll have to look into our Rs2Npc utility class.
+To attack an npc we use the `Npcs` search; it finds the nearest match and clicks it in one go.
 
 ```java
-Rs2Npc.attack("man")
+Npcs.query("Man").interact("Attack");
 ```
 
 Our example script should look like this now.

@@ -1,11 +1,12 @@
-# Rs2Camera Class Documentation
+# Camera Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Camera` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Camera`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2Camera` class provides methods to manipulate the camera view in the game, including setting camera angles, pitching, and determining if a tile is visible on the screen.
+The `Camera` class provides methods to manipulate the camera view in the game, including setting camera angles, pitching, and determining if a tile is visible on the screen.
 
 ## Methods
 

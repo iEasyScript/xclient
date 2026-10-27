@@ -1,11 +1,12 @@
-# Rs2Gembag Class Documentation
+# GemBag Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Gembag` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Gembag`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2Gembag` class manages the state and interactions with the Gem Bag. It tracks the contents of the gem bag based on chat messages and inventory interactions.
+The `GemBag` class manages the state and interactions with the Gem Bag. It tracks the contents of the gem bag based on chat messages and inventory interactions.
 
 ## Methods
 

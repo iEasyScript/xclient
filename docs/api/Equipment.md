@@ -1,10 +1,11 @@
-# Rs2Equipment Class Documentation
+# Equipment Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Equipment` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Equipment`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 ## Overview
-The `Rs2Equipment` class provides methods to interact with the player's equipment, allowing for checking equipment status, manipulating specific items, and managing actions related to equipment slots.
+The `Equipment` class provides methods to interact with the player's equipment, allowing for checking equipment status, manipulating specific items, and managing actions related to equipment slots.
 
 ## Methods
 

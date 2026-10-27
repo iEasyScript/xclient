@@ -1,11 +1,12 @@
-# Rs2Bank Class Documentation
+# Bank Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Bank` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Bank`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2Bank` class manages interactions with the banking system in the game, facilitating operations like opening the bank, depositing, withdrawing, and managing inventory items.
+The `Bank` class manages interactions with the banking system in the game, facilitating operations like opening the bank, depositing, withdrawing, and managing inventory items.
 
 ## Methods
 

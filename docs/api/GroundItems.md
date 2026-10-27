@@ -1,27 +1,29 @@
-# Rs2GroundItem Class Documentation
+# GroundItems Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2GroundItem` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2GroundItem`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
-> **Deprecated:** `Rs2GroundItem` is deprecated and marked for removal. Use the **Queryable API** via `ProjectX.getRs2TileItemCache().query()` instead. It provides a fluent, type-safe interface with better performance through tick-based caching.
->
-> See the [Queryable API Documentation & Migration Guide](../../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md#migration-guide) for migration steps and side-by-side examples.
->
-> **Quick comparison:**
-> ```java
-> // Legacy (deprecated)
-> Rs2GroundItem.loot("Dragon bones", 1, 10);
->
-> // Queryable API (recommended)
-> Rs2TileItemModel bones = ProjectX.getRs2TileItemCache().query()
->     .withName("Dragon bones")
->     .nearest();
-> bones.click("Take");
-> ```
+
+## Finding things: `GroundItems.query()`
+
+To find an entity, start with `GroundItems.query()` rather than the static helpers below; it is the supported way to search and returns a typed model you can click.
+
+```java
+FloorItem bones = GroundItems.query("Dragon bones").nearest(10);
+if (bones != null) {
+    bones.pickup();
+}
+
+// or search and click in one go
+GroundItems.query("Dragon bones").interact("Take");
+```
+
+All filters and terminals are described in the [Queryable API guide](../../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md). The older static helpers documented below still work.
 
 ## Overview
-The `Rs2GroundItem` class provides methods to interact with ground items within the game, facilitating operations like picking up, checking existence, and interacting with items based on various criteria such as item ID, name, or location.
+The `GroundItems` class provides methods to interact with ground items within the game, facilitating operations like picking up, checking existence, and interacting with items based on various criteria such as item ID, name, or location.
 
 ## Methods
 

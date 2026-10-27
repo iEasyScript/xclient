@@ -1,10 +1,11 @@
-# Rs2Inventory Class Documentation
+# Inventory Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Inventory` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Inventory`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 ## Overview
-`Rs2Inventory` manages the player's inventory in the game, offering methods for interacting with items, checking inventory status, and performing complex item manipulations.
+`Inventory` manages the player's inventory in the game, offering methods for interacting with items, checking inventory status, and performing complex item manipulations.
 
 ## Methods
 
@@ -126,6 +127,7 @@ The class includes numerous other methods for more specific or advanced inventor
 
 ## Usage Example
 ```java
-Rs2Inventory.interact(12345, "Use");
-boolean hasItem = Rs2Inventory.contains("Magic potion");
-int emptySlots = Rs2Inventory.emptySlotCount();
+Inventory.interact(12345, "Use");
+boolean hasItem = Inventory.contains("Magic potion");
+int emptySlots = Inventory.emptySlotCount();
+```

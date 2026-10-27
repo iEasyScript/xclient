@@ -1,10 +1,11 @@
-# Rs2Keyboard Class Documentation
+# Keyboard Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Keyboard` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Keyboard`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 ## Overview
-The `Rs2Keyboard` class simulates keyboard actions such as typing strings, pressing, holding, and releasing keys. It directly interacts with the game's canvas to dispatch keyboard events.
+The `Keyboard` class simulates keyboard actions such as typing strings, pressing, holding, and releasing keys. It directly interacts with the game's canvas to dispatch keyboard events.
 
 ## Methods
 
@@ -54,12 +55,6 @@ The `Rs2Keyboard` class simulates keyboard actions such as typing strings, press
 - **Description**: Simulates pressing the Enter key.
 - **Behavior**: Calls `keyHold` and `keyRelease` for `KeyEvent.VK_ENTER`.
 
-### `isKeyPressed`
-- **Description**: Checks if a specific key is currently pressed.
-- **Parameters**:
-    - `keyCode`: `int` - The key code to check.
-- **Returns**: `boolean` - True if the key is pressed, false otherwise.
-
 ## Static Members
 
 ### `pressedKeys`
@@ -68,9 +63,12 @@ The `Rs2Keyboard` class simulates keyboard actions such as typing strings, press
 
 ## Usage Example
 ```java
-Rs2Keyboard.typeString("Hello, world!");
-Rs2Keyboard.keyPress('a');
-Rs2Keyboard.holdShift();
-Rs2Keyboard.releaseShift();
-Rs2Keyboard.enter();
-boolean isShiftPressed = Rs2Keyboard.isKeyPressed(KeyEvent.VK_SHIFT);
+import java.awt.event.KeyEvent;
+
+Keyboard.typeString("Hello, world!");
+Keyboard.keyPress('a');
+Keyboard.holdShift();
+Keyboard.releaseShift();
+Keyboard.enter();
+Keyboard.keyPress(KeyEvent.VK_ESCAPE);
+```

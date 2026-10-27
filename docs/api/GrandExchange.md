@@ -1,11 +1,12 @@
-# Rs2GrandExchange Class Documentation
+# GrandExchange Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2GrandExchange` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2GrandExchange`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2GrandExchange` class provides methods for interacting with the Grand Exchange in the game. It allows for buying, selling, collecting offers, and managing Grand Exchange slots.
+The `GrandExchange` class provides methods for interacting with the Grand Exchange in the game. It allows for buying, selling, collecting offers, and managing Grand Exchange slots.
 
 ## Methods
 

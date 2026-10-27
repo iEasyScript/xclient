@@ -1,10 +1,11 @@
-# Rs2Magic Class Documentation
+# Magic Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Magic` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Magic`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 ## Overview
-The `Rs2Magic` class facilitates magic-related operations in the ProjectX client, allowing for casting spells on various entities and performing alchemy. It handles interactions with the game's magic interface and provides utility functions for different spell actions.
+The `Magic` class facilitates magic-related operations in the ProjectX client, allowing for casting spells on various entities and performing alchemy. It handles interactions with the game's magic interface and provides utility functions for different spell actions.
 
 ## Methods
 
@@ -56,7 +57,7 @@ The `Rs2Magic` class facilitates magic-related operations in the ProjectX client
 ## Usage Examples
 
 ```java
-Rs2Magic.cast(MagicAction.FIRE_STRIKE);
-Rs2Magic.alch("Rune Platelegs");
-Rs2Magic.castOn(MagicAction.TELEKINETIC_GRAB, someActor);
-Rs2Magic.highAlch(someRs2Item);
+Magic.cast(CombatSpells.FIRE_STRIKE);
+Magic.alch("Rune platelegs");
+Magic.castOn(CombatSpells.FIRE_STRIKE, Npcs.query("Man").nearest());
+```

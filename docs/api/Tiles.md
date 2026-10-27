@@ -1,6 +1,5 @@
 ## [Back](../development.md)
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Tile` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
 
 ### `isWalkable(Tile tile)`
 - **Parameters**:

@@ -1,29 +1,31 @@
-# Rs2Npc Class Documentation
+# Npcs Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Npc` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Npc`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
-> **Deprecated:** `Rs2Npc` is deprecated and marked for removal. Use the **Queryable API** via `ProjectX.getRs2NpcCache().query()` instead. It provides a fluent, type-safe interface with better performance through tick-based caching.
->
-> See the [Queryable API Documentation & Migration Guide](../../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md#migration-guide) for migration steps and side-by-side examples.
->
-> **Quick comparison:**
-> ```java
-> // Legacy (deprecated)
-> NPC banker = Rs2Npc.getNpc("Banker");
-> Rs2Npc.interact(banker, "Bank");
->
-> // Queryable API (recommended)
-> Rs2NpcModel banker = ProjectX.getRs2NpcCache().query()
->     .withName("Banker")
->     .where(npc -> !npc.isInteracting())
->     .nearest();
-> banker.click("Bank");
-> ```
+
+## Finding things: `Npcs.query()`
+
+To find an entity, start with `Npcs.query()` rather than the static helpers below; it is the supported way to search and returns a typed model you can click.
+
+```java
+Npc banker = Npcs.query("Banker")
+        .where(npc -> !npc.isInteracting())
+        .nearest();
+if (banker != null) {
+    banker.interact("Bank");
+}
+
+// or search and click in one go
+Npcs.query("Cow").interact("Attack");
+```
+
+All filters and terminals are described in the [Queryable API guide](../../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md). The older static helpers documented below still work.
 
 ## Overview
-The `Rs2Npc` class provides a comprehensive suite of methods for interacting with NPCs within the game. These methods include retrieving NPCs by various attributes, validating NPC interactability, performing actions like attacking or pickpocketing, and handling NPC visibility and targeting through the game's camera and walking systems.
+The `Npcs` class provides a comprehensive suite of methods for interacting with NPCs within the game. These methods include retrieving NPCs by various attributes, validating NPC interactability, performing actions like attacking or pickpocketing, and handling NPC visibility and targeting through the game's camera and walking systems.
 
 ## Methods
 
@@ -77,4 +79,4 @@ The `Rs2Npc` class provides a comprehensive suite of methods for interacting wit
 - **NPC Interaction**: This class is central for tasks that require direct NPC interaction, providing both high-level methods for complex actions and low-level methods for precise control.
 
 ## Conclusion
-The `Rs2Npc` class is an essential component of the ProjectX client, facilitating advanced NPC interaction capabilities for automation tasks. Its methods are designed to handle various aspects of NPC engagement, from basic interactions to complex behaviors like combat and pathfinding.
+The `Npcs` class is an essential component of the ProjectX client, facilitating advanced NPC interaction capabilities for automation tasks. Its methods are designed to handle various aspects of NPC engagement, from basic interactions to complex behaviors like combat and pathfinding.

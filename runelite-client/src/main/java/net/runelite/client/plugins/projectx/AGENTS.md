@@ -13,7 +13,7 @@ Config UI uses the custom `ProjectXConfigPanel` (`plugins/projectx/ui`), not Run
 ## Cache / Queryable API (mandatory)
 - Scripts: use the short names in `projectx.bot` — `Objects.query("Oak tree")`, `Npcs.query()`, `GroundItems.query()`, `Players.query()`, `Inventory`, `Bank`, … (guide: `docs/SCRIPTING.md`, old-to-new map: `docs/api-migration.tsv`; needs `minClientVersion = "2.7.0"`). The `Rs2*` names and `ProjectX.getRs2XxxCache()` are deprecated aliases kept for compiled scripts; do not teach them in new code or docs.
 - Client internals: singletons via `ProjectX.getRs2XxxCache()` (NPCs, objects, ground items, inventory, bank, varbits, players, widgets, …).
-- Query with `.query().<filters>.first() / .all() / .stream()` — not direct cache instantiation, not raw client iteration.
+- Query as `Npcs.query("Banker").where(npc -> !npc.isInteracting()).nearest()` (filters, then `nearest()` / `nearestReachable()` / `first()` / `list()` / `count()` / `interact(action)`), or `Npcs.stream()` — not direct cache instantiation, not raw client iteration. Use the `*OnClientThread` terminals for name searches that run every loop.
 - Caches are event-driven; treat returned entities as snapshots, re-query before acting on stale refs.
 - Full reference: `runelite-client/.../projectx/api/QUERYABLE_API.md`.
 

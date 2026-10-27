@@ -1,10 +1,11 @@
-# Rs2Prayer Class Documentation
+# Prayers Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Prayer` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Prayer`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 ## Overview
-The `Rs2Prayer` class offers functionalities to manage and interact with prayer abilities in the game. It includes methods to toggle prayers on or off, check if prayers are active, and determine if the player is out of prayer points.
+The `Prayers` class offers functionalities to manage and interact with prayer abilities in the game. It includes methods to toggle prayers on or off, check if prayers are active, and determine if the player is out of prayer points.
 
 ## Methods
 
@@ -56,22 +57,28 @@ drain. Do it every tick and the prayer is always up for free. Two rules:
    Through the mouse they can straddle two ticks, and the prayer drops or drains.
 
 ```java
-@Subscribe
-public void onGameTick(GameTick tick) {
-    if (!underAttack()) {
-        return;
-    }
-    // Quick prayers if any are set up, otherwise the protection prayer for the attacker
-    ProjectX.withDirectInput(() -> {
-        if (!Rs2Prayer.flickQuickPrayer()) {
-            Rs2Prayer.flick(Rs2PrayerEnum.PROTECT_MELEE);
+import net.runelite.api.events.GameTick;
+import net.runelite.client.eventbus.Subscribe;
+
+public class FlickScript {
+    @Subscribe
+    public void onGameTick(GameTick tick) {
+        if (!Players.local().isInteracting()) {
+            return;
         }
-    });
+        // Quick prayers if any are set up, otherwise the protection prayer for the attacker
+        ProjectX.withDirectInput(() -> {
+            if (!Prayers.flickQuickPrayer()) {
+                Prayers.flick(Prayers.PROTECT_MELEE);
+            }
+        });
+    }
 }
 ```
-Turn the prayer off once the fight is over: `Rs2Prayer.toggle(Rs2PrayerEnum.PROTECT_MELEE, false)`.
+Turn the prayer off once the fight is over: `Prayers.toggle(Prayers.PROTECT_MELEE, false)`.
 
 ### Toggling a Prayer
 ```java
-Rs2Prayer.toggle(Rs2PrayerEnum.PIETY, true); // Activates Piety
-Rs2Prayer.toggle(Rs2PrayerEnum.PIETY, false); // Deactivates Piety
+Prayers.toggle(Prayers.PIETY, true); // Activates Piety
+Prayers.toggle(Prayers.PIETY, false); // Deactivates Piety
+```

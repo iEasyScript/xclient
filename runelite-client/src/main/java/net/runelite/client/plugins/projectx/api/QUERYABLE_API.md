@@ -1,1176 +1,573 @@
-# Queryable API Documentation
+# Queryable API
 
-This is the long-form guide for the ProjectX entity cache/query layer. Scripts reach it through `Objects.query()`, `Npcs.query()`, `GroundItems.query()` and `Players.query()` in `projectx.bot` (plugin API 2.7.0, see [docs/SCRIPTING.md](../../../../../../../../../../docs/SCRIPTING.md)); the examples below use the older `Rs2*` cache names, which still work and are what client internals use via `ProjectX.getRs2XxxCache()`. Do not instantiate caches or queryables directly.
+How scripts find things in the game world: NPCs, objects, ground items and players. It is the long
+form of the "Searching" section of [docs/SCRIPTING.md](../../../../../../../../../../docs/SCRIPTING.md).
+Available from client plugin API **2.7.0** (set `minClientVersion = "2.7.0"`).
 
-## Table of Contents
+Every example below compiles against the client. Imports are left out to keep them short (plus the usual
+`java.util` ones such as `List`, `Comparator`, `Predicate` and `Collectors`); the ones that matter are:
 
-1. [Introduction](#introduction)
-2. [Why Use Queryable API?](#why-use-queryable-api)
-3. [Core Concepts](#core-concepts)
-4. [Getting Started](#getting-started)
-5. [Available Queryables](#available-queryables)
-6. [API Reference](#api-reference)
-7. [Common Patterns](#common-patterns)
-8. [Advanced Usage](#advanced-usage)
-9. [Performance Tips](#performance-tips)
-10. [Migration Guide](#migration-guide)
+```java
+import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.plugins.projectx.bot.*;
+```
+
+## Contents
+
+1. [Getting started](#getting-started)
+2. [What you can search](#what-you-can-search)
+3. [Filters](#filters)
+4. [Terminals](#terminals)
+5. [What a search returns: the models](#what-a-search-returns-the-models)
+6. [Threading](#threading)
+7. [Common patterns](#common-patterns)
+8. [Advanced](#advanced)
+9. [Performance](#performance)
+10. [Troubleshooting](#troubleshooting)
+11. [Old names](#old-names)
 
 ---
 
-## Introduction
+## Getting started
 
-The **Queryable API** is a modern, fluent interface for querying game entities in ProjectX. It provides a type-safe, chainable way to filter and find NPCs, players, ground items, and tile objects with minimal boilerplate code.
-
-### Design Philosophy
-
-- **Fluent Interface**: Chain multiple filters for readable code
-- **Type-Safe**: Compile-time checking prevents errors
-- **Performance**: Leverages efficient caching and streaming
-- **Intuitive**: Natural language-like queries
-- **Flexible**: Custom predicates for complex filters
-
----
-
-## Why Use Queryable API?
-
-### Old Way (Legacy) ❌
+A search has three parts: **where to look**, **filters** that narrow it down, and a **terminal** that
+gives the answer.
 
 ```java
-// Verbose and hard to read
-NPC banker = null;
-for (NPC npc : client.getNpcs()) {
-    if (npc.getName() != null && 
-        npc.getName().equals("Banker") && 
-        !npc.getInteracting() != null) {
-        if (banker == null || 
-            npc.getWorldLocation().distanceTo(player.getWorldLocation()) < 
-            banker.getWorldLocation().distanceTo(player.getWorldLocation())) {
-            banker = npc;
-        }
-    }
-}
-
-// Stream API - better but still verbose
-NPC banker = Rs2Npc.getNpcs().stream()
-    .filter(npc -> npc.getName() != null)
-    .filter(npc -> npc.getName().equals("Banker"))
-    .filter(npc -> npc.getInteracting() == null)
-    .min(Comparator.comparingInt(npc -> 
-        npc.getWorldLocation().distanceTo(player.getWorldLocation())))
-    .orElse(null);
-```
-
-### New Way (Queryable) ✅
-
-```java
-// Clean, readable, and concise
-Rs2NpcModel banker = ProjectX.getRs2NpcCache().query()
-        .withName("Banker")
-        .where(npc -> !npc.isInteracting())
-        .nearestOnClientThread();
-```
-
-**Benefits:**
-- 📖 **Readable**: Self-documenting code
-- 🚀 **Faster Development**: Less code to write
-- 🐛 **Fewer Bugs**: Type-safe operations
-- 🔧 **Maintainable**: Easy to modify queries
-- ⚡ **Performant**: Optimized internally
-
----
-
-## Core Concepts
-
-### 1. Entity Models
-
-All queryable entities implement the `IEntity` interface:
-
-```java
-public interface IEntity {
-    String getName();           // Entity name
-    int getId();               // Entity ID
-    WorldPoint getWorldLocation(); // World coordinates
-    // ... other common properties
-}
-```
-
-**Coordinates in instances:** every model's `getWorldLocation()` is in the scene's own
-coordinates, which inside an instance are instance coordinates, so `within(n)`, `nearest()` and
-`nearestReachable()` compare like with like. `Rs2Player.getWorldLocation()` and wiki tiles are
-template (real-world) coordinates there; `within(anchor, n)` and `nearest(anchor, n)` map such an
-anchor onto the scene first. Reachability is worked out in scene coordinates. If it cannot be
-worked out (no player world view, or the check throws), `nearestReachable()` and `interact(...)`
-fall back to the nearest entity within 10 tiles rather than refusing.
-
-**Available Models:**
-- `Rs2NpcModel` - NPCs
-- `Rs2PlayerModel` - Players
-- `Rs2TileItemModel` - Ground items
-- `Rs2TileObjectModel` - Game objects
-
-**Example setup (used throughout examples):**
-```java
-var npcCache = ProjectX.getRs2NpcCache();
-var playerCache = ProjectX.getRs2PlayerCache();
-var tileItemCache = ProjectX.getRs2TileItemCache();
-var tileObjectCache = ProjectX.getRs2TileObjectCache();
-// Use <cache>.query() to build queries.
-```
-
-### 2. Queryable Interface
-
-All queryables implement `IEntityQueryable<Q, E>`:
-
-```java
-public interface IEntityQueryable<Q, E> {
-    Q where(Predicate<E> predicate);     // Custom filter
-    Q within(int distance);               // Distance from player
-    Q within(WorldPoint anchor, int distance); // Distance from point
-    E first();                            // First match
-    E nearest();                          // Nearest to player
-    E nearest(int maxDistance);           // Nearest within range
-    E nearest(WorldPoint anchor, int maxDistance); // Nearest to point
-    E withName(String name);             // Find by name
-    E withNames(String... names);        // Find by multiple names
-    E withId(int id);                    // Find by ID
-    E withIds(int... ids);               // Find by multiple IDs
-    List<E> toList();                    // Get all matches
-}
-```
-
-### 3. Fluent Chaining
-
-Methods return the queryable itself, allowing chaining:
-
-```java
-npcCache.query()
-    .withName("Guard")           // Filter by name
-    .where(npc -> !npc.isInteracting())  // Add custom filter
-    .within(15)                  // Within 15 tiles
-    .nearest();                  // Get nearest match
-```
-
-### 4. Lazy Evaluation
-
-Queries are not executed until a terminal operation is called:
-
-```java
-// No execution yet - just building the query
-Rs2NpcQueryable query = ProjectX.getRs2NpcCache().query()
-        .withName("Guard")
-        .within(10);
-
-// NOW it executes
-Rs2NpcModel guard = query.nearestOnClientThread();  // Terminal operation
-```
-
----
-
-## Getting Started
-
-Always use the corresponding singleton cache from `ProjectX` and call `query()` from it to build queries against the per-tick cache.
-
-### Basic Query Structure
-
-Every query follows this pattern:
-
-```java
-// 1. Create queryable from the singleton cache
-ProjectX.getRs2NpcCache().query()
-    
-// 2. Add filters (optional, chainable)
-    .withName("name")
-    .where(entity -> condition)
-    .within(distance)
-    
-// 3. Execute with terminal operation
-    .nearestOnClientThread();  // or firstOnClientThread(), toListOnClientThread(), etc.
-```
-
-### Simple Examples
-
-**Find nearest NPC by name:**
-```java
-Rs2NpcModel banker = ProjectX.getRs2NpcCache().query()
-        .withName("Banker")
-        .nearestOnClientThread();
-```
-
-**Find nearest ground item:**
-```java
-Rs2TileItemModel coins = ProjectX.getRs2TileItemCache().query()
-        .withName("Coins")
-        .nearestOnClientThread();
-```
-
-**Find nearest player:**
-```java
-Rs2PlayerModel player = ProjectX.getRs2PlayerCache().query()
-        .withName("PlayerName")
-        .nearestOnClientThread();
-```
-
-**Find nearest tree (tile object):**
-```java
-Rs2TileObjectModel tree = ProjectX.getRs2TileObjectCache().query()
-        .withName("Tree")
-        .nearestOnClientThread();
-```
-
----
-
-## Available Queryables
-
-### 1. Rs2NpcQueryable - NPC Queries
-
-**Import:**
-```java
-import net.runelite.client.plugins.projectx.api.npc.Rs2NpcCache;
-import net.runelite.client.plugins.projectx.api.npc.models.Rs2NpcModel;
-```
-
-**Basic Usage:**
-```java
-// Find nearest banker
-Rs2NpcModel banker = npcCache.query()
-    .withName("Banker")
-    .nearest();
-
-// Find all guards within 10 tiles
-List<Rs2NpcModel> guards = npcCache.query()
-    .withName("Guard")
-    .within(10)
-    .toList();
-
-// Find nearest non-interacting cow
-Rs2NpcModel cow = npcCache.query()
-    .withName("Cow")
-    .where(npc -> !npc.isInteracting())
-    .nearest();
-```
-
-**Rs2NpcModel Methods:**
-```java
-npc.getName()              // "Guard"
-npc.getId()                // 123
-npc.getWorldLocation()     // WorldPoint
-npc.isInteracting()        // true/false
-npc.getHealthRatio()       // 0-30
-npc.getAnimation()         // Animation ID
-npc.click("Attack")        // Interact with NPC
-npc.interact("Bank")       // Alternative interact method
-```
-
-### 2. Rs2TileItemQueryable - Ground Item Queries
-
-**Import:**
-```java
-import net.runelite.client.plugins.projectx.api.tileitem.Rs2TileItemCache;
-import net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel;
-```
-
-**Basic Usage:**
-```java
-// Find nearest coins
-Rs2TileItemModel coins = tileItemCache.query()
-    .withName("Coins")
-    .nearest();
-
-// Find valuable items
-List<Rs2TileItemModel> loot = tileItemCache.query()
-    .where(item -> item.getTotalValue() > 1000)
-    .toList();
-
-// Find nearest lootable item
-Rs2TileItemModel lootable = tileItemCache.query()
-    .where(Rs2TileItemModel::isLootAble)
-    .nearest();
-```
-
-**Rs2TileItemModel Methods:**
-```java
-item.getName()             // "Coins"
-item.getId()               // Item ID
-item.getQuantity()         // Stack size
-item.getTotalValue()       // GE value
-item.getTotalGeValue()     // Total GE value
-item.isLootAble()          // Can loot?
-item.isOwned()             // Owned by player?
-item.isStackable()         // Is stackable?
-item.isNoted()             // Is noted?
-item.isTradeable()         // Is tradeable?
-item.isMembers()           // Members item?
-item.isDespawned()         // Has despawned?
-item.willDespawnWithin(seconds) // Will despawn soon?
-item.pickup()              // Pick up item
-```
-
-### 3. Rs2PlayerQueryable - Player Queries
-
-**Import:**
-```java
-import net.runelite.client.plugins.projectx.api.player.Rs2PlayerCache;
-import net.runelite.client.plugins.projectx.api.player.models.Rs2PlayerModel;
-```
-
-**Basic Usage:**
-```java
-// Find nearest player
-Rs2PlayerModel player = playerCache.query()
-    .nearest();
-
-// Find player by name
-Rs2PlayerModel target = playerCache.query()
-    .withName("PlayerName")
-    .nearest();
-
-// Find all friends nearby
-List<Rs2PlayerModel> friends = playerCache.query()
-    .where(Rs2PlayerModel::isFriend)
-    .within(20)
-    .toList();
-```
-
-**Rs2PlayerModel Methods:**
-```java
-player.getName()              // Player name
-player.getCombatLevel()       // Combat level
-player.getHealthRatio()       // Health (-1 if not visible)
-player.isFriend()             // Is friend?
-player.isClanMember()         // In your clan?
-player.isFriendsChatMember()  // In friends chat?
-player.getSkullIcon()         // Skull icon (-1 if none)
-player.getOverheadIcon()      // Prayer icon (HeadIcon or null)
-player.getAnimation()         // Current animation
-player.isInteracting()        // Is interacting?
-```
-
-### 4. Rs2TileObjectQueryable - Tile Object Queries
-
-**Import:**
-```java
-import net.runelite.client.plugins.projectx.api.tileobject.Rs2TileObjectCache;
-import net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel;
-```
-
-**Basic Usage:**
-```java
-// Find nearest tree
-Rs2TileObjectModel tree = tileObjectCache.query()
-    .withName("Tree")
-    .nearest();
-
-// Find nearest bank booth
-Rs2TileObjectModel bank = tileObjectCache.query()
-    .withName("Bank booth")
-    .nearest();
-
-// Find all rocks within 15 tiles
-List<Rs2TileObjectModel> rocks = tileObjectCache.query()
-    .where(obj -> obj.getName() != null && 
-                  obj.getName().contains("rocks"))
-    .within(15)
-    .toList();
-```
-
-**Rs2TileObjectModel Methods:**
-```java
-obj.getName()              // "Tree"
-obj.getId()                // Object ID
-obj.getWorldLocation()     // WorldPoint
-obj.click("Chop down")     // Interact with object
-obj.click("Mine")          // Interact with a specific action
-```
-
----
-
-## API Reference
-
-### Terminal Operations
-
-These execute the query and return results:
-
-#### `nearest()`
-Returns the nearest entity to the player.
-
-```java
-Rs2NpcModel npc = npcCache.query()
-    .withName("Guard")
-    .nearest();
-```
-
-#### `nearest(int maxDistance)`
-Returns the nearest entity within max distance from player.
-
-```java
-Rs2NpcModel npc = npcCache.query()
-    .withName("Guard")
-    .nearest(10);  // Within 10 tiles
-```
-
-#### `nearest(WorldPoint anchor, int maxDistance)`
-Returns the nearest entity to a specific point.
-
-```java
-WorldPoint location = new WorldPoint(3100, 3500, 0);
-Rs2NpcModel npc = npcCache.query()
-    .withName("Guard")
-    .nearest(location, 5);
-```
-
-#### `first()`
-Returns the first matching entity (not necessarily nearest).
-
-```java
-Rs2NpcModel npc = npcCache.query()
-    .withName("Guard")
-    .first();
-```
-
-#### `withName(String name)`
-Finds nearest entity with exact name (case-insensitive).
-
-```java
-Rs2NpcModel banker = npcCache.query()
-    .withName("Banker");  // Terminal operation
-```
-
-#### `withNames(String... names)`
-Finds nearest entity matching any of the names.
-
-```java
-Rs2NpcModel npc = npcCache.query()
-    .withNames("Banker", "Bank clerk", "Bank assistant");
-```
-
-#### `withId(int id)`
-Finds nearest entity with specific ID.
-
-```java
-Rs2NpcModel npc = npcCache.query()
-    .withId(1234);
-```
-
-#### `withIds(int... ids)`
-Finds nearest entity matching any of the IDs.
-
-```java
-Rs2NpcModel npc = npcCache.query()
-    .withIds(1234, 5678, 9012);
-```
-
-#### `toList()`
-Returns all matching entities as a list.
-
-```java
-List<Rs2NpcModel> guards = npcCache.query()
-    .withName("Guard")
-    .toList();
-```
-
-#### `count()`
-Returns the number of matching entities.
-
-```java
-int guardCount = npcCache.query()
-    .withName("Guard")
-    .within(10)
-    .count();
-```
-
-### Filter Operations
-
-These filter entities and return the queryable for chaining:
-
-#### `where(Predicate<E> predicate)`
-Adds a custom filter using a lambda expression.
-
-```java
-npcCache.query()
-    .where(npc -> npc.getHealthRatio() > 0)
-    .where(npc -> !npc.isInteracting())
-    .nearest();
-```
-
-#### `within(int distance)`
-Filters entities within distance from player.
-
-```java
-npcCache.query()
-    .withName("Guard")
-    .within(10)
-    .toList();
-```
-
-#### `within(WorldPoint anchor, int distance)`
-Filters entities within distance from a specific point.
-
-```java
-WorldPoint location = new WorldPoint(3100, 3500, 0);
-npcCache.query()
-    .withName("Guard")
-    .within(location, 15)
-    .toList();
-```
-
----
-
-## Common Patterns
-
-### Pattern 1: Find Nearest Non-Interacting NPC
-
-```java
-Rs2NpcModel cow = npcCache.query()
-    .withName("Cow")
-    .where(npc -> !npc.isInteracting())
-    .nearest();
-
-if (cow != null) {
-    cow.click("Attack");
-}
-```
-
-### Pattern 2: Find Valuable Loot
-
-```java
-Rs2TileItemModel loot = tileItemCache.query()
-    .where(item -> item.getTotalGeValue() >= 5000)
-    .where(Rs2TileItemModel::isLootAble)
-    .nearest(10);
-
-if (loot != null) {
-    loot.pickup();
-}
-```
-
-### Pattern 3: Find Multiple NPCs
-
-```java
-List<Rs2NpcModel> guards = npcCache.query()
-    .withName("Guard")
-    .where(npc -> !npc.isInteracting())
-    .within(15)
-    .toList();
-
-for (Rs2NpcModel guard : guards) {
-    // Do something with each guard
-}
-```
-
-### Pattern 4: Find by Multiple Names
-
-```java
-Rs2NpcModel banker = npcCache.query()
-    .withNames("Banker", "Bank clerk", "Bank assistant");
+Npc banker = Npcs.query("Banker")                  // where to look: NPCs named "Banker"
+        .where(npc -> !npc.isInteracting())        // filter: not busy with someone else
+        .nearest();                                // terminal: the closest one, or null
 
 if (banker != null) {
-    banker.click("Bank");
-}
-```
-
-### Pattern 5: Complex Query with Multiple Filters
-
-```java
-Rs2NpcModel target = npcCache.query()
-    .withName("Goblin")
-    .where(npc -> !npc.isInteracting())
-    .where(npc -> npc.getHealthRatio() > 0)
-    .where(npc -> npc.getAnimation() == -1)  // Not animating
-    .within(10)
-    .nearest();
-```
-
-### Pattern 6: Find Nearest Object by Partial Name
-
-```java
-Rs2TileObjectModel tree = tileObjectCache.query()
-    .where(obj -> obj.getName() != null && 
-                  obj.getName().toLowerCase().contains("tree"))
-    .nearest();
-```
-
-### Pattern 7: Find Items About to Despawn
-
-```java
-List<Rs2TileItemModel> despawning = tileItemCache.query()
-    .where(item -> item.willDespawnWithin(30))  // 30 seconds
-    .where(item -> item.getTotalValue() > 1000)
-    .toList();
-```
-
-### Pattern 8: Find Friends Nearby
-
-```java
-List<Rs2PlayerModel> friends = playerCache.query()
-    .where(Rs2PlayerModel::isFriend)
-    .within(20)
-    .toList();
-```
-
-### Pattern 9: Find Low Health Enemies
-
-```java
-Rs2NpcModel weakEnemy = npcCache.query()
-    .withName("Goblin")
-    .where(npc -> npc.getHealthRatio() > 0 && 
-                  npc.getHealthRatio() < 10)  // Low health
-    .nearest();
-```
-
-### Pattern 10: Find Specific Object by ID
-
-```java
-Rs2TileObjectModel altar = tileObjectCache.query()
-    .withId(409)  // Altar object ID
-    .nearest();
-```
-
----
-
-## Advanced Usage
-
-### Custom Predicates
-
-Create reusable predicates for common filters:
-
-```java
-// Define predicates
-Predicate<Rs2NpcModel> isAlive = npc -> npc.getHealthRatio() > 0;
-Predicate<Rs2NpcModel> notBusy = npc -> !npc.isInteracting();
-Predicate<Rs2NpcModel> notAnimating = npc -> npc.getAnimation() == -1;
-
-// Use them
-Rs2NpcModel target = npcCache.query()
-    .withName("Cow")
-    .where(isAlive)
-    .where(notBusy)
-    .where(notAnimating)
-    .nearest();
-```
-
-### Combining Predicates
-
-```java
-// Combine with AND
-Predicate<Rs2NpcModel> attackable = 
-    npc -> !npc.isInteracting() && npc.getHealthRatio() > 0;
-
-Rs2NpcModel target = npcCache.query()
-    .withName("Goblin")
-    .where(attackable)
-    .nearest();
-
-// Combine with OR
-Predicate<Rs2TileItemModel> valuableOrStackable =
-    item -> item.getTotalValue() > 1000 || item.isStackable();
-
-Rs2TileItemModel loot = tileItemCache.query()
-    .where(valuableOrStackable)
-    .nearest();
-```
-
-### Distance-Based Queries
-
-```java
-// Find nearest NPC within specific range
-WorldPoint homeBase = new WorldPoint(3100, 3500, 0);
-
-Rs2NpcModel nearbyEnemy = npcCache.query()
-    .withName("Goblin")
-    .within(homeBase, 10)  // Within 10 tiles of home base
-    .nearest(homeBase, 10);  // Get nearest to home base
-```
-
-### Sorting and Limiting
-
-```java
-// Get 5 nearest guards
-List<Rs2NpcModel> guards = npcCache.query()
-    .withName("Guard")
-    .toList()
-    .stream()
-    .sorted(Comparator.comparingInt(npc -> 
-        npc.getWorldLocation().distanceTo(Rs2Player.getWorldLocation())))
-    .limit(5)
-    .collect(Collectors.toList());
-```
-
-### Null Safety
-
-Always check for null results:
-
-```java
-Rs2NpcModel banker = npcCache.query()
-    .withName("Banker")
-    .nearest();
-
-if (banker != null) {
-    banker.click("Bank");
-} else {
-    log.warn("No banker found nearby");
-}
-```
-
-### Using with sleepUntil
-
-```java
-// Wait until target NPC appears
-Rs2NpcModel target = sleepUntilNotNull(() -> 
-    npcCache.query()
-        .withName("Banker")
-        .nearest(),
-    5000, 600  // 5 second timeout, check every 600ms
-);
-
-if (target != null) {
-    target.click("Bank");
-}
-```
-
----
-
-## Performance Tips
-
-### ✅ DO:
-
-**1. Use specific filters early:**
-```java
-// Good - filters by name first
-npcCache.query()
-    .withName("Guard")
-    .where(npc -> !npc.isInteracting())
-    .nearest();
-```
-
-**2. Limit search radius:**
-```java
-// Good - only searches within 10 tiles
-npcCache.query()
-    .withName("Guard")
-    .within(10)
-    .nearest();
-```
-
-**3. Cache results when possible:**
-```java
-// Good - query once, use multiple times
-List<Rs2NpcModel> guards = npcCache.query()
-    .withName("Guard")
-    .toList();
-
-for (Rs2NpcModel guard : guards) {
-    // Process each guard
-}
-```
-
-**4. Use method references:**
-```java
-// Good - cleaner and potentially faster
-tileItemCache.query()
-    .where(Rs2TileItemModel::isLootAble)
-    .nearest();
-```
-
-### ❌ DON'T:
-
-**1. Don't query in tight loops:**
-```java
-// Bad - queries on every iteration
-while (true) {
-    Rs2NpcModel npc = npcCache.query()
-        .withName("Guard")
-        .nearest();
-    // ...
-    sleep(100);  // Still too frequent
-}
-
-// Good - reasonable interval
-while (true) {
-    Rs2NpcModel npc = npcCache.query()
-        .withName("Guard")
-        .nearest();
-    // ...
-    sleep(600);  // ~1 game tick
-}
-```
-
-**2. Don't use expensive operations in predicates:**
-```java
-// Bad - calls API repeatedly in filter
-npcCache.query()
-    .where(npc -> someExpensiveApiCall(npc))
-    .nearest();
-
-// Good - call API once, cache result
-boolean shouldFilter = someExpensiveApiCall();
-npcCache.query()
-    .where(npc -> shouldFilter)
-    .nearest();
-```
-
-**3. Don't create unnecessary lists:**
-```java
-// Bad - creates full list just to get one item
-Rs2NpcModel npc = npcCache.query()
-    .withName("Guard")
-    .toList()
-    .get(0);
-
-// Good - gets first directly
-Rs2NpcModel npc = npcCache.query()
-    .withName("Guard")
-    .first();
-```
-
----
-
-## Migration Guide
-
-### From Legacy API to Queryable API
-
-#### NPCs
-
-**Legacy:**
-```java
-// Old way
-NPC npc = Rs2Npc.getNpc("Banker");
-NPC nearest = Rs2Npc.getNearestNpc("Guard");
-List<NPC> npcs = Rs2Npc.getNpcs(NpcID.GUARD);
-```
-
-**Queryable:**
-```java
-// New way
-Rs2NpcModel npc = npcCache.query()
-    .withName("Banker");
-
-Rs2NpcModel nearest = npcCache.query()
-    .withName("Guard")
-    .nearest();
-
-List<Rs2NpcModel> npcs = npcCache.query()
-    .withId(NpcID.GUARD)
-    .toList();
-```
-
-#### Ground Items
-
-**Legacy:**
-```java
-// Old way
-TileItem item = Rs2GroundItem.findItem("Coins");
-TileItem nearest = Rs2GroundItem.getNearestItem("Dragon bones");
-```
-
-**Queryable:**
-```java
-// New way
-Rs2TileItemModel item = tileItemCache.query()
-    .withName("Coins")
-    .first();
-
-Rs2TileItemModel nearest = tileItemCache.query()
-    .withName("Dragon bones")
-    .nearest();
-```
-
-#### Game Objects
-
-**Legacy:**
-```java
-// Old way
-TileObject tree = Rs2GameObject.findObject("Tree");
-TileObject nearest = Rs2GameObject.findObjectById(1234);
-```
-
-**Queryable:**
-```java
-// New way
-Rs2TileObjectModel tree = tileObjectCache.query()
-    .withName("Tree")
-    .nearest();
-
-Rs2TileObjectModel nearest = tileObjectCache.query()
-    .withId(1234)
-    .nearest();
-```
-
-### Step-by-Step Migration
-
-**Step 1:** Replace direct method calls with queryable:
-```java
-// Before
-NPC banker = Rs2Npc.getNpc("Banker");
-
-// After
-Rs2NpcModel banker = npcCache.query().withName("Banker");
-```
-
-**Step 2:** Add filters if needed:
-```java
-// Before
-NPC cow = Rs2Npc.getNpcs().stream()
-    .filter(npc -> npc.getName().equals("Cow"))
-    .filter(npc -> npc.getInteracting() == null)
-    .findFirst()
-    .orElse(null);
-
-// After
-Rs2NpcModel cow = npcCache.query()
-    .withName("Cow")
-    .where(npc -> !npc.isInteracting())
-    .nearest();
-```
-
-**Step 3:** Update interaction methods:
-```java
-// Before
-if (banker != null) {
-    Rs2Npc.interact(banker, "Bank");
-}
-
-// After
-if (banker != null) {
-    banker.click("Bank");
-    // or
     banker.interact("Bank");
 }
 ```
 
----
+`Npcs.query("Banker")` is the short form of `Npcs.query().nameEquals("Banker")`. Names compare
+ignoring case, and must otherwise match exactly.
 
-## Examples by Use Case
-
-### Combat Scripts
+When you only want to click the nearest match, skip the variable. `interact(action)` is a terminal
+too; it returns `true` when a click was sent and `false` when nothing matched:
 
 ```java
-// Find nearest attackable enemy
-Rs2NpcModel enemy = npcCache.query()
-    .withName("Goblin")
-    .where(npc -> !npc.isInteracting())
-    .where(npc -> npc.getHealthRatio() > 0)
-    .nearest(10);
+boolean attacked = Npcs.query("Cow").interact("Attack");
+boolean mined = Objects.query("Copper rocks").interact("Mine");
+```
 
-if (enemy != null && !Rs2Player.isInCombat()) {
-    enemy.click("Attack");
-    sleepUntil(() -> Rs2Player.isInCombat(), 2000);
+Two rules that avoid most bugs:
+
+- **Check for `null`.** `nearest()`, `first()` and friends return `null` when nothing matches.
+- **A query is single use.** It reads the scene once, through one terminal. To ask a second
+  question, start a new `query()`. Do not keep the entities either; search again each loop, because
+  the scene changes every tick.
+
+## What you can search
+
+| Start with | Query type | Returns | Notes |
+|---|---|---|---|
+| `Npcs.query()` | `NpcQuery` | `Npc` | Monsters, bankers, shopkeepers |
+| `Objects.query()` | `ObjectQuery` | `SceneObject` | Rocks, trees, doors, bank booths, ladders, altars |
+| `GroundItems.query()` | `GroundItemQuery` | `FloorItem` | Items lying on the ground |
+| `Players.query()` | `PlayerQuery` | `PlayerModel` | Other players, and you |
+
+Each also takes a name: `Npcs.query("Guard")`, `Objects.query("Oak tree")`,
+`GroundItems.query("Bones")`, `Players.query("Zezima")`.
+
+`Npcs.stream()`, `Objects.stream()`, `GroundItems.stream()` and `Players.stream()` return everything
+in the scene this tick as a Java `Stream`, for when you would rather use streams. Your own
+character is `Players.local()`.
+
+```java
+List<Npc> all = Npcs.stream().filter(n -> n.getCombatLevel() > 50).collect(Collectors.toList());
+WorldPoint here = Players.local().getWorldLocation();
+```
+
+All four query types have exactly the same filters and terminals, listed next. Scenery from the
+boat system (`Boats.local()`) is not a query; see [SCRIPTING.md](../../../../../../../../../../docs/SCRIPTING.md).
+
+## Filters
+
+Filters return the query, so you chain as many as you like. They are applied in the order you write
+them, which matters for [performance](#performance).
+
+| Filter | Keeps |
+|---|---|
+| `nameEquals(String name)` | entities whose name is `name`, ignoring case (`withName` is the same) |
+| `withNames(String... names)` | entities named any of these |
+| `withNameContains(String text)` | entities whose name contains `text`, ignoring case |
+| `withId(int id)` | entities with this id |
+| `withIds(int... ids)` | entities with any of these ids |
+| `within(int tiles)` | entities within `tiles` of your character |
+| `within(WorldPoint anchor, int tiles)` | entities within `tiles` of `anchor` |
+| `where(Predicate<E> test)` | entities for which `test` is true (`E` is `Npc`, `SceneObject`, ...) |
+| `fromWorldView()` | entities in the same world view as your character (matters on boats) |
+
+A `null` name, an empty `withNames()` / `withIds()` or an empty `withNameContains("")` keeps
+nothing, so the query comes back empty rather than matching everything.
+
+```java
+List<Npc> guards = Npcs.query()
+        .withNames("Guard", "Knight of Ardougne")
+        .within(10)
+        .where(npc -> npc.getHealthRatio() != 0)
+        .list();
+```
+
+## Terminals
+
+A terminal ends the query and gives the answer.
+
+| Terminal | Returns | Meaning |
+|---|---|---|
+| `first()` | model or `null` | first match in scene order |
+| `firstReachable()` | model or `null` | first match your character can walk to |
+| `nearest()` | model or `null` | closest match to your character |
+| `nearest(int maxTiles)` | model or `null` | closest match no further than `maxTiles` |
+| `nearest(WorldPoint anchor, int maxTiles)` | model or `null` | closest match to `anchor` |
+| `nearestReachable()` | model or `null` | closest match you can walk to |
+| `nearestReachable(int maxTiles)` | model or `null` | same, no further than `maxTiles` |
+| `list()` | `List<E>` | every match (`toList()` is the same) |
+| `count()` | `int` | how many match |
+| `interact(String action)` | `boolean` | click the nearest reachable match with `action` |
+
+The `interact` family, all returning `true` if a click was sent:
+
+```java
+Objects.query("Bank booth").interact();                   // left-click option
+Objects.query("Bank booth").interact("Bank");             // pick this option
+Objects.query("Oak tree").interact("Chop down", 12);      // only within 12 tiles
+Objects.query().interact(1276, "Chop down");              // by object id
+GroundItems.query().interact(995, "Take", 8);             // by item id, within 8 tiles
+```
+
+The full list is `interact()`, `interact(action)`, `interact(action, maxTiles)`, `interact(id)`,
+`interact(id, action)` and `interact(id, action, maxTiles)`. Those with an `id` add a `withId(id)`
+filter first.
+
+`nearestReachable()` is usually what a skilling script wants: the nearest rock that is not behind a
+wall or a fence. If reachability cannot be worked out (for example your character has no world view
+yet) it falls back to the nearest match within 10 tiles instead of returning nothing.
+
+**Inside an instance** (a boss room, a minigame), model locations are in the instance's own
+coordinates. An anchor you pass to `within(anchor, n)` or `nearest(anchor, n)` is usually a normal
+world tile, and the API maps it onto the instance for you, so a hard-coded tile still works there.
+
+The `*OnClientThread` terminals (`firstOnClientThread()`, `nearestOnClientThread()` and its
+`(maxTiles)` and `(anchor, maxTiles)` forms, `toListOnClientThread()`) give the same answers; see
+[Threading](#threading) for when to prefer them.
+
+## What a search returns: the models
+
+The models are named so they do not collide with RuneLite's own types: `Npc` (RuneLite has `NPC`),
+`SceneObject` (not `GameObject`), `FloorItem` (the ground items plugin has `GroundItem`) and
+`PlayerModel` (RuneLite has `Player`).
+
+All four have these:
+
+| Method | Meaning |
+|---|---|
+| `interact(String action)` | click with this menu option; `true` if the click was sent (`click(action)` is the same) |
+| `interact()` | click the left-click option |
+| `getId()` | object id, NPC id, item id or player index |
+| `getName()` | name, or `null` |
+| `getWorldLocation()` | `WorldPoint` |
+| `getLocalLocation()` | `LocalPoint` |
+| `isReachable()` | can your character walk there |
+
+Beyond that, each model has its own:
+
+**`Npc`** (also everything a RuneLite actor has, such as `getAnimation()`, `getInteracting()`,
+`isDead()`, `getOverheadText()`):
+
+```java
+Npc npc = Npcs.query("Goblin").nearest();
+if (npc != null) {
+    int level = npc.getCombatLevel();
+    double hp = npc.getHealthPercentage();          // 0 to 100
+    boolean busy = npc.isInteracting();             // fighting anyone
+    boolean fightingMe = npc.isInteractingWithPlayer();
+    boolean walking = npc.isMoving();
+    int tiles = npc.getDistanceFromPlayer();
+    boolean near = npc.isWithinDistance(Players.local().getWorldLocation(), 5);
+    boolean visible = npc.hasLineOfSight();
 }
 ```
 
-### Looting Scripts
+**`SceneObject`:**
 
 ```java
-// Find valuable loot
-Rs2TileItemModel loot = tileItemCache.query()
-    .where(Rs2TileItemModel::isLootAble)
-    .where(item -> item.getTotalGeValue() >= 5000)
-    .nearest(15);
+SceneObject door = Objects.query("Large door").nearest();
+if (door != null) {
+    int id = door.getId();
+    net.runelite.api.ObjectComposition def = door.getObjectComposition();   // actions, impostors
+    boolean hasOpen = door.isOpShown(0);                                     // is menu option 1 shown
+}
+```
+
+**`FloorItem`:**
+
+```java
+FloorItem loot = GroundItems.query("Dragon bones").nearest();
+if (loot != null) {
+    int qty = loot.getQuantity();
+    int geValue = loot.getTotalGeValue();       // quantity times Grand Exchange price
+    boolean mine = loot.isOwned();              // visible only to you
+    boolean tradeable = loot.isTradeable();
+    boolean noted = loot.isNoted();
+    boolean gone = loot.willDespawnWithin(10);  // ticks, not seconds
+    loot.pickup();                              // same as interact("Take")
+}
+```
+
+Also on `FloorItem`: `isStackable()`, `isMembers()`, `isLootAble()`, `isDespawned()`,
+`isProfitableToHighAlch()`, `getTotalValue()`, `getVisibleTime()`, `getDespawnTime()`.
+
+**`PlayerModel`** (and `Players.local()` is one too):
+
+```java
+for (PlayerModel other : Players.query().within(15).list()) {
+    String name = other.getName();
+    int combat = other.getCombatLevel();
+    boolean friend = other.isFriend();
+    boolean clan = other.isClanMember();
+    int skull = other.getSkullIcon();
+}
+```
+
+## Threading
+
+Game state lives on RuneLite's client thread; your script loop runs on a separate thread. The query
+API hides the hop, but it helps to know what it costs.
+
+**Every terminal is safe to call from a script thread.** That is where scripts call them, and
+`interact(...)` in particular must be called from the script thread, never from the client thread,
+because the click may wait for the mouse.
+
+What differs is how many hops a search makes:
+
+- With the plain terminals (`nearest()`, `first()`, `list()`, `count()`, ...) the filters run on
+  *your* thread, and each time one needs live data it hops to the client thread and waits. A name
+  is live data (`getName()` is a hop per entity); an id, a location and a `within` check mostly
+  are not.
+- The `*OnClientThread` terminals do the whole search in a single hop: filters, sorting and all.
+  With a name filter over a busy scene that is much cheaper, and every entity is read in the same
+  game tick.
+- `interact(...)` already works this way: it picks the target in one client-thread read, then clicks
+  on your thread.
+
+```java
+// One hop for the whole search, then a click on the script thread.
+Npc banker = Npcs.query("Banker").nearestOnClientThread();
+if (banker != null) {
+    banker.interact("Bank");
+}
+
+List<Npc> goblins = Npcs.query("Goblin").within(12).toListOnClientThread();
+```
+
+Rules for what goes inside `where(...)`:
+
+- Keep it quick and side-effect free: no clicks, no `sleep`, no waiting. With an `*OnClientThread`
+  terminal it runs on the client thread, where blocking freezes the game.
+- Do not call `interact(...)`, `sleepUntil(...)` or anything else that clicks or waits from inside it.
+- Only the terminals listed above have an `OnClientThread` form. `nearestReachable()`, `count()` and
+  `firstReachable()` use the plain form.
+
+If the client thread does not answer for 10 seconds (the game is stalled) a hop throws a
+`RuntimeException`. Script loops should catch exceptions per iteration, as in the example in
+[Common patterns](#a-whole-script-loop).
+
+## Common patterns
+
+### Nearest NPC that is not busy
+
+```java
+Npc cow = Npcs.query("Cow")
+        .where(npc -> !npc.isInteracting())
+        .nearestReachable();
+
+if (cow != null) {
+    cow.interact("Attack");
+}
+```
+
+### Valuable loot
+
+```java
+FloorItem loot = GroundItems.query()
+        .where(item -> item.getTotalGeValue() >= 5000)
+        .where(FloorItem::isLootAble)
+        .nearest(10);
 
 if (loot != null) {
     loot.pickup();
-    sleepUntil(() -> Rs2Inventory.contains(loot.getName()), 3000);
 }
 ```
 
-### Skilling Scripts
+### Every match
 
 ```java
-// Find nearest available tree
-Rs2TileObjectModel tree = tileObjectCache.query()
-    .where(obj -> obj.getName() != null && 
-                  obj.getName().equals("Oak tree"))
-    .nearest(10);
+List<Npc> guards = Npcs.query("Guard")
+        .where(npc -> !npc.isInteracting())
+        .within(15)
+        .list();
 
-if (tree != null && !Rs2Player.isAnimating()) {
-    tree.click("Chop down");
-    sleepUntil(() -> Rs2Player.isAnimating(), 3000);
+for (Npc guard : guards) {
+    ProjectX.log("Guard at " + guard.getWorldLocation());
 }
 ```
 
-### Banking Scripts
+### Any of several names
 
 ```java
-// Find nearest bank
-Rs2TileObjectModel bank = tileObjectCache.query()
-    .withNames("Bank booth", "Bank chest", "Bank")
-    .nearest(20);
+Npc banker = Npcs.query()
+        .withNames("Banker", "Bank clerk", "Bank assistant")
+        .nearestReachable();
+```
 
-if (bank != null && !Rs2Bank.isOpen()) {
-    bank.click("Bank");
-    sleepUntil(() -> Rs2Bank.isOpen(), 5000);
+### Several filters
+
+```java
+Npc target = Npcs.query("Goblin")
+        .within(10)
+        .where(npc -> !npc.isInteracting())
+        .where(npc -> npc.getHealthRatio() != 0)
+        .where(npc -> npc.getAnimation() == -1)
+        .nearest();
+```
+
+### Partial name
+
+```java
+SceneObject tree = Objects.query().withNameContains("tree").nearestReachable();
+```
+
+### Items about to disappear
+
+```java
+List<FloorItem> vanishing = GroundItems.query()
+        .where(item -> item.willDespawnWithin(30))   // 30 ticks
+        .where(item -> item.getTotalValue() > 1000)
+        .list();
+```
+
+### Friends nearby
+
+```java
+List<PlayerModel> friends = Players.query()
+        .where(PlayerModel::isFriend)
+        .within(20)
+        .list();
+```
+
+### By id
+
+```java
+SceneObject altar = Objects.query().withId(409).nearest();
+```
+
+### Wait for something to appear
+
+```java
+Npc banker = sleepUntilNotNull(() -> Npcs.query("Banker").nearest(), 5000, 600);
+```
+
+### Click, then wait for the result
+
+```java
+if (Npcs.query("Banker").interact("Bank")) {
+    sleepUntil(Bank::isOpen, 5000);
 }
 ```
 
----
+### A whole script loop
+
+```java
+package net.runelite.client.plugins.projectx.copperminer;
+
+import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.Script;
+import net.runelite.client.plugins.projectx.bot.*;
+
+import java.util.concurrent.TimeUnit;
+
+public class CopperMinerScript extends Script {
+
+    public boolean run() {
+        mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
+            try {
+                if (!ProjectX.isLoggedIn() || !super.run()) return;
+
+                if (Inventory.isFull()) {
+                    Inventory.dropAll("Copper ore");
+                    return;
+                }
+                if (Player.isAnimating()) return;
+
+                SceneObject rock = Objects.query("Copper rocks").nearestReachable();
+                if (rock != null && rock.interact("Mine")) {
+                    sleepUntil(Player::isAnimating, 3000);
+                }
+            } catch (Exception e) {
+                ProjectX.log("Copper miner: " + e.getMessage());
+            }
+        }, 0, 600, TimeUnit.MILLISECONDS);
+        return true;
+    }
+}
+```
+
+## Advanced
+
+### Your own predicates
+
+`where` takes any `Predicate`, so put reusable rules in a method or a field:
+
+```java
+Predicate<Npc> idle = npc -> !npc.isInteracting() && npc.getAnimation() == -1;
+Predicate<Npc> weak = npc -> npc.getCombatLevel() <= 10;
+
+Npc target = Npcs.query("Guard").where(idle).where(weak.negate()).nearest();
+```
+
+### Search around a point
+
+`within(anchor, n)` and `nearest(anchor, n)` measure from the anchor instead of from you, which is
+how you stay inside an area while fighting or gathering:
+
+```java
+WorldPoint camp = new WorldPoint(3222, 3218, 0);
+
+Npc cow = Npcs.query("Cow").within(camp, 8).nearestReachable();
+Npc closestToCamp = Npcs.query("Cow").nearest(camp, 8);
+```
+
+### Sorting and limiting
+
+A query has no `sorted()` or `limit()`. Take the list, or use `stream()`:
+
+```java
+List<Npc> closestThree = Npcs.query("Guard").list().stream()
+        .sorted(Comparator.comparingInt(Npc::getDistanceFromPlayer))
+        .limit(3)
+        .collect(Collectors.toList());
+
+long lowHealth = Npcs.stream()
+        .filter(npc -> "Goblin".equalsIgnoreCase(npc.getName()))
+        .filter(npc -> npc.getHealthRatio() > 0 && npc.getHealthRatio() < 10)
+        .count();
+```
+
+Prefer the query filters when you can; they are the ones the API optimises, and `stream()` hands you
+every entity in the scene.
+
+### Counting and branching
+
+```java
+int guards = Npcs.query("Guard").within(10).count();
+boolean crowded = Players.query().within(7).count() > 3;
+boolean nobodyAround = GroundItems.query("Bones").count() == 0;
+```
+
+### Null safety
+
+```java
+Npc npc = Npcs.query("Banker").nearest();
+if (npc == null) {
+    ProjectX.status = "No banker in sight";
+    return;
+}
+npc.interact("Bank");
+```
+
+## Performance
+
+- **Filter cheap things first.** Ids and distances are cheap; names and `where` predicates that read
+  game data are not. `Objects.query().withId(1276).within(10).where(...)` lets the `where` see few
+  entities. A search by `withId` / `withIds` beats one by name whenever you know the id.
+- **Narrow the area.** `within(15)` or `nearest(15)` beats a scene-wide search.
+- **Use the `*OnClientThread` terminals for name searches** that run every loop; see
+  [Threading](#threading).
+- **Search once per loop**, then use the result. Do not repeat the same query for each decision:
+
+```java
+Npc cow = Npcs.query("Cow").nearestReachable();    // once
+if (cow != null && !cow.isInteracting()) {
+    cow.interact("Attack");
+}
+```
+
+- **Keep predicates simple.** A `where` runs for every entity that reaches it, so no loops over the
+  whole scene inside it.
+- **Do not hold entities between loops.** They are snapshots; an NPC that died or an object that
+  depleted will not click.
 
 ## Troubleshooting
 
-### Query Returns Null
+**The query returns `null` though it is on screen.**
 
-**Problem:** Query returns `null` even though entity exists.
+- Is the name exactly the in-game name? The rock is `"Copper rocks"`, not `"Copper rock"`. Check with
+  `withNameContains("copper")` to see what it is called.
+- Widen the radius, or drop `within`.
+- Drop filters one by one. If the search works without your `where`, the predicate is too strict.
+- With `nearestReachable()`, the target may really be unreachable (behind a closed door). Try
+  `nearest()` to tell the two apart.
 
-**Solutions:**
-
-1. **Check distance:**
 ```java
-// Increase search radius
-.nearest(20)  // Instead of default
+Objects.query("Copper rocks").nearest();            // found?
+Objects.query("Copper rocks").nearestReachable();   // found, and walkable?
 ```
 
-2. **Verify name:**
+- The thing may not have spawned yet. Wait for it:
+
 ```java
-// Names are case-insensitive but must be exact
-.withName("Banker")  // Not "banker" or "Bank"
+SceneObject rock = sleepUntilNotNull(() -> Objects.query("Copper rocks").nearestReachable(), 5000);
 ```
 
-3. **Check filters:**
+**`IllegalStateException: stream has already been operated upon or closed`.** You used a query twice.
+Build a new `query()` for each question.
+
+**`interact` returns `false`.** Nothing matched, or nothing reachable matched. For an entity you hold
+already, `model.interact(action)` returns `false` if the action is not on its menu: check the exact
+spelling (`"Pick-up"` versus `"Take"`; `FloorItem.pickup()` handles the ground-item case).
+
+**The click goes through but nothing happens.** Wait for the result before the next click:
+
 ```java
-// Simplify query to find the issue
-Rs2NpcModel test1 = npcCache.query().withName("Banker");
-Rs2NpcModel test2 = npcCache.query().withName("Banker").where(filter);
-// If test1 works but test2 doesn't, your filter is too restrictive
-```
-
-4. **Verify entity is loaded:**
-```java
-// Wait for entity to appear
-Rs2NpcModel npc = sleepUntilNotNull(() -> 
-    npcCache.query().withName("Banker").nearest(),
-    5000, 600
-);
-```
-
-### Performance Issues
-
-**Problem:** Queries are slow or cause lag.
-
-**Solutions:**
-
-1. **Limit search area:**
-```java
-.within(15)  // Only search nearby
-```
-
-2. **Cache results:**
-```java
-// Query once per game tick, not every iteration
-List<Rs2NpcModel> npcs = npcCache.query()
-    .withName("Guard")
-    .toList();
-```
-
-3. **Simplify predicates:**
-```java
-// Avoid complex calculations in where() clauses
-.where(npc -> simpleCheck(npc))  // Good
-.where(npc -> complexCalculation(npc))  // Bad
-```
-
-### Interaction Failures
-
-**Problem:** Entity found but click doesn't work.
-
-**Solutions:**
-
-1. **Check null:**
-```java
-Rs2NpcModel npc = npcCache.query().withName("Banker");
-if (npc != null) {  // Always check
-    npc.click("Bank");
+SceneObject rock = Objects.query("Copper rocks").nearestReachable();
+if (rock != null && rock.interact("Mine")) {
+    sleepUntil(Player::isAnimating, 3000);
 }
 ```
 
-2. **Wait for action:**
-```java
-npc.click("Bank");
-sleepUntil(() -> Rs2Bank.isOpen(), 5000);
-```
+**A hop times out.** The game thread was busy for 10 seconds, usually because something in a `where`
+predicate blocks. Remove waits and clicks from predicates.
 
-3. **Verify entity still exists:**
-```java
-if (npc != null && npc.getWorldLocation() != null) {
-    npc.click("Bank");
-}
-```
+## Old names
 
----
+Everything above has an older name that still works and is marked deprecated; scripts built against
+them run unchanged. The machine-readable map is [docs/api-migration.tsv](../../../../../../../../../../docs/api-migration.tsv).
 
-## Best Practices Summary
+| Old | New |
+|---|---|
+| `ProjectX.getRs2NpcCache().query()` | `Npcs.query()` |
+| `ProjectX.getRs2TileObjectCache().query()` | `Objects.query()` |
+| `ProjectX.getRs2TileItemCache().query()` | `GroundItems.query()` |
+| `ProjectX.getRs2PlayerCache().query()` | `Players.query()` |
+| `ProjectX.getRs2XxxCache().getStream()` | `Npcs.stream()`, `Objects.stream()`, `GroundItems.stream()`, `Players.stream()` |
+| `new Rs2PlayerModel()` (you) | `Players.local()` |
+| `.query().withName("X")` | `.query("X")` or `.query().nameEquals("X")` |
+| `.toList()` | `.list()` |
+| `model.click(action)` | `model.interact(action)` |
+| `Rs2NpcModel` (`api.npc.models`) | `Npc` |
+| `Rs2TileObjectModel` (`api.tileobject.models`) | `SceneObject` |
+| `Rs2TileItemModel` | `FloorItem` |
+| `Rs2PlayerModel` (`api.player.models`) | `PlayerModel` |
+| `Rs2NpcQueryable` | `NpcQuery` |
+| `Rs2TileObjectQueryable` | `ObjectQuery` |
+| `Rs2TileItemQueryable` | `GroundItemQuery` |
+| `Rs2PlayerQueryable` | `PlayerQuery` |
 
-✅ **DO:**
-- Use queryable API for new code
-- Chain filters for readability
-- Check for null results
-- Use `nearest()` for single entities
-- Use `toList()` for multiple entities
-- Cache query results when appropriate
-- Use method references when possible
-- Add distance limits to queries
-
-❌ **DON'T:**
-- Query in tight loops without delays
-- Use expensive operations in filters
-- Forget null checks
-- Create unnecessary intermediate lists
-- Use legacy API for new code
-- Query without distance limits
-
----
-
-## Quick Reference
-
-### Imports
-
-```java
-// NPCs
-import net.runelite.client.plugins.projectx.api.npc.Rs2NpcCache;
-import net.runelite.client.plugins.projectx.api.npc.models.Rs2NpcModel;
-
-// Ground Items
-import net.runelite.client.plugins.projectx.api.tileitem.Rs2TileItemCache;
-import net.runelite.client.plugins.projectx.api.tileitem.models.Rs2TileItemModel;
-
-// Players
-import net.runelite.client.plugins.projectx.api.player.Rs2PlayerCache;
-import net.runelite.client.plugins.projectx.api.player.models.Rs2PlayerModel;
-
-// Tile Objects
-import net.runelite.client.plugins.projectx.api.tileobject.Rs2TileObjectCache;
-import net.runelite.client.plugins.projectx.api.tileobject.models.Rs2TileObjectModel;
-```
-
-### Quick Examples
-
-```java
-// Find nearest NPC
-npcCache.query().withName("Banker").nearest();
-
-// Find ground item
-tileItemCache.query().withName("Coins").nearest();
-
-// Find player
-playerCache.query().withName("PlayerName").nearest();
-
-// Find object
-tileObjectCache.query().withName("Tree").nearest();
-
-// Complex query
-npcCache.query()
-    .withName("Guard")
-    .where(npc -> !npc.isInteracting())
-    .within(10)
-    .nearest();
-```
-
----
-
-## Additional Resources
-
-- **CLAUDE.md** - Full framework documentation
-- **Example Scripts** - See `api/*/ApiExample.java` files
-- **Discord** - https://discord.gg/zaGrfqFEWE
-- **Website** - https://xclient.dev
-
----
-
-**For questions or issues, please visit our Discord community.**
+The old model types are the parents of the new ones, so a `Npc` can be passed to anything that takes
+an `Rs2NpcModel`. Client internals still reach the caches through `ProjectX.getRs2XxxCache()`; scripts
+should not.

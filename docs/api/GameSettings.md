@@ -1,11 +1,12 @@
-# Rs2Settings Class Documentation
+# GameSettings Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Settings` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Settings`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2Settings` class provides methods to interact with and toggle various in-game settings, such as shift-dropping, hiding roofs, notifications, and audio settings.
+The `GameSettings` class provides methods to interact with and toggle various in-game settings, such as shift-dropping, hiding roofs, notifications, and audio settings.
 
 ## Methods
 

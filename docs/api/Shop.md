@@ -1,11 +1,12 @@
-# Rs2Shop Class Documentation
+# Shop Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Shop` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Shop`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2Shop` class manages interactions with shops in the game, including opening shops, buying items, checking stock, and handling shop interfaces.
+The `Shop` class manages interactions with shops in the game, including opening shops, buying items, checking stock, and handling shop interfaces.
 
 ## Methods
 

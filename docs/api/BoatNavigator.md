@@ -1,12 +1,13 @@
-# Rs2BoatNavigator (sailing)
+# BoatNavigator Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2BoatNavigator` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2BoatNavigator`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
 
-Sails the player's boat to a place, the way `Rs2Walker` walks the player there. Available from
+Sails the player's boat to a place, the way `Walker` walks the player there. Available from
 client **1.0.49** (plugin API **2.6.30**); set `minClientVersion` to `"2.6.30"`.
 
 - **Long trips** follow the sea lanes: every stored port-to-port route (`PortPaths`) is a
@@ -20,7 +21,7 @@ client **1.0.49** (plugin API **2.6.30**); set `minClientVersion` to `"2.6.30"`.
 
 ### Walking from a boat
 
-You often don't need this class. `Rs2Walker.walkTo` checks for a boat first:
+You often don't need this class. `Walker.walkTo` checks for a boat first:
 
 - If the destination is **at sea**, it sails there with `sailTo`.
 - If it is **on land**, it goes ashore first, then walks. When the boat is moored it takes the
@@ -51,7 +52,7 @@ So quest steps and scripts that call `walkTo` work the same on a boat as on land
 
 ### `getBoatLocation()`
 - **Description**: Where the boat is in the main world. While on a boat,
-  `Rs2Player.getWorldLocation()` reads coordinates in the boat's own world, so use this instead.
+  `Player.getWorldLocation()` reads coordinates in the boat's own world, so use this instead.
 
 ### `isMainWorld(WorldPoint point)`
 - **Description**: True for main-world coordinates (as opposed to a boat's or an instance's).
@@ -65,11 +66,14 @@ So quest steps and scripts that call `walkTo` work the same on a boat as on land
 ## Example
 
 ```java
+import net.runelite.client.plugins.projectx.api.boat.data.PortLocation;
+import net.runelite.client.plugins.projectx.util.walker.WalkerState;
+
 // In a script loop: sail to the Pandemonium, then go ashore.
 WorldPoint pandemonium = PortLocation.PANDEMONIUM.getNavigationLocation();
-WalkerState state = Rs2BoatNavigator.step(pandemonium, 4);
+WalkerState state = BoatNavigator.step(pandemonium, 4);
 if (state == WalkerState.ARRIVED) {
-    Rs2BoatNavigator.goAshore(pandemonium);
+    BoatNavigator.goAshore(pandemonium);
 }
 ```
 

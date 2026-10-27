@@ -1,28 +1,29 @@
-# Rs2GameObject Class Documentation
+# Objects Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2GameObject` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2GameObject`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
-> **Deprecated:** `Rs2GameObject` is deprecated and marked for removal. Use the **Queryable API** via `ProjectX.getRs2TileObjectCache().query()` instead. It provides a fluent, type-safe interface with better performance through tick-based caching.
->
-> See the [Queryable API Documentation & Migration Guide](../../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md#migration-guide) for migration steps and side-by-side examples.
->
-> **Quick comparison:**
-> ```java
-> // Legacy (deprecated)
-> TileObject tree = Rs2GameObject.findObject("Tree");
-> Rs2GameObject.interact(tree, "Chop down");
->
-> // Queryable API (recommended)
-> Rs2TileObjectModel tree = ProjectX.getRs2TileObjectCache().query()
->     .withName("Tree")
->     .nearest();
-> tree.click("Chop down");
-> ```
+
+## Finding things: `Objects.query()`
+
+To find an entity, start with `Objects.query()` rather than the static helpers below; it is the supported way to search and returns a typed model you can click.
+
+```java
+SceneObject tree = Objects.query("Tree").nearestReachable();
+if (tree != null) {
+    tree.interact("Chop down");
+}
+
+// or search and click in one go
+Objects.query("Tree").interact("Chop down");
+```
+
+All filters and terminals are described in the [Queryable API guide](../../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md). The older static helpers documented below still work.
 
 ## Overview
-The `Rs2GameObject` class provides methods to interact with game objects within the game environment. It offers functionalities to locate, interact, and manipulate game objects based on various criteria like ID, name, or location.
+The `Objects` class provides methods to interact with game objects within the game environment. It offers functionalities to locate, interact, and manipulate game objects based on various criteria like ID, name, or location.
 
 ## Methods
 

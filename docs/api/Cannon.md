@@ -1,11 +1,12 @@
-# Rs2Cannon Class Documentation
+# Cannon Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Cannon` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Cannon`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2Cannon` class provides utility methods for interacting with the Dwarf Multicannon, including refilling and repairing it.
+The `Cannon` class provides utility methods for interacting with the Dwarf Multicannon, including refilling and repairing it.
 
 ## Methods
 

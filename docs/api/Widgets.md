@@ -1,11 +1,12 @@
-# Rs2Widget Class Documentation
+# Widgets Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Widget` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Widget`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2Widget` class provides a comprehensive set of methods for finding, checking, and interacting with widgets in the game interface. It supports finding widgets by text, ID, or structure, and interacting with them.
+The `Widgets` class provides a comprehensive set of methods for finding, checking, and interacting with widgets in the game interface. It supports finding widgets by text, ID, or structure, and interacting with them.
 
 ## Methods
 

@@ -1,10 +1,11 @@
-# Rs2Player Class Documentation
+# Player Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Player` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Player`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 ## Overview
-The `Rs2Player` class is responsible for managing the player's state and interactions within the game. It includes methods for managing player status like hitpoints, energy, and various potion effects, as well as player actions like logging out, eating, and toggling run energy.
+The `Player` class is responsible for managing the player's state and interactions within the game. It includes methods for managing player status like hitpoints, energy, and various potion effects, as well as player actions like logging out, eating, and toggling run energy.
 
 ## Methods
 
@@ -90,4 +91,4 @@ The `Rs2Player` class is responsible for managing the player's state and interac
 - **Utility Methods**: Includes utilities for waiting on player actions (like walking or animation), which are essential for coordinating tasks in automation scripts.
 
 ## Conclusion
-The `Rs2Player` class is essential for managing the player's interaction within the game, providing methods to handle health, status effects, and environmental awareness. It serves as a central point for scripting player behavior in response to game state changes and player conditions.
+The `Player` class is essential for managing the player's interaction within the game, providing methods to handle health, status effects, and environmental awareness. It serves as a central point for scripting player behavior in response to game state changes and player conditions.

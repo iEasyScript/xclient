@@ -1,14 +1,15 @@
-# Rs2Walker Class Documentation
+# Walker Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2Walker` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2Walker`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2Walker` class is the primary utility for handling player movement and pathfinding. It supports walking to specific coordinates, handling obstacles, using transports (teleports, ships, etc.), and interacting with the minimap.
+The `Walker` class is the primary utility for handling player movement and pathfinding. It supports walking to specific coordinates, handling obstacles, using transports (teleports, ships, etc.), and interacting with the minimap.
 
 **On a boat** (client 1.0.49+), `walkTo` sails to a destination at sea and goes ashore before
-walking to one on land. See [Rs2BoatNavigator](Rs2BoatNavigator.md).
+walking to one on land. See [BoatNavigator](BoatNavigator.md).
 
 ## Methods
 

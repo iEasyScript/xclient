@@ -1,11 +1,12 @@
-# Rs2RunePouch Class Documentation
+# RunePouch Class Documentation
 
-> **Old name.** Since plugin API 2.7.0 scripts use the short `projectx.bot` names; this `Rs2RunePouch` page documents the older, still working, deprecated name. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+> Also known as `Rs2RunePouch`, the older name, which still works but is deprecated. Scripts use the short `projectx.bot` names since plugin API 2.7.0. Guide: [SCRIPTING.md](../SCRIPTING.md), map: [api-migration.tsv](../api-migration.tsv).
+
 
 ## [Back](../development.md)
 
 ## Overview
-The `Rs2RunePouch` class provides utilities to manage and interact with the Rune Pouch. It allows for checking rune contents, loading loadouts, and depositing runes into the bank.
+The `RunePouch` class provides utilities to manage and interact with the Rune Pouch. It allows for checking rune contents, loading loadouts, and depositing runes into the bank.
 
 ## Methods
 

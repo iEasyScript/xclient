@@ -157,7 +157,7 @@ Before writing or modifying any script, check the relevant docs:
 | State machine scripts | `runelite-client/.../statemachine/CLAUDE.md` — when/how to use, best practices |
 | Item interactions | `docs/entity-guides/items.md` — known gotchas for Rs2Inventory, Rs2Bank, etc. |
 | Cache/queryable usage | `runelite-client/.../api/QUERYABLE_API.md` — singleton pattern, fluent queries |
-| Specific Rs2* utility | `docs/api/Rs2<Name>.md` (35+ utility docs) |
+| A specific helper (`Inventory`, `Bank`, `Walker`, ...) | `docs/api/<Name>.md` (35+ helper docs) |
 
 ---
 
@@ -462,7 +462,7 @@ All docs an agent should know about, organized by topic.
 ### API Reference
 | Document | What's in it |
 |----------|-------------|
-| `docs/api/Rs2*.md` (35+ files) | One doc per utility — Rs2Inventory, Rs2Bank, Rs2Npc, Rs2Walker, etc. |
+| `docs/api/*.md` (35+ files) | One doc per helper — Inventory, Bank, Npcs, Walker, etc. (old `Rs2*` name noted on each page) |
 | `docs/entity-guides/items.md` | Gotchas for item-related utilities (name mismatches, noted items, etc.) |
 | `docs/entity-guides/README.md` | Index of all entity gotcha guides |
 

@@ -3,7 +3,7 @@
 
 ## Overview
 
-Every click the `Rs2*` helpers make normally goes through the virtual mouse: the cursor moves
+Every click the helpers (`Inventory`, `Bank`, `Objects`, ...) make normally goes through the virtual mouse: the cursor moves
 to the target and clicks it. **Direct input** sends the same action straight to the game
 instead, with no mouse movement and no click events.
 
@@ -53,33 +53,41 @@ match, or catch `NoSuchMethodError` and fall back to the mouse.
 
 ### A single action
 ```java
-ProjectX.withDirectInput(() -> Rs2Inventory.interact("Bones", "Bury"));
+ProjectX.withDirectInput(() -> Inventory.interact("Bones", "Bury"));
 ```
 
 ### Use an item on an object
 ```java
+int PATCH_ID = 8550;
 ProjectX.withDirectInput(() -> {
-    Rs2Inventory.interact("Watering can(8)", "Use");
-    ProjectX.getRs2TileObjectCache().query().withId(PATCH_ID).nearest().click();
+    Inventory.interact("Watering can(8)", "Use");
+    Objects.query().withId(PATCH_ID).nearest().interact();
 });
 ```
 
 ### Only when the player turned it on
 ```java
-if (config.directInput()) {
-    ProjectX.withDirectInput(this::doClicks);
+Runnable doClicks = () -> Inventory.interact("Bones", "Bury");
+boolean directInputEnabled = true;
+if (directInputEnabled) {
+    ProjectX.withDirectInput(doClicks);
 } else {
-    doClicks();
+    doClicks.run();
 }
 ```
 
 ### 1-tick prayer flicking
-See [Rs2Prayer: flicking](Rs2Prayer.md#1-tick-flicking).
+See [Prayers: flicking](Prayers.md#1-tick-flicking).
 ```java
-@Subscribe
-public void onGameTick(GameTick tick) {
-    if (underAttack()) {
-        ProjectX.withDirectInput(Rs2Prayer::flickQuickPrayer);
+import net.runelite.api.events.GameTick;
+import net.runelite.client.eventbus.Subscribe;
+
+public class Flicker {
+    @Subscribe
+    public void onGameTick(GameTick tick) {
+        if (Players.local().isInteracting()) {
+            ProjectX.withDirectInput(Prayers::flickQuickPrayer);
+        }
     }
 }
 ```
