@@ -410,7 +410,7 @@ public class ProjectXPluginManager {
                 continue;
             }
             for (String old : previous) {
-                Plugin loaded = findLoadedPlugin(old);
+                Plugin loaded = findLoadedStoreBuild(old);
                 if (loaded == null || old.equalsIgnoreCase(internalName)) {
                     continue;
                 }
@@ -450,6 +450,10 @@ public class ProjectXPluginManager {
                 continue;
             }
             for (String old : previous) {
+                Plugin holder = findLoadedPlugin(old);
+                if (holder != null && findLoadedStoreBuild(old) == null) {
+                    continue;
+                }
                 String enabled = configManager.getConfiguration(RuneLiteConfig.GROUP_NAME, old.toLowerCase(Locale.ROOT));
                 if (enabled != null) {
                     configManager.setConfiguration(RuneLiteConfig.GROUP_NAME, key, enabled);
@@ -478,6 +482,21 @@ public class ProjectXPluginManager {
     private Plugin findLoadedPlugin(String internalName) {
         return pluginManager.getPlugins().stream()
                 .filter(p -> p.getClass().getSimpleName().equalsIgnoreCase(internalName))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * A loaded store build by class name. A renamed script's old name can also be the class name of a
+     * RuneLite Plugin Hub or core plugin (the Hub's Rogues' Den is RoguesDenPlugin); that plugin is not
+     * the old build, and treating it as one left the new name waiting forever for an unload that cannot
+     * happen, so the script was never installed or updated mid-session.
+     */
+    @Nullable
+    private Plugin findLoadedStoreBuild(String internalName) {
+        return pluginManager.getPlugins().stream()
+                .filter(p -> p.getClass().getSimpleName().equalsIgnoreCase(internalName))
+                .filter(p -> isFromPluginJar(p) && !devPluginClasses.contains(p.getClass()))
                 .findFirst()
                 .orElse(null);
     }
