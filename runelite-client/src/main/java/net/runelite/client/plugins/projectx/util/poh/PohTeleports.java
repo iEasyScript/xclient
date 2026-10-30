@@ -155,7 +155,9 @@ public class PohTeleports {
             if (portal != null) {
                 Rs2GameObject.interact(portal, "Teleport Menu");
             } else {
+                // No nexus in this house: fail now instead of waiting for a menu that cannot open.
                 log.warn("Portal nexus not found");
+                return false;
             }
         }
 

@@ -465,3 +465,76 @@ if (row < 0) { /* Escape, PathfinderConfig.lockedSpiritTreeDestinations.add(dest
 `util/poh/data/MountedXerics`.
 
 **Defensive check:** `SpiritTreeMenuRowTest`.
+
+## 22. Answer every "are you sure?" area warning, not only the ones you have met
+
+Gates and ladders into dangerous areas open one of the game's warning interfaces instead of
+moving the player. There are 21 of them (interfaces 560-580, the list the Doomsayer toggles), and
+they share one layout: the proceed button is `WARN1` (child 17). Handle the whole set with
+`AreaWarning`, and after clicking a gate, wait for the warning as well as for the gate to open.
+
+**Why this matters:** the walker answered only the desert (565) and Stronghold of Security (579)
+warnings. At the Mort Myre swamp gate the warning stayed open, the gate never let the player
+through, and the walker clicked the gate again in a loop (Mort Myre report, 2026-10).
+
+**Pattern to follow:**
+
+```java
+// Wrong: one hard-coded interface per area
+if (Rs2Widget.isWidgetVisible(565, 20)) { ... Rs2Widget.clickWidget(565, 17); }
+// Right: whichever warning is open; bounds read on the client thread, click from the script thread
+AreaWarning.acceptIfOpen();
+```
+
+**Where this applies:** `Rs2Walker.processWalk` (each pass), `Rs2Walker.handleObject` (adjacent
+gate/door transports), `AreaWarning`. Interfaces 319, 327 and 581 have a different layout and are
+not answered.
+
+**Defensive check:** `AreaWarningTest` (every interface 560-580 is covered; only the visible one is chosen).
+
+## 23. Wait for a short same-plane hop to land before the next pass
+
+A jump, stepping stone or squeeze moves the player by force. That is not walking, so
+`Rs2Player.waitForWalking()` returns at once. A same-plane object transport of 2-10 tiles
+(`isShortSamePlaneHop`) must wait for the animation to start and then for the landing (or the
+animation to end) before returning. Agility shortcuts belong in `agility_shortcuts.tsv`, never
+also in `transports.tsv`: the plain TRANSPORT copy skips the Agility level and the agility landing wait.
+
+**Why this matters:** the Fremennik Slayer Dungeon "Strange floor" jumps were in both files. Taken
+as a plain TRANSPORT, the walker clicked the jump again mid-jump (report, 2026-10). The Brimhaven
+Dungeon stepping stones (56 Agility), pipe (22) and the rocks at 3239,9524,2 (23) were duplicated the
+same way, without their Agility level.
+
+**Where this applies:** `Rs2Walker.handleObject` (TRANSPORT branch), `transports.tsv`, `agility_shortcuts.tsv`.
+
+**Defensive check:** `TransportDataIntegrityTest.noAgilityShortcutIsAlsoAPlainTransport`.
+
+## 24. A gated transport must not have a requirement-free twin
+
+If two rows share an origin, destination and object, and one has no requirement at all, the
+pathfinder always takes the free one: the gate's item is never checked and the banking planner
+never fetches it.
+
+**Why this matters:** Taverley Dungeon's dusty-key gate (2623, 2924,9803 -> 2923,9803) had a keyless
+twin row. Players without the key were routed into the locked gate to reach the blue dragons, the
+key was never withdrawn, and the walker looped at the gate (blue dragons report, 2026-10).
+
+**Where this applies:** every transport TSV.
+
+**Defensive check:** `TransportDataIntegrityTest.noGatedTransportHasARequirementFreeTwin` (known
+exceptions are listed with a reason) and `ShortestPathCoreTest.testTaverleyBlueDragonsNeedTheDustyKeyForTheGate`.
+
+## 25. Stop retrying a POH teleport the house does not have
+
+POH teleports come from the Web Walker's POH panel (ticked by hand or by Detect), not from the
+house itself. When one fails twice in a row, add its display info to
+`PathfinderConfig.lockedPohTeleports`, close the nexus menu, refresh and replan. Detect clears the lock.
+
+**Why this matters:** a nexus destination listed in the panel but absent from the house was chosen
+on every pass, so the walker kept opening the portal nexus to look for it (POH report, 2026-10).
+`PohTeleports.usePortalNexus` also waited for a menu when the house had no nexus at all.
+
+**Where this applies:** `Rs2Walker` POH branch, `PathfinderConfig.useTransport`, `PohPanel.detectPortalsFromPOH`,
+`PohTeleports.usePortalNexus`.
+
+**Defensive check:** `PohTeleportLockTest`.

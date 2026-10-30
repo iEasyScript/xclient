@@ -37,7 +37,7 @@
 # Games Necklace										
 2520 3571 0		3853 3855 3857 3859 3861 3863 3865 3867				Y	T	19	4	Games necklace: Barbarian Outpost
 2899 3553 0		3853 3855 3857 3859 3861 3863 3865 3867				Y	T	19	4	Games necklace: Burthorpe
-2967 4384 2		3853 3855 3857 3859 3861 3863 3865 3867				Y	T	19	4	Games necklace: Corporeal Beast
+2964 4382 2		3853 3855 3857 3859 3861 3863 3865 3867				Y	T	19	4	Games necklace: Corporeal Beast
 3245 9500 2		3853 3855 3857 3859 3861 3863 3865 3867	Tears of Guthix			Y	T	19	4	Games necklace: Tears of Guthix
 1631 3940 0		3853 3855 3857 3859 3861 3863 3865 3867				Y	T	19	4	Games necklace: Wintertodt Camp
 										
@@ -157,7 +157,7 @@
 3548 3529 0		19621	Priest in Peril			Y	T	19	4	Fenkenstrain's Castle tablet
 2500 3290 0		19623	Biohazard			Y	T	19	4	West Ardougne tablet
 3797 2866 0		19625	The Great Brain Robbery			Y	T	19	4	Harmony Island tablet
-2981 3764 0		19627				Y	T	19	4	Cemetery tablet
+2980 3763 0		19627				Y	T	19	4	Cemetery tablet
 3564 3315 0		19629	Priest in Peril			Y	T	19	4	Barrows tablet
 2771 9102 0		19631	Monkey Madness I			Y	T	19	4	Ape Atoll tablet
 3811 3813 0		21541				Y	T	19	4	Volcanic Mine tablet
@@ -180,9 +180,9 @@
 1310 1250 0		13249				Y	T	19	4	Key master teleport
 3128 3832 0		21802				Y	T	19	4	Revenant cave teleport
 1645 3580 0		23387				Y	T	19	4	Watson teleport
-3658 3402 0		29782	Priest in Peril			Y	T	19	4	Spider cave teleport
-1641 2920 0		30040				Y	T	19	4	Colossal wyrm teleport
-1439 10074 0		30775				Y	T	19	4	Chasm teleport
+3659 3404 0		29782	Priest in Peril			Y	T	19	4	Spider cave teleport
+1641 2921 0		30040				Y	T	19	4	Colossal wyrm teleport
+1439 10076 0		30775				Y	T	19	4	Chasm teleport
 										
 # Master Scroll Book										
 3419 2917 0		21389		5672>0		Y	T	19	4	Master Scroll Book: Nardah
@@ -200,8 +200,8 @@
 1310 1250 0		21389		5684>0		Y	T	19	4	Master Scroll Book: Key master
 3128 3832 0		21389		6056>0		Y	T	19	4	Master Scroll Book: Revenant cave
 1645 3580 0		21389		8253>0		Y	T	19	4	Master Scroll Book: Watson
-3658 3402 0		21389	Priest in Peril	10995>0		Y	T	19	4	Master Scroll Book: Spider cave
-1641 2920 0		21389		11029>0		Y	T	19	4	Master Scroll Book: Colossal wyrm
+3659 3404 0		21389	Priest in Peril	10995>0		Y	T	19	4	Master Scroll Book: Spider cave
+1641 2921 0		21389		11029>0		Y	T	19	4	Master Scroll Book: Colossal wyrm
 1439 10074 0		21389		16238>0		Y	T	19	4	Master Scroll Book: Chasm of fire
 										
 # capes										
@@ -311,7 +311,7 @@
 3649 3230 0		22400				Y	F	19	4	Drakan's medallion: Ver Sinhaza
 3592 3337 0		22400	Sins of the Father			Y	F	19	4	Drakan's medallion: Darkmeyer
 # todo: this only works if you've used a Slepey tablet on the medallion										
-3808 9700 0		22400				Y	F	19	4	Drakan's medallion: Slepe
+3808 9700 1		22400				Y	F	19	4	Drakan's medallion: Slepe
 #mythical cape (instead of using the item name we use the action teleport, we use the itemids to verifiy the item)										
 2457 2850 0		21913 22114 24855				Y	F	19	4	Mythical cape: Teleport
 # Stony Basalt - 4493 is DIARY_FREMENNIK_HARD										
@@ -320,7 +320,7 @@
 2846 3938 0		22599				Y	T	19	4	Icy basalt: Weiss
 										
 # Other										
-1934 4428 0		26948				Y	T	19	4	Pharaoh's sceptre: Jalsavrah
+1934 4428 3		26948				Y	T	19	4	Pharaoh's sceptre: Jalsavrah
 3341 2827 0		26948				Y	T	19	4	Pharaoh's sceptre: Jaleustrophos
 3232 2897 0		26948				Y	T	19	4	Pharaoh's sceptre: Jaldraocht
 3313 2718 0		26948				Y	T	19	4	Pharaoh's sceptre: Jaltevas
@@ -399,3 +399,16 @@
 2703 5350 0		10972	Death to the Dorgeshuun			Y	T	19	4	Dorgesh-kaan sphere
 2956 3505 0		11060	Another Slice of H.A.M.			Y	T	19	4	Goblin village sphere
 2588 9840 0		26577	Land of the Goblins			Y	T	19	4	Plain of Mud sphere
+
+# Imported from Skretzo/shortest-path f644d64e37 (teleportation_items.tsv)
+# Necklace of passage (1-5)
+2591 2221 0		21146 21149 21151 21153 21155	Fallen From Grace			Y	T	19	4	Necklace of passage: Wyrmscraig
+# Varbit 4460 is DIARY_ARDOUGNE_HARD
+1422 2964 0		30149				Y	T	19	4	Aldarin tablet
+#  Teleport scrolls
+4063 4557 0		29684	While Guthix Sleeps			Y	T	19	4	Guthixian temple teleport
+4063 4557 0		21389	While Guthix Sleeps	10967>0		Y	T	19	4	Master scroll book: Guthixian temple teleport
+2542 2216 0		34033	Fallen From Grace			Y	T	19	4	Ardeaglais teleport
+2542 2216 0		21389	Fallen From Grace	15749>0		Y	T	19	4	Master scroll book: Ardeaglais teleport
+# Inert is 34722; shortcut: landing tile is approximate, replace after an exact capture.
+4130 5544 0		34723				Y	T	19	4	Archivist's folio

@@ -119,7 +119,6 @@
 3424 3476 0	3427 3477 0	Climb;Rocks;16998	65 Agility
 3427 3477 0	3424 3476 0	Climb;Rocks;16999	65 Agility
 3424 3476 0	3423 3476 0	Squeeze-through;Ornate railing;16552	65 Agility
-3426 3478 0	3424 3476 0	Climb;Rocks;16999	65 Agility
 3425 3483 0	3425 3484 0	Squeeze-through;Ornate railing;17000	65 Agility
 3425 3484 0	3425 3483 0	Squeeze-through;Ornate railing;17000	65 Agility
 2997 3483 0	3002 3483 0	Climb;Rocks;47571	68 Agility				5
@@ -398,10 +397,8 @@
 2722 3596 0	2722 3592 0	Walk-across;Log balance;16540	48 Agility				4
 3085 3352 0	3086 3352 0	Squeeze-through;Broken fence;62422	49 Agility
 3086 3352 0	3085 3352 0	Squeeze-through;Broken fence;62422	49 Agility
-3180 2432 0	3180 2434 0	Climb;Rocks;57928	50 Agility
-3180 2434 0	3180 2432 0	Climb;Rocks;57927	50 Agility
 3191 3339 0	3193 3346 0	Jump-to;Stepping stone;62412	52 Agility
-3193 3346 0	3191 3339 0	Jump-to;Stepping stone;62412	52 Agility
+3193 3346 0	3193 3338 0	Jump-to;Stepping stone;62412	52 Agility
 1627 3804 1	1629 3804 0	Jump-down;Railing;28374	52 Agility
 1627 3806 1	1629 3806 0	Jump-down;Railing;28373	52 Agility
 1627 3808 1	1629 3808 0	Jump-down;Railing;28374	52 Agility
@@ -559,7 +556,7 @@
 3034 9558 0	3026 9571 0	Enter;Tunnel;42506	72 Agility				1
 3035 9558 0	3026 9571 0	Enter;Tunnel;42506	72 Agility				1
 3036 9558 0	3026 9571 0	Enter;Tunnel;42506	72 Agility				1
-1438 10098 2	1438 10098 1	Hang-over;Platform edge;56371	73 Agility
+1438 10097 2	1438 10098 1	Hang-over;Platform edge;56371	73 Agility
 1448 10097 1	1453 10097 1	Jump;Gap;56372	73 Agility				1
 1453 10097 1	1456 10097 1	Jump;Gap;56372	73 Agility
 3201 3807 0	3201 3810 0	Cross;Stepping stone;14918	74 Agility				3
@@ -592,5 +589,10 @@
 2332 3252 0	2338 3253 0	Climb;Rocks;16514	85 Agility				6
 2547 3749 0	2547 3744 0	Climb;Rocks;53252	85 Agility				5
 2547 3744 0	2547 3749 0	Climb;Rocks;53254	85 Agility				5
-2769 9340 0	2764 9341 0	Squeeze-through;Crevice;53242	96 Agility		Legends' Quest
-2764 9341 0	2769 9340 0	Squeeze-through;Crevice;53242	96 Agility		Legends' Quest
+2770 9340 0	2764 9339 0	Squeeze-through;Crevice;53242	96 Agility		Legends' Quest
+2764 9339 0	2770 9340 0	Squeeze-through;Crevice;53242	96 Agility		Legends' Quest
+
+# Imported from Skretzo/shortest-path f644d64e37 (agility_shortcuts.tsv)
+# Stone block 10881; automatic walking obstacle
+3180 2431 0	3180 2435 0	Climb;Rocks;57928	50 Agility
+3180 2435 0	3180 2431 0	Climb;Rocks;57927	50 Agility

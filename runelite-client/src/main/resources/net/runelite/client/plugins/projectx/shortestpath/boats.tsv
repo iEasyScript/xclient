@@ -47,7 +47,7 @@
 # Rellekka, Weiss									
 2707 3735 0	2849 3968 0	Weiss;Boat;21176				Making Friends with My Arm		12	
 2707 3736 0	2849 3968 0	Weiss;Boat;21176				Making Friends with My Arm		12	
-2711 3732 0	2849 3968 0	Weiss;Boat;21176				Making Friends with My Arm		12	
+2711 3732 0	2849 3967 0	Weiss;Boat;21176				Making Friends with My Arm		12	
 2848 3966 0	2706 3735 0	Travel;Boat;21177				Making Friends with My Arm		12	
 2849 3967 0	2706 3735 0	Travel;Boat;21177				Making Friends with My Arm		12	
 2849 3968 0	2706 3735 0	Travel;Boat;21177				Making Friends with My Arm		12	
@@ -127,9 +127,9 @@
 3525 3170 0	3605 3161 1	Board;Boat;38089					7255>41	13	1: Meiyerditch.
 3525 3170 0	3684 3176 0	Board;Boat;38089					7255>41	13	2: Icyene Graveyard.
 3525 3170 0	3663 3277 0	Board;Boat;38089					7255>87	13	3: Slepe.
-3605 3161 1	3525 3170 0	Board;Boat;38089					7255>41	13	1: Burgh de Rott.
-3605 3161 1	3684 3176 0	Board;Boat;38089					7255>41	13	2: Icyene Graveyard.
-3605 3161 1	3663 3277 0	Board;Boat;38089					7255>87	13	3: Slepe.
+3605 3163 1	3525 3170 0	Board;Boat;38089					7255>41	13	1: Burgh de Rott.
+3605 3163 1	3684 3176 0	Board;Boat;38089					7255>41	13	2: Icyene Graveyard.
+3605 3163 1	3663 3277 0	Board;Boat;38089					7255>87	13	3: Slepe.
 3684 3176 0	3525 3170 0	Board;Boat;38089					7255>41	13	1: Burgh de Rott.
 3684 3176 0	3605 3161 1	Board;Boat;38089					7255>41	13	2: Meiyerditch.
 3684 3176 0	3663 3277 0	Board;Boat;38089					7255>87	13	3: Slepe.
@@ -180,3 +180,19 @@
 # Buccaneer's Haven Boat
 2203 3803 0	2086 3689 0	Travel;Rowboat;58643					18371=1	5
 2086 3689 0	2203 3803 0	Travel;Rowboat;58642					18371=1	5
+
+# Imported from Skretzo/shortest-path f644d64e37 (boats.tsv)
+# Rellekka, Weiss
+2707 3735 0	2849 3967 0	Weiss;Boat;21176				Making Friends with My Arm		12	Weiss
+2707 3736 0	2849 3967 0	Weiss;Boat;21176				Making Friends with My Arm		12	Weiss
+# The Great Conch rowboats (TT/18321 > 3: quest accepted; duration 6 estimated in #813)
+3197 2531 0	3191 2370 0	Travel;Rowboat;57950					18321>3	6	1: The Summer Shore.
+3197 2531 0	3264 2463 0	Travel;Rowboat;57950					18321>3	6	2: Eastern Coast.
+3264 2463 0	3191 2370 0	Travel;Rowboat;57951					18321>3	6	1: The Summer Shore.
+3264 2463 0	3197 2531 0	Travel;Rowboat;57951					18321>3	6	2: Northern Coast.
+3265 2463 0	3191 2370 0	Travel;Rowboat;57951					18321>3	6	1: The Summer Shore.
+3265 2463 0	3197 2531 0	Travel;Rowboat;57951					18321>3	6	2: Northern Coast.
+3191 2370 0	3197 2531 0	Travel;Rowboat;57952					18321>3	6	1: Northern Coast.
+3191 2370 0	3264 2463 0	Travel;Rowboat;57952					18321>3	6	2: Eastern Coast.
+3192 2370 0	3197 2531 0	Travel;Rowboat;57952					18321>3	6	1: Northern Coast.
+3192 2370 0	3264 2463 0	Travel;Rowboat;57952					18321>3	6	2: Eastern Coast.

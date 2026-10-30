@@ -87,6 +87,12 @@ public class PathfinderConfig {
 	 * planning until the client restarts so the walker routes around them instead of reopening the menu.
 	 */
 	public static final Set<WorldPoint> lockedSpiritTreeDestinations = ConcurrentHashMap.newKeySet();
+	/**
+	 * POH teleports (by display info) that failed twice in a row this session: listed in the Web Walker's
+	 * POH panel but not usable in the house (no such nexus slot, portal or jewellery box). Left out of
+	 * planning until the client restarts or the POH panel's Detect button is pressed.
+	 */
+	public static final Set<String> lockedPohTeleports = ConcurrentHashMap.newKeySet();
 
 	/** Order matches {@link #spiritTreeDestinationToggle(int)} — add destinations in both places only here + switch. */
 	private static final WorldPoint[] SPIRIT_TREE_DESTINATIONS_ORDERED = {
@@ -1327,6 +1333,11 @@ public class PathfinderConfig {
         if (transport.getType() == TransportType.SPIRIT_TREE
                 && lockedSpiritTreeDestinations.contains(transport.getDestination())) {
             log.debug("Transport ( O: {} D: {} ) is a spirit tree destination the travel menu did not offer", transport.getOrigin(), transport.getDestination());
+            return false;
+        }
+        if (transport.getType() == TransportType.POH
+                && lockedPohTeleports.contains(transport.getDisplayInfo())) {
+            log.debug("Transport ( O: {} D: {} ) is a POH teleport that failed in the house", transport.getOrigin(), transport.getDestination());
             return false;
         }
         if (transport.getType() == TransportType.BOAT

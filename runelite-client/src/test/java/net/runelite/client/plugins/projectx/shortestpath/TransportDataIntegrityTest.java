@@ -274,6 +274,91 @@ public class TransportDataIntegrityTest {
         return line.endsWith("\r") ? line.substring(0, line.length() - 1) : line;
     }
 
+    /** Requirement columns: a row with all of them empty can be used by every player. */
+    private static final List<String> REQUIREMENT_COLUMNS = Arrays.asList(
+            "Skills", "Item IDs", "Currency", "Quests", "Varbits", "Varplayers");
+
+    /**
+     * Known requirement-free twins, each with the reason it is allowed: "file|origin|destination|object".
+     * Review an entry before adding one: a free twin makes the gated row dead weight.
+     */
+    private static final Set<String> ALLOWED_FREE_TWINS = new HashSet<>(Arrays.asList(
+            // Brimhaven Dungeon "permanent access" rows; no varbit for the one-off fee is modelled yet
+            "transports.tsv|2744 3154 0|2713 9564 0|Enter;Dungeon entrance;20877",
+            "transports.tsv|2744 3153 0|2713 9564 0|Enter;Dungeon entrance;20877",
+            "transports.tsv|2745 3154 0|2713 9564 0|Enter;Dungeon entrance;20877",
+            "transports.tsv|2743 3154 0|2713 9564 0|Enter;Dungeon entrance;20877",
+            // Stronghold of Security portals: varbit rows and free rows from the original data, unverified
+            "teleportation_portals.tsv|2119 5258 0|2146 5287 0|Use;Portal;23707",
+            "teleportation_portals.tsv|2121 5258 0|2146 5287 0|Use;Portal;23707"));
+
+    /**
+     * A requirement-gated transport must not have a twin row (same origin, destination and object)
+     * with no requirement at all: the pathfinder takes the free twin, so the gate is never checked
+     * and the banking planner never fetches the item. Taverley Dungeon's dusty-key gate had a keyless
+     * twin, which routed key-less players into the locked gate (blue dragons report, 2026-10).
+     */
+    @Test
+    public void noGatedTransportHasARequirementFreeTwin() throws IOException {
+        List<String> problems = new ArrayList<>();
+        for (String file : FILES.keySet()) {
+            Map<String, List<Row>> byRoute = new LinkedHashMap<>();
+            for (Row row : readRows(file)) {
+                String origin = row.fields.getOrDefault("Origin", "").trim();
+                if (origin.isEmpty()) {
+                    continue;
+                }
+                String key = file + "|" + origin + "|" + row.fields.getOrDefault("Destination", "").trim()
+                        + "|" + row.fields.getOrDefault("menuOption menuTarget objectID", "").trim();
+                byRoute.computeIfAbsent(key, k -> new ArrayList<>()).add(row);
+            }
+            for (Map.Entry<String, List<Row>> route : byRoute.entrySet()) {
+                Row free = null;
+                Row gated = null;
+                for (Row row : route.getValue()) {
+                    boolean hasRequirement = REQUIREMENT_COLUMNS.stream()
+                            .anyMatch(c -> !row.fields.getOrDefault(c, "").trim().isEmpty());
+                    if (hasRequirement) {
+                        gated = row;
+                    } else {
+                        free = row;
+                    }
+                }
+                if (free != null && gated != null && !ALLOWED_FREE_TWINS.contains(route.getKey())) {
+                    problems.add(free.where() + " is a requirement-free twin of " + gated.where());
+                }
+            }
+        }
+        assertTrue(problems.size() + " gated transports with a free twin:\n" + String.join("\n", problems),
+                problems.isEmpty());
+    }
+
+    /**
+     * An agility shortcut must live only in agility_shortcuts.tsv. A copy in transports.tsv is a
+     * plain TRANSPORT: it skips the Agility level (the copies had none) and the walker's agility
+     * landing wait, so it clicked the Fremennik Slayer Dungeon jump again mid-jump (report, 2026-10).
+     */
+    @Test
+    public void noAgilityShortcutIsAlsoAPlainTransport() throws IOException {
+        Set<String> shortcuts = new HashSet<>();
+        for (Row row : readRows("agility_shortcuts.tsv")) {
+            shortcuts.add(routeKey(row));
+        }
+        List<String> problems = new ArrayList<>();
+        for (Row row : readRows("transports.tsv")) {
+            if (shortcuts.contains(routeKey(row))) {
+                problems.add(row.where() + " repeats an agility shortcut: " + routeKey(row));
+            }
+        }
+        assertTrue(problems.size() + " agility shortcuts also in transports.tsv:\n" + String.join("\n", problems),
+                problems.isEmpty());
+    }
+
+    private static String routeKey(Row row) {
+        return row.fields.getOrDefault("Origin", "").trim() + "|" + row.fields.getOrDefault("Destination", "").trim()
+                + "|" + row.fields.getOrDefault("menuOption menuTarget objectID", "").trim();
+    }
+
     @Test
     public void everyLoadedTransportHasACoordinateEndpoint() {
         HashMap<WorldPoint, Set<Transport>> transports = Transport.loadAllFromResources();

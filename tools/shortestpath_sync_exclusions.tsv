@@ -79,3 +79,5 @@ agility_shortcuts.tsv	*	*	23145	agility course obstacle (RuneLite Obstacles.OBST
 agility_shortcuts.tsv	*	*	23557	agility course obstacle (RuneLite Obstacles.OBSTACLE_IDS): course laps, not routes for the walker
 agility_shortcuts.tsv	*	*	23559	agility course obstacle (RuneLite Obstacles.OBSTACLE_IDS): course laps, not routes for the walker
 agility_shortcuts.tsv	*	*	23560	agility course obstacle (RuneLite Obstacles.OBSTACLE_IDS): course laps, not routes for the walker
+transports.tsv	*	*	5435	Light creatures (Lumbridge Swamp chasm) are NPCs; transports.tsv rows interact with objects, and object 5435 is an unrelated fence
+transports.tsv	*	*	12202	Falador mole hills need a spade used on them; the walker has no item-on-object dispatch and would click the hill's first option

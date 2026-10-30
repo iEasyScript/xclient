@@ -655,7 +655,7 @@
 2683 3266 0	2683 3263 1	Cross;Gangplank;2085								1
 
 # Witchaven Dungeon											
-2697 3283 0	2696 9683 0	Climb-down;Old ruin entrance;18270
+2698 3283 0	2696 9684 0	Climb-down;Old ruin entrance;18270
 2696 9683 0	2697 3283 0	Climb-up;Exit;18354
 2700 9688 0	2323 5104 0	Enter;Wall opening;19124								2
 2323 5104 0	2700 9688 0	Enter;Passage;18412								2
@@ -1606,14 +1606,8 @@
 2636 9517 0	2636 9510 2	Walk-up;Stairs;21725
 2636 9510 2	2636 9517 0	Walk-down;Stairs;21726
 # Stepping Stones
-2695 9533 0	2697 9525 0	Cross;Stepping stone;19040
-2697 9525 0	2695 9533 0	Cross;Stepping stone;19040
-2690 9547 0	2682 9548 0	Cross;Stepping stone;19040
-2682 9548 0	2690 9547 0	Cross;Stepping stone;19040
 # Log Balance
 # Pipes
-2655 9573 0	2655 9566 0	Squeeze-through;Pipe;21728
-2655 9566 0	2655 9573 0	Squeeze-through;Pipe;21728
 # Crevice
 # Brimhaven Dungeon - CKR Fairy Ring Alternate Entrance
 2761 3062 0	2734 9478 0	Climb;Rope;66
@@ -1962,11 +1956,6 @@
 1987 5568 0	2435 3519 0	Pass-through;Opening;28807									
 											
 # Tolna's Rift											
-3309 3452 0	3297 9824 0	Enter;Rift;13968									
-3297 9824 0	3312 3450 0	Climb-up;Rope;13999									
-3298 9823 0	3312 3450 0	Climb-up;Rope;13999									
-3296 9823 0	3312 3450 0	Climb-up;Rope;13999									
-3297 9822 0	3312 3450 0	Climb-up;Rope;13999									
 2484 3463 1	2486 3465 2	Climb-up;Tree;2447									
 2485 3465 2	2484 3463 1	Climb-down;Tree;28800									
 											
@@ -2015,9 +2004,6 @@
 3588 3173 0	3590 3173 1	Climb-up;Floor;18124									
 3589 3174 1	3588 3173 0	Climb-down;Floor;18122									
 3589 3174 0	3590 3173 1	Climb-up;Floor;18124									
-3589 3173 1	3588 3173 0	Climb-down;Floor;18122									
-3588 3173 1	3588 3173 0	Climb-down;Floor;18122									
-3589 3173 0	3590 3173 1	Climb-up;Floor;18124									
 3588 3211 0	3588 3209 1	Climb-up;Ladder;18000									
 3588 3209 1	3588 3211 0	Climb-down;Ladder;17999									
 3589 3214 0	3589 3215 0	Open;Barricade;18054									
@@ -4624,7 +4610,6 @@
 # Zanaris											
 2452 4473 0	3201 3169 0	Use;Fairy ring;12094								6	
 3202 3169 0	2452 4473 0	Open;Door;2406		772 9084		Lost City			Y	6	
-2486 4471 0	3260 3171 0	Use;Fairy ring;12003								6	
 											
 # Wintertodt											
 1630 3968 0	1630 3963 0	Enter;Doors of dinh;29322								1	
@@ -4737,8 +4722,8 @@
 # kourend											
 1618 3680 0	1614 3680 1	Climb-up;Staircase;11807									
 1614 3680 1	1618 3680 0	Climb-down;Staircase;11799									
-1616 3686 1	1616 3686 2	Climb-up;Staircase;12536									
-1616 3686 2	1616 3686 1	Climb-down;Staircase;12538									
+1615 3687 1	1616 3686 2	Climb-up;Staircase;12536									
+1616 3686 2	1615 3687 1	Climb-down;Staircase;12538									
 1639 3673 0	1666 10050 0	Investigate;Statue;27785									
 1666 10050 0	1639 3673 0	Climb-up;Vine ladder;28894									
 1562 3791 0	1617 10101 0	Enter;Hole;28921					5090=1				
@@ -4773,7 +4758,7 @@
 1610 3826 1	1617 3826 0	Climb;Stairs;27855									
 1610 3827 1	1617 3827 0	Climb;Stairs;27856									
 1615 3818 1	1608 3818 2	Climb;Stairs;27851	 								
-1615 3819 1	1608 3819 2	Climb;Stairs;27851	 								
+1615 3819 1	1608 3818 2	Climb;Stairs;27851	 								
 1608 3818 2	1615 3818 1	Climb;Stairs;27852	 								
 1608 3819 2	1615 3819 1	Climb;Stairs;27852	 								
 1639 3810 1	1639 3803 2	Climb;Stairs;27851									
@@ -4785,14 +4770,14 @@
 1610 3795 1	1617 3795 0	Climb;Stairs;27855									
 1610 3796 1	1617 3796 0	Climb;Stairs;27856									
 1621 3791 1	1621 3798 2	Climb;Stairs;27851									
-1622 3791 1	1622 3798 2	Climb;Stairs;27851									
+1622 3791 1	1621 3798 2	Climb;Stairs;27851									
 1621 3798 2	1621 3791 1	Climb;Stairs;27852									
 1622 3798 2	1622 3791 1	Climb;Stairs;27852									
 1644 3818 0	1644 3825 1	Climb;Stairs;27853									
 1645 3818 0	1645 3825 1	Climb;Stairs;27854									
 1644 3825 1	1644 3818 0	Climb;Stairs;27855									
 1645 3825 1	1645 3818 0	Climb;Stairs;27856									
-1643 3829 1	1650 3829 2	Climb;Stairs;27851									
+1643 3829 1	1650 3828 2	Climb;Stairs;27851									
 1643 3828 1	1650 3828 2	Climb;Stairs;27851									
 1650 3829 2	1643 3829 1	Climb;Stairs;27852									
 1650 3828 2	1643 3828 1	Climb;Stairs;27852
@@ -4853,9 +4838,6 @@
 # Piscatoris Hunting Area											
 2371 3622 0	2371 3620 0	Climb-over;Stile;19222								8	
 2371 3620 0	2371 3622 0	Climb-over;Stile;19222								8	
-											
-# Taverly dungeon											
-2924 9803 0	2923 9803 0	Open;Gate;2623
 											
 # Fight Caves											
 2493 5174 0	2495 5174 0	Pass;Hot vent door;30266								2	
@@ -5117,9 +5099,9 @@
 											
 # Legends Guild											
 2732 3376 0	2732 3380 1	Climb-up;Staircase;15653									
-2733 3376 0	2733 3380 1	Climb-up;Staircase;15653									
+2733 3376 0	2732 3380 1	Climb-up;Staircase;15653									
 2732 3380 1	2732 3376 0	Climb-down;Staircase;15654									
-2733 3380 1	2733 3376 0	Climb-down;Staircase;15654									
+2733 3380 1	2732 3376 0	Climb-down;Staircase;15654									
 2732 3376 1	2732 3376 2	Climb-up;Ladder;16683									
 2732 3376 2	2732 3376 1	Climb-down;Ladder;16679									
 2733 3375 1	2733 3375 2	Climb-up;Ladder;16683									
@@ -5219,10 +5201,6 @@
 3227 9542 0	3219 9532 2	Enter;Tunnel;6659								2	
 3218 9532 2	3226 9542 0	Enter;Tunnel;6658								2	
 3220 9532 2	3226 9542 0	Enter;Tunnel;6658								2	
-3239 9525 2	3241 9525 2	Climb;Rocks;6673								4	
-3241 9525 2	3239 9525 2	Climb;Rocks;6673								4	
-3239 9524 2	3241 9524 2	Climb;Rocks;6673								4	
-3241 9524 2	3239 9524 2	Climb;Rocks;6673								4	
 3238 9497 2	3240 9497 2	Climb;Rocks;6672								4	
 3238 9498 2	3240 9498 2	Climb;Rocks;6672								4	
 3238 9499 2	3240 9499 2	Climb;Rocks;6672								4	
@@ -5256,7 +5234,6 @@
 2508 3640 0	2505 3641 2	Top-floor;Staircase;4568									
 2505 3641 1	2506 3642 0	Climb-down;Staircase;4569									
 2505 3641 1	2505 3641 2	Climb-up;Staircase;4569									
-2505 3641 2	2506 3584 1	Climb-down;Staircase;4570									
 2505 3641 2	2506 3642 0	Bottom-floor;Staircase;4570									
 2510 3644 0	2518 9994 0	Climb;Iron ladder;4383									
 2518 9994 0	2510 3644 0	Climb;Iron ladder;4384									
@@ -5572,7 +5549,6 @@
 1803 9968 0	1726 9994 0	Enter;Strange passage;28918					5087=1			1	
 1803 9967 0	1726 9994 0	Enter;Strange passage;28918					5087=1			1	
 1470 3652 0	1650 9987 0	Enter;Hole;28915					5088=1			2	
-1470 3654 0	1650 9987 0	Enter;Hole;28915					5088=1			2	
 1471 3653 0	1650 9987 0	Enter;Hole;28915					5088=1			2	
 1563 3790 0	1617 10101 0	Enter;Hole;28915					5088=1			2	
 1563 3792 0	1617 10101 0	Enter;Hole;28915					5088=1			2	
@@ -5714,17 +5690,10 @@
 2522 3493 1	2522 3493 0	Climb-down;Ladder;16679								2	
 2511 3511 0	1768 5366 0	Jump-into;Whirlpool;25274					3759>1			2	
 2512 3511 0	1768 5366 0	Jump-into;Whirlpool;25274					3759>1			2	
-1742 5352 0	2531 3446 0	Ride;Aged log;25216								2	
-1761 5362 0	2531 3446 0	Ride;Aged log;25216								2	
 1559 3046 0	1556 3046 2	Climb-up;Rope;51647								2	
 1556 3046 2	1559 3046 0	Climb-down;Rope;51644								2	
 1557 3047 0	1557 9451 0	Climb-down;Stairs;51641								2	
 1557 9451 0	1557 3047 0	Climb-up;Stairs;51642								2	
-1533 3051 0	1533 9446 0	Enter;Cave;51761								2	
-1533 3050 0	1533 9446 0	Enter;Cave;51761								2	
-1533 9447 0	1533 3051 0	Exit;Cave;51760								2	
-1533 9446 0	1533 3051 0	Exit;Cave;51760								2	
-1533 9445 0	1533 3051 0	Exit;Cave;51760								2	
 1248 3722 0	1248 3723 0	Open;Door;34463	45 Farming							1	
 1248 3723 0	1248 3722 0	Open;Door;34463								1	
 1249 3722 0	1249 3723 0	Open;Door;34464	45 Farming							1	
@@ -5787,18 +5756,18 @@
 3057 9555 0	3057 9562 0	Enter;Ice Cavern;10595								1	
 3106 3559 0	3035 4852 0	Teleport;Mage of Zamorak;2581				Enter the Abyss					
 3039 4805 0	3039 4800 0	Enter;Passage;27054									
-3039 4854 0	3039 4844 0	Go-through;Passage;26250									
-3029 4850 0	3033 4843 0	Go-through;Passage;26250									
-3021 4843 0	3039 4844 0	Go-through;Passage;26250									
-3018 4834 0	3039 4844 0	Go-through;Passage;26250									
-3018 4822 0	3039 4844 0	Go-through;Passage;26250									
-3030 4812 0	3039 4844 0	Go-through;Passage;26250									
-3042 4811 0	3039 4844 0	Go-through;Passage;26250									
-3050 4813 0	3039 4844 0	Go-through;Passage;26250									
-3058 4822 0	3039 4844 0	Go-through;Passage;26250									
-3061 4831 0	3052 4831 0	Go-through;Passage;26250									
-3059 4840 0	3039 4844 0	Go-through;Passage;26250									
-3050 4850 0	3039 4844 0	Go-through;Passage;26250									
+3039 4855 0	3039 4844 0	Go-through;Passage;26250									
+3029 4851 0	3033 4843 0	Go-through;Passage;26250									
+3020 4843 0	3039 4844 0	Go-through;Passage;26250									
+3017 4834 0	3039 4844 0	Go-through;Passage;26250									
+3017 4822 0	3039 4844 0	Go-through;Passage;26250									
+3027 4812 0	3039 4844 0	Go-through;Passage;26250									
+3042 4810 0	3039 4844 0	Go-through;Passage;26250									
+3050 4812 0	3039 4844 0	Go-through;Passage;26250									
+3059 4822 0	3039 4844 0	Go-through;Passage;26250									
+3062 4831 0	3052 4831 0	Go-through;Passage;26250									
+3060 4840 0	3039 4844 0	Go-through;Passage;26250									
+3050 4851 0	3039 4844 0	Go-through;Passage;26250									
 3034 4793 0	3221 3219 0	Operate;Appendage;27027								4	
 3044 4842 0	2269 4840 0	Exit-through;Chaos rift;25382									
 2259 4846 0	2259 4846 1	Climb-up;Ladder;16683								1	
@@ -5826,8 +5795,6 @@
 3029 4830 0	2587 4836 0	Exit-through;Fire rift;25382									
 2575 4849 0	3310 3252 0	Use;Portal;34752								1	
 3027 4834 0	3229 4834 0	Exit-through;Blood rift;25382				Sins of the Father					
-3240 4832 0	3559 9779 0	Use;Portal;43478								1	
-3224 4832 0	3559 9779 0	Use;Portal;43478								1	
 3028 4837 0	2142 4836 0	Exit-through;Cosmic rift;25382				Lost City					
 2122 4833 0	2405 4381 0	Use;Portal;34754								1	
 2142 4853 0	2405 4381 0	Use;Portal;34754								1	
@@ -5868,10 +5835,6 @@
 3615 9484 0	3615 9482 0	Quick-pass;Barrier;43700								5	
 3616 9484 0	3616 9482 0	Quick-pass;Barrier;43700								5	
 3617 9484 0	3617 9482 0	Quick-pass;Barrier;43700								5	
-2775 10003 0	2773 10003 0	Jump-over;Strange floor;16544	43 Agility							10	
-2773 10003 0	2775 10003 0	Jump-over;Strange floor;16544	43 Agility							10	
-2770 10002 0	2768 10002 0	Jump-over;Strange floor;16544	43 Agility							10	
-2768 10002 0	2770 10002 0	Jump-over;Strange floor;16544	43 Agility							10	
 3230 9609 0	3313 9613 0	Mines;Kazgar;7301				The Lost Tribe				8	Mines
 3230 9609 0	3245 9648 0	Watermill;Kazgar;7301				Death to the Dorgeshuun				8	Watermill
 3317 9612 0	3232 9610 0	Cellar;Mistag;7299				The Lost Tribe				8	Cellar
@@ -5964,7 +5927,6 @@
 3319 6078 0	2298 3326 0	Exit;City Gate;36522				Song of the Elves				4	
 3319 6081 0	2298 3329 0	Exit;City Gate;36523				Song of the Elves				4	
 2763 9103 0	2763 2703 0	Climb-up;Bamboo Ladder;4781									
-2763 2703 0	2763 9103 0	Climb-down;Bamboo Ladder;4780									
 2591 2851 1	2589 2851 0	Cross;Gangplank;31756								3	
 2589 2851 0	2591 2851 1	Cross;Gangplank;31756								3	
 1811 3679 1	1808 3679 0	Cross;Gangplank;50064								3	
@@ -6250,3 +6212,336 @@
 3282 3936 1	3282 3936 2	Climb-up;Staircase;14736								2
 3282 3936 1	3281 3935 0	Climb-down;Staircase;14736								2
 3281 3935 0	3282 3936 1	Climb-up;Staircase;14736								2
+
+# Imported from Skretzo/shortest-path f644d64e37 (transports.tsv)
+# Ancient Guthixian Temple
+4065 4555 0	4065 4554 1	Climb-up;Wall;53623
+4065 4554 1	4065 4555 0	Jump-down;Wall;53676
+4066 4553 1	4066 4552 2	Climb-up;Wall;53624
+4066 4552 2	4066 4553 1	Jump-down;Wall;53676
+4063 4550 2	4061 4466 0	Climb-through;Opening;53622					9653>759;10820=0
+4061 4466 0	4063 4550 2	Crawl-through;Hole;53637					9653>759
+# The Fractured Archive entrance
+4053 4568 0	4127 5508 0	Crawl-through;Opening;62542				While Guthix Sleeps				2
+4127 5508 0	4053 4568 0	Enter;Opening;63009				While Guthix Sleeps
+# Lighthouse
+2505 3641 2	2506 3642 1	Climb-down;Staircase;4570
+# Tolna's Rift
+3309 3452 0	3105 5280 0	Enter;Rift;13968
+3105 5280 0	3312 3450 0	Climb-up;Rope;13999								2
+3106 5279 0	3312 3450 0	Climb-up;Rope;13999								2
+3104 5279 0	3312 3450 0	Climb-up;Rope;13999								2
+3105 5278 0	3312 3450 0	Climb-up;Rope;13999								2
+# Jalsavrah (Pyramid Plunder)
+1934 4450 2	3288 2801 0	Leave Tomb;Tomb Door;20932								3
+1968 4420 2	3288 2801 0	Leave Tomb;Tomb Door;20932								3
+1934 4420 3	3288 2801 0	Leave Tomb;Tomb Door;20932								3
+1968 4450 3	3288 2801 0	Leave Tomb;Tomb Door;20932								3
+# Uzer Mastaba
+3850 4578 0	3485 3023 0	Climb;Stairs;50202					11479>3			1
+3485 3023 0	3850 4578 0	Enter;Entry;50201					11479>3			1
+3886 4598 0	3884 4598 0	Open;Imposing doors;50211					11479>9			1
+3884 4598 0	3886 4598 0	Open;Imposing doors;50211					11479>9			1
+3861 4595 0	3892 4714 0	Climb;Stairs;55785					11479>11			1
+3892 4714 0	3861 4595 0	Climb;Stairs;55786					11479>11			1
+# Zanaris
+2469 4438 0	2470 4438 0	Open;Magic door;12045		1601						1
+2470 4438 0	2469 4438 0	Open;Magic door;12045								1
+2469 4437 0	2470 4437 0	Open;Magic door;12047		1601						1
+2470 4437 0	2469 4437 0	Open;Magic door;12047								1
+2466 4434 0	2466 4433 0	Open;Magic door;12045		1601						1
+2466 4433 0	2466 4434 0	Open;Magic door;12045								1
+2465 4434 0	2465 4433 0	Open;Magic door;12047		1601						1
+2465 4433 0	2465 4434 0	Open;Magic door;12047								1
+2486 4472 0	3260 3171 0	Use;Fairy ring;12003								6
+2487 4471 0	3260 3171 0	Use;Fairy ring;12003								6
+2486 4470 0	3260 3171 0	Use;Fairy ring;12003								6
+2485 4471 0	3260 3171 0	Use;Fairy ring;12003								6
+# Watchtower
+2932 4711 2	2549 3112 1	Climb-down;Ladder;2797								2
+2548 3111 1	2933 4712 2	Climb-up;Ladder;2796				Watchtower				2
+2550 3111 1	2933 4712 2	Climb-up;Ladder;2796				Watchtower				2
+# Ancient Cavern (Baxtorian Falls Whirlpool)
+1778 5346 0	1778 5343 1	Climb-up;Stairs;25339								2
+1741 5352 0	2531 3446 0	Ride;Aged log;25216								2
+1741 5353 0	2531 3446 0	Ride;Aged log;25216								2
+1741 5354 0	2531 3446 0	Ride;Aged log;25216								2
+1761 5361 0	2531 3446 0	Ride;Aged log;25216								2
+1762 5361 0	2531 3446 0	Ride;Aged log;25216								2
+1763 5361 0	2531 3446 0	Ride;Aged log;25216								2
+# Hunter Guild
+1533 3051 0	1538 9446 0	Enter;Cave;51761								2
+1533 3050 0	1538 9446 0	Enter;Cave;51761								2
+1538 9447 0	1533 3051 0	Exit;Cave;51760								2
+1538 9446 0	1533 3051 0	Exit;Cave;51760								2
+1538 9445 0	1533 3051 0	Exit;Cave;51760								2
+# todo: can also access Kourend's Blood Altar by using dark essence block/fragments on rift after crafting blood runes on it
+3240 4833 0	3559 9779 0	Use;Portal;43478								1
+3240 4831 0	3559 9779 0	Use;Portal;43478								1
+3239 4832 0	3559 9779 0	Use;Portal;43478								1
+3224 4833 0	3559 9779 0	Use;Portal;43478								1
+3225 4832 0	3559 9779 0	Use;Portal;43478								1
+3224 4831 0	3559 9779 0	Use;Portal;43478								1
+# Ape Atoll Dungeon
+2763 2704 0	2763 9103 0	Climb-down;Bamboo Ladder;4780								2
+2764 2703 0	2763 9103 0	Climb-down;Bamboo Ladder;4780								2
+2763 2702 0	2763 9103 0	Climb-down;Bamboo Ladder;4780								2
+2762 2703 0	2763 9103 0	Climb-down;Bamboo Ladder;4780								2
+## Trahaearn Mine
+3271 6051 0	3302 12454 0	Enter;Cave entrance;36556
+3302 12454 0	3271 6051 0	Exit;Steps;36215
+## Zalcano entrance
+3282 6057 0	3033 6068 0	Channel;Teleport Platform;36198
+3033 6068 0	3283 6058 0	Channel;Teleport Platform;36197
+## Central Crystal Staircase: ground floor and upper floor
+3263 6078 0	3268 6082 2	Climb up;Crystal Staircase;36387
+3264 6078 0	3268 6082 2	Climb up;Crystal Staircase;36387
+3268 6082 2	3263 6078 0	Climb down;Crystal Staircase;36390
+## Prifddinas Library teleport platform: central tower and library
+3256 6082 2	3232 12537 0	Travel;Teleport Platform;36614
+3256 6083 2	3232 12537 0	Travel;Teleport Platform;36614
+3254 6081 2	3232 12537 0	Travel;Teleport Platform;36614
+3255 6081 2	3232 12537 0	Travel;Teleport Platform;36614
+3254 6084 2	3232 12537 0	Travel;Teleport Platform;36614
+3255 6084 2	3232 12537 0	Travel;Teleport Platform;36614
+3231 12537 0	3256 6082 2	Travel;Teleport Platform;36615
+3232 12537 0	3256 6082 2	Travel;Teleport Platform;36615
+3233 12537 0	3256 6082 2	Travel;Teleport Platform;36615
+## North-west teleport platform: ground floor and upper floor
+3245 6125 0	3245 6125 2	Channel;Teleport Platform;36490
+3245 6126 0	3245 6126 2	Channel;Teleport Platform;36490
+3248 6125 0	3248 6125 2	Channel;Teleport Platform;36490
+3248 6126 0	3248 6126 2	Channel;Teleport Platform;36490
+3246 6124 0	3246 6124 2	Channel;Teleport Platform;36490
+3247 6124 0	3247 6124 2	Channel;Teleport Platform;36490
+3246 6127 0	3246 6127 2	Channel;Teleport Platform;36490
+3247 6127 0	3247 6127 2	Channel;Teleport Platform;36490
+3245 6125 2	3245 6125 0	Channel;Teleport Platform;36490
+3245 6126 2	3245 6126 0	Channel;Teleport Platform;36490
+3248 6125 2	3248 6125 0	Channel;Teleport Platform;36490
+3248 6126 2	3248 6126 0	Channel;Teleport Platform;36490
+3246 6124 2	3246 6124 0	Channel;Teleport Platform;36490
+3247 6124 2	3247 6124 0	Channel;Teleport Platform;36490
+3246 6127 2	3246 6127 0	Channel;Teleport Platform;36490
+3247 6127 2	3247 6127 0	Channel;Teleport Platform;36490
+## West-north teleport platform: ground floor and upper floor
+3219 6099 0	3219 6099 2	Channel;Teleport Platform;36490
+3219 6100 0	3219 6100 2	Channel;Teleport Platform;36490
+3222 6099 0	3222 6099 2	Channel;Teleport Platform;36490
+3222 6100 0	3222 6100 2	Channel;Teleport Platform;36490
+3220 6098 0	3220 6098 2	Channel;Teleport Platform;36490
+3221 6098 0	3221 6098 2	Channel;Teleport Platform;36490
+3220 6101 0	3220 6101 2	Channel;Teleport Platform;36490
+3221 6101 0	3221 6101 2	Channel;Teleport Platform;36490
+3219 6099 2	3219 6099 0	Channel;Teleport Platform;36490
+3219 6100 2	3219 6100 0	Channel;Teleport Platform;36490
+3222 6099 2	3222 6099 0	Channel;Teleport Platform;36490
+3222 6100 2	3222 6100 0	Channel;Teleport Platform;36490
+3220 6098 2	3220 6098 0	Channel;Teleport Platform;36490
+3221 6098 2	3221 6098 0	Channel;Teleport Platform;36490
+3220 6101 2	3220 6101 0	Channel;Teleport Platform;36490
+3221 6101 2	3221 6101 0	Channel;Teleport Platform;36490
+## North-east teleport platform: ground floor and upper floor
+3279 6125 0	3279 6125 2	Channel;Teleport Platform;36490
+3279 6126 0	3279 6126 2	Channel;Teleport Platform;36490
+3282 6125 0	3282 6125 2	Channel;Teleport Platform;36490
+3282 6126 0	3282 6126 2	Channel;Teleport Platform;36490
+3280 6124 0	3280 6124 2	Channel;Teleport Platform;36490
+3281 6124 0	3281 6124 2	Channel;Teleport Platform;36490
+3280 6127 0	3280 6127 2	Channel;Teleport Platform;36490
+3281 6127 0	3281 6127 2	Channel;Teleport Platform;36490
+3279 6125 2	3279 6125 0	Channel;Teleport Platform;36490
+3279 6126 2	3279 6126 0	Channel;Teleport Platform;36490
+3282 6125 2	3282 6125 0	Channel;Teleport Platform;36490
+3282 6126 2	3282 6126 0	Channel;Teleport Platform;36490
+3280 6124 2	3280 6124 0	Channel;Teleport Platform;36490
+3281 6124 2	3281 6124 0	Channel;Teleport Platform;36490
+3280 6127 2	3280 6127 0	Channel;Teleport Platform;36490
+3281 6127 2	3281 6127 0	Channel;Teleport Platform;36490
+## East-north teleport platform: ground floor and upper floor
+3305 6099 0	3305 6099 2	Channel;Teleport Platform;36490
+3305 6100 0	3305 6100 2	Channel;Teleport Platform;36490
+3308 6099 0	3308 6099 2	Channel;Teleport Platform;36490
+3308 6100 0	3308 6100 2	Channel;Teleport Platform;36490
+3306 6098 0	3306 6098 2	Channel;Teleport Platform;36490
+3307 6098 0	3307 6098 2	Channel;Teleport Platform;36490
+3306 6101 0	3306 6101 2	Channel;Teleport Platform;36490
+3307 6101 0	3307 6101 2	Channel;Teleport Platform;36490
+3305 6099 2	3305 6099 0	Channel;Teleport Platform;36490
+3305 6100 2	3305 6100 0	Channel;Teleport Platform;36490
+3308 6099 2	3308 6099 0	Channel;Teleport Platform;36490
+3308 6100 2	3308 6100 0	Channel;Teleport Platform;36490
+3306 6098 2	3306 6098 0	Channel;Teleport Platform;36490
+3307 6098 2	3307 6098 0	Channel;Teleport Platform;36490
+3306 6101 2	3306 6101 0	Channel;Teleport Platform;36490
+3307 6101 2	3307 6101 0	Channel;Teleport Platform;36490
+## East-south teleport platform: ground floor and upper floor
+3305 6065 0	3305 6065 2	Channel;Teleport Platform;36490
+3305 6066 0	3305 6066 2	Channel;Teleport Platform;36490
+3308 6065 0	3308 6065 2	Channel;Teleport Platform;36490
+3308 6066 0	3308 6066 2	Channel;Teleport Platform;36490
+3306 6064 0	3306 6064 2	Channel;Teleport Platform;36490
+3307 6064 0	3307 6064 2	Channel;Teleport Platform;36490
+3306 6067 0	3306 6067 2	Channel;Teleport Platform;36490
+3307 6067 0	3307 6067 2	Channel;Teleport Platform;36490
+3305 6065 2	3305 6065 0	Channel;Teleport Platform;36490
+3305 6066 2	3305 6066 0	Channel;Teleport Platform;36490
+3308 6065 2	3308 6065 0	Channel;Teleport Platform;36490
+3308 6066 2	3308 6066 0	Channel;Teleport Platform;36490
+3306 6064 2	3306 6064 0	Channel;Teleport Platform;36490
+3307 6064 2	3307 6064 0	Channel;Teleport Platform;36490
+3306 6067 2	3306 6067 0	Channel;Teleport Platform;36490
+3307 6067 2	3307 6067 0	Channel;Teleport Platform;36490
+## South-east teleport platform: ground floor and upper floor
+3279 6039 0	3279 6039 2	Channel;Teleport Platform;36490
+3279 6040 0	3279 6040 2	Channel;Teleport Platform;36490
+3282 6039 0	3282 6039 2	Channel;Teleport Platform;36490
+3282 6040 0	3282 6040 2	Channel;Teleport Platform;36490
+3280 6038 0	3280 6038 2	Channel;Teleport Platform;36490
+3281 6038 0	3281 6038 2	Channel;Teleport Platform;36490
+3280 6041 0	3280 6041 2	Channel;Teleport Platform;36490
+3281 6041 0	3281 6041 2	Channel;Teleport Platform;36490
+3279 6039 2	3279 6039 0	Channel;Teleport Platform;36490
+3279 6040 2	3279 6040 0	Channel;Teleport Platform;36490
+3282 6039 2	3282 6039 0	Channel;Teleport Platform;36490
+3282 6040 2	3282 6040 0	Channel;Teleport Platform;36490
+3280 6038 2	3280 6038 0	Channel;Teleport Platform;36490
+3281 6038 2	3281 6038 0	Channel;Teleport Platform;36490
+3280 6041 2	3280 6041 0	Channel;Teleport Platform;36490
+3281 6041 2	3281 6041 0	Channel;Teleport Platform;36490
+## South-west teleport platform: ground floor and upper floor
+3245 6039 0	3245 6039 2	Channel;Teleport Platform;36490
+3245 6040 0	3245 6040 2	Channel;Teleport Platform;36490
+3248 6039 0	3248 6039 2	Channel;Teleport Platform;36490
+3248 6040 0	3248 6040 2	Channel;Teleport Platform;36490
+3246 6038 0	3246 6038 2	Channel;Teleport Platform;36490
+3247 6038 0	3247 6038 2	Channel;Teleport Platform;36490
+3246 6041 0	3246 6041 2	Channel;Teleport Platform;36490
+3247 6041 0	3247 6041 2	Channel;Teleport Platform;36490
+3245 6039 2	3245 6039 0	Channel;Teleport Platform;36490
+3245 6040 2	3245 6040 0	Channel;Teleport Platform;36490
+3248 6039 2	3248 6039 0	Channel;Teleport Platform;36490
+3248 6040 2	3248 6040 0	Channel;Teleport Platform;36490
+3246 6038 2	3246 6038 0	Channel;Teleport Platform;36490
+3247 6038 2	3247 6038 0	Channel;Teleport Platform;36490
+3246 6041 2	3246 6041 0	Channel;Teleport Platform;36490
+3247 6041 2	3247 6041 0	Channel;Teleport Platform;36490
+## West-south teleport platform: ground floor and upper floor
+3219 6065 0	3219 6065 2	Channel;Teleport Platform;36490
+3219 6066 0	3219 6066 2	Channel;Teleport Platform;36490
+3222 6065 0	3222 6065 2	Channel;Teleport Platform;36490
+3222 6066 0	3222 6066 2	Channel;Teleport Platform;36490
+3220 6064 0	3220 6064 2	Channel;Teleport Platform;36490
+3221 6064 0	3221 6064 2	Channel;Teleport Platform;36490
+3220 6067 0	3220 6067 2	Channel;Teleport Platform;36490
+3221 6067 0	3221 6067 2	Channel;Teleport Platform;36490
+3219 6065 2	3219 6065 0	Channel;Teleport Platform;36490
+3219 6066 2	3219 6066 0	Channel;Teleport Platform;36490
+3222 6065 2	3222 6065 0	Channel;Teleport Platform;36490
+3222 6066 2	3222 6066 0	Channel;Teleport Platform;36490
+3220 6064 2	3220 6064 0	Channel;Teleport Platform;36490
+3221 6064 2	3221 6064 0	Channel;Teleport Platform;36490
+3220 6067 2	3220 6067 0	Channel;Teleport Platform;36490
+3221 6067 2	3221 6067 0	Channel;Teleport Platform;36490
+# Fisher Realm, Sir Percival's castle
+2633 4682 0	2634 4682 1	Climb-up;Staircase;16671								1
+2635 4681 0	2634 4682 1	Climb-up;Staircase;16671								1
+2634 4682 1	2635 4681 0	Climb-down;Staircase;16673								1
+2640 4681 1	2640 4685 2	Climb-up;Staircase;15645								1
+2640 4685 2	2640 4681 1	Climb-down;Staircase;15648								1
+2647 4684 0	2649 4685 1	Climb-up;Staircase;16671								1
+2651 4685 1	2651 4685 2	Climb-up;Ladder;16683								2
+2651 4685 2	2651 4685 1	Climb-down;Ladder;16679								2
+2649 4685 1	2650 4684 0	Climb-down;Staircase;16673								1
+# Wilderness magic axe hut (lockpick and 23 Thieving)
+3190 3957 0	3190 3958 0	Pick-lock;Door;11726	23 Thieving	1523						1
+3190 3958 0	3190 3957 0	Open;Door;11726								1
+3191 3963 0	3191 3962 0	Pick-lock;Door;11726	23 Thieving	1523						1
+3191 3962 0	3191 3963 0	Open;Door;11726								1
+# Lumbridge Swamp shed
+3201 3169 0	3202 3169 0	Open;Door;2406								1
+3202 3169 0	3201 3169 0	Open;Door;2406								1
+# Villa Lucens stage
+1453 2934 0	1455 2934 0	Pass-through;Entryway;54707				Death on the Isle				2
+1455 2934 0	1453 2934 0	Pass-through;Entryway;54707				Death on the Isle				2
+# Tai Bwo Wannai hardwood grove (100 trading sticks, free with Karamja elite diary)
+2817 3083 0	2816 3083 0	Open;Hardwood Grove Doors;9038								1
+2817 3084 0	2816 3084 0	Open;Hardwood Grove Doors;9039								1
+# Tarn's Lair, wall trap passage (run past or search to disarm) and additional passageways
+3148 4556 0	3147 4556 0	Search;Wall;20594								1
+3147 4556 0	3148 4556 0	Search;Wall;20594								1
+3149 4664 0	3149 4658 0	Enter;Passageway;16130								2
+3149 4658 0	3149 4664 0	Enter;Passageway;16129								2
+3151 4597 1	3155 4597 1	Enter;Passageway;20534								2
+3155 4597 1	3151 4597 1	Enter;Passageway;20533								2
+3149 4604 1	3150 4604 1	Search;Wall;20590								1
+3150 4604 1	3149 4604 1	Search;Wall;20590								1
+3155 4592 1	3155 4593 1	Search;Wall;20590								1
+3155 4593 1	3155 4592 1	Search;Wall;20590								1
+3154 4604 1	3155 4604 1	Search;Wall;20590								1
+3155 4604 1	3154 4604 1	Search;Wall;20590								1
+3156 4596 1	3156 4597 1	Search;Wall;20590								1
+3156 4597 1	3156 4596 1	Search;Wall;20590								1
+3145 4600 0	3146 4600 0	Search;Wall;20594								1
+3146 4600 0	3145 4600 0	Search;Wall;20594								1
+3149 4595 0	3149 4596 0	Search;Wall;20594								1
+3149 4596 0	3149 4595 0	Search;Wall;20594								1
+3146 4589 1	3147 4589 1	Search;Wall;20596								1
+3147 4589 1	3146 4589 1	Search;Wall;20596								1
+3151 4589 1	3152 4589 1	Search;Wall;20596								1
+3152 4589 1	3151 4589 1	Search;Wall;20596								1
+# God Wars Dungeon: swimming the river to Zamorak's Fortress (70 Hitpoints)
+2885 5333 2	2885 5344 2	Climb-off;Ice bridge;26518	70 Hitpoints							5
+2885 5344 2	2885 5333 2	Climb-off;Ice bridge;26518	70 Hitpoints							5
+# Kourend Castle, first to second floor
+1618 3659 1	1617 3660 2	Climb-up;Staircase;12536								1
+1617 3660 2	1617 3660 1	Climb-down;Staircase;12538								1
+# Kourend Castle, ground to first floor
+1618 3665 0	1614 3665 1	Climb-up;Staircase;11807								1
+1614 3665 1	1618 3665 0	Climb-down;Staircase;11799								1
+# Legends' Guild, basement
+2723 3375 0	2727 9774 0	Climb-down;Staircase;16664								2
+# Civitas illa Fortis, Alchemical Society basement
+1388 2918 0	1388 9313 0	Climb-down;Staircase;54946								1
+1388 9313 0	1388 2918 0	Climb-up;Staircase;54945								1
+1389 2918 0	1389 9313 0	Climb-down;Staircase;54946								1
+1389 9313 0	1389 2918 0	Climb-up;Staircase;54945								1
+# Woodcutting Guild Ent dungeon: the cave, the vine back up, and the roots inside
+1606 3508 0	1596 9900 0	Enter;Cave;28855								2
+1596 9900 0	1606 3508 0	Climb;Vine;28856								2
+1551 9880 0	1551 9882 0	Step-over;Root;26721								2
+1551 9882 0	1551 9880 0	Step-over;Root;26721								2
+1552 9880 0	1552 9882 0	Step-over;Root;26720								2
+1552 9882 0	1552 9880 0	Step-over;Root;26720								2
+1554 9871 0	1556 9871 0	Step-over;Root;26720								2
+1556 9871 0	1554 9871 0	Step-over;Root;26720								2
+1555 9870 0	1555 9872 0	Step-over;Root;26720								2
+1555 9872 0	1555 9870 0	Step-over;Root;26720								2
+1588 9899 0	1590 9899 0	Step-over;Root;26721								2
+1590 9899 0	1588 9899 0	Step-over;Root;26721								2
+1588 9900 0	1590 9900 0	Step-over;Root;26720								2
+1590 9900 0	1588 9900 0	Step-over;Root;26720								2
+# Prifddinas: Gauntlet Portal into the Gauntlet lobby
+3228 6117 0	3032 6125 1	Enter;Gauntlet Portal;36081				Song of the Elves				2
+3228 6116 0	3032 6125 1	Enter;Gauntlet Portal;36081				Song of the Elves				2
+3032 6125 1	3228 6116 0	Channel;Teleport Platform;36082				Song of the Elves				2
+# Goblin Village sled racing, Scrubfoot's cave
+2949 3507 0	1975 6220 3	Enter;Cave entrance;40887								2
+1975 6220 3	2949 3508 0	Exit;Cave exit;40888								2
+2949 3508 0	1975 6220 3	Enter;Cave entrance;40887								2
+1927 6223 0	1963 6221 3	Squeeze-through;Crevice;40889								2
+# Ruins of Camdozaal (Below Ice Mountain)
+2998 3493 0	2952 5762 0	Enter;Ruins Entrance;41439				Below Ice Mountain				2
+2998 3495 0	2952 5762 0	Enter;Ruins Entrance;41439				Below Ice Mountain				2
+2953 5762 0	2998 3494 0	Exit;Ruins Exit;41446				Below Ice Mountain				2
+# The Darkfrost: the slope down into the Hueycoatl's public arena
+1524 3290 0	1519 3289 0	Slide;Slope;55234								3
+# Corporeal Beast cave: entrance and exit to the Wilderness
+2964 4382 2	3206 3681 0	Exit;Cave exit;679								2
+3206 3681 0	2964 4382 2	Enter;Cave;678								2
+# The Great Conch, Gryphon Slayer Cave (south-eastern cave)
+3234 2418 0	3237 8882 0	Enter;Cave entrance;57915								2
+3237 8882 0	3234 2418 0	Exit;Cave exit;57916								2
+# The Great Conch, Gryphon cave (north-western cave)
+3122 2490 0	3125 8880 0	Enter;Cave entrance;57908								2
+3125 8880 0	3122 2490 0	Exit;Cave exit;57909								2

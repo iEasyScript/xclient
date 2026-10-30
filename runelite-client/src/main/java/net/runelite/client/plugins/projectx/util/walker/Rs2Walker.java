@@ -323,6 +323,12 @@ public class Rs2Walker {
     private static final int ADJACENT_TRANSPORT_APPROACH_MAX_MS = 20_000;
     private static final int ADJACENT_TRANSPORT_APPROACH_IDLE_MS = 1_800;
     private static final int ADJACENT_TRANSPORT_OPEN_WAIT_MS = 1_500;
+    /** How long a gate click may take to open an area warning (see {@link AreaWarning}); two ticks. */
+    private static final int AREA_WARNING_APPEAR_WAIT_MS = 1_200;
+    /** Same-plane object transports up to this many tiles are hops that need a landing wait. */
+    private static final int SHORT_HOP_MAX_TILES = 10;
+    private static final int SHORT_HOP_START_WAIT_MS = 1_800;
+    private static final int SHORT_HOP_LANDING_WAIT_MS = 8_000;
 
     /** Teleport “already near destination” skip in path loop — same semantics as prior {@code distanceTo2D &lt; 3}. */
     private static final int TELEPORT_NEAR_SKIP_CHEBYSHEV = 3;
@@ -2132,25 +2138,8 @@ public class Rs2Walker {
                 }
             }
 
-            // entering desert warning
-            if (Rs2Widget.isWidgetVisible(565, 20) && Rs2Widget.clickWidget(565, 20)) {
-                sleepUntil(() -> {
-                    Widget checkBoxWidget = Rs2Widget.getWidget(565, 20);
-                    if (checkBoxWidget == null) return false;
-                    return checkBoxWidget.getSpriteId() != 941;
-                });
-                Rs2Widget.clickWidget(565, 17);
-            }
-
-            // entering down ladder strong hold of security
-            if (Rs2Widget.isWidgetVisible(579, 20) && Rs2Widget.clickWidget(579, 20)) {
-                sleepUntil(() -> {
-                    Widget checkBoxWidget = Rs2Widget.getWidget(579, 20);
-                    if (checkBoxWidget == null) return false;
-                    return checkBoxWidget.getSpriteId() != 941;
-                });
-                Rs2Widget.clickWidget(579, 17);
-            }
+            // "Are you sure?" area warnings: desert, Stronghold of Security ladders, Mort Myre gate, ...
+            AreaWarning.acceptIfOpen();
 
 
             if (Rs2Widget.enterWilderness()) {
@@ -9243,8 +9232,25 @@ public class Rs2Walker {
                                         compactWorldPoint(Rs2Player.getWorldLocation()));
                             }
                             if (pohNearDest) {
+                                POH_TELEPORT_FAILURES.remove(transport.getDisplayInfo());
                                 return finishHandledTransport(transport);
                             }
+                        } else if (recordPohTeleportFailure(POH_TELEPORT_FAILURES, transport.getDisplayInfo())) {
+                            // Listed in the POH panel but not usable in this house (no such nexus slot, portal or
+                            // jewellery box). Unlocked, the walker reopened the nexus/portal for it every pass.
+                            WebWalkLog.spWarn("POH teleport failed twice, planning without it: {}", transport.getDisplayInfo());
+                            if (PohTeleports.getPortalNexusInterface() != null) {
+                                Rs2Keyboard.keyPress(KeyEvent.VK_ESCAPE);
+                                sleepUntil(() -> PohTeleports.getPortalNexusInterface() == null, 1200);
+                            }
+                            PathfinderConfig.lockedPohTeleports.add(transport.getDisplayInfo());
+                            PathfinderConfig pathConfig = Rs2PathApi.getPathfinderConfig();
+                            if (pathConfig != null) {
+                                pathConfig.invalidateTransportRefreshCache();
+                                pathConfig.refresh();
+                            }
+                            recalculatePath();
+                            return false;
                         }
                     }
 
@@ -9626,6 +9632,28 @@ public class Rs2Walker {
      * @param transport the transport object to be checked and processed
      * @return true if the transport is an instance of PohTransport and its transport method executes successfully, false otherwise
      */
+    /** Consecutive failed attempts per POH teleport (display info); cleared on success. */
+    private static final Map<String, Integer> POH_TELEPORT_FAILURES = new ConcurrentHashMap<>();
+    /** Failures in a row before a POH teleport is left out of planning (one may be a slow menu). */
+    static final int POH_TELEPORT_FAILURES_BEFORE_LOCK = 2;
+
+    /**
+     * Counts one failed attempt at a POH teleport.
+     *
+     * @return true when this failure reaches {@link #POH_TELEPORT_FAILURES_BEFORE_LOCK} (the count is reset)
+     */
+    static boolean recordPohTeleportFailure(Map<String, Integer> failures, String teleport) {
+        if (teleport == null) {
+            return false;
+        }
+        int count = failures.merge(teleport, 1, Integer::sum);
+        if (count >= POH_TELEPORT_FAILURES_BEFORE_LOCK) {
+            failures.remove(teleport);
+            return true;
+        }
+        return false;
+    }
+
     private static boolean handlePohTransport(Transport transport) {
         if(!(transport instanceof PohTransport)) {
             throw new IllegalStateException("handlePohTransport should not be called for non-PohTransports");
@@ -9760,6 +9788,21 @@ public class Rs2Walker {
                                 || !now.equals(before)
                                 || !Rs2Player.isMoving());
                     }, 2000);
+                    // A gate into a dangerous area (Mort Myre) opens an "are you sure?" warning instead of
+                    // letting the player through. Unanswered, the gate stays shut and the walker re-clicks it.
+                    if (!transport.getDestination().equals(Rs2Player.getWorldLocation())) {
+                        final int gateId = transport.getObjectId();
+                        final WorldPoint gateTile = transport.getOrigin();
+                        // Ends early once the gate opens or the player is through, so ordinary gates do not wait.
+                        sleepUntil(() -> AreaWarning.isOpen()
+                                || transport.getDestination().equals(Rs2Player.getWorldLocation())
+                                || (gateId > 0 && gateTile != null && Rs2GameObject.getTileObject(gateId, gateTile, 1) == null),
+                                AREA_WARNING_APPEAR_WAIT_MS);
+                        if (AreaWarning.acceptIfOpen()) {
+                            sleepUntil(() -> transport.getDestination().equals(Rs2Player.getWorldLocation()),
+                                    ADJACENT_TRANSPORT_OPEN_WAIT_MS);
+                        }
+                    }
                     WorldPoint afterOpen = Rs2Player.getWorldLocation();
                     if (afterOpen != null && !afterOpen.equals(transport.getDestination())) {
                         // Let the gate actually swing open before asking the server to path through it.
@@ -9780,6 +9823,16 @@ public class Rs2Walker {
                                 return now != null && td != null && now.equals(td);
                             }, 3000);
                         }
+                    }
+                } else if (isShortSamePlaneHop(transport)) {
+                    // A jump, stepping stone or squeeze moves the player by force, which is not walking:
+                    // waitForWalking() returned at once and the next pass clicked the obstacle again
+                    // mid-jump. Wait for the hop to start, then for the landing or the animation to end.
+                    boolean hopStarted = sleepUntil(() -> Rs2Player.isAnimating()
+                            || isPlayerWithinChebyshevOf(tdObj, 2), SHORT_HOP_START_WAIT_MS);
+                    if (hopStarted) {
+                        sleepUntil(() -> isPlayerWithinChebyshevOf(tdObj, 2)
+                                || (!Rs2Player.isAnimating() && !Rs2Player.isMoving()), SHORT_HOP_LANDING_WAIT_MS);
                     }
                 }
             }
@@ -9886,6 +9939,19 @@ public class Rs2Walker {
             return defaultRadius;
         }
         return Math.min(defaultRadius, hop - 1);
+    }
+
+    /**
+     * A same-plane object transport that moves the player a few tiles (jump, stepping stone, squeeze),
+     * as opposed to a door (adjacent) or a long same-plane jump such as a sewer ladder.
+     */
+    static boolean isShortSamePlaneHop(Transport transport) {
+        return transport != null
+                && transport.getOrigin() != null
+                && transport.getDestination() != null
+                && transport.getOrigin().getPlane() == transport.getDestination().getPlane()
+                && transport.getOrigin().distanceTo(transport.getDestination()) > 1
+                && transport.getOrigin().distanceTo(transport.getDestination()) <= SHORT_HOP_MAX_TILES;
     }
 
     private static boolean isAdjacentSamePlaneTransport(Transport transport) {

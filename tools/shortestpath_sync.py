@@ -76,6 +76,10 @@ Usage (from the repository root):
     #    rewrites corrected tiles in place, prints a report
     python tools/shortestpath_sync.py apply --upstream /tmp/sp-up agility_shortcuts.tsv
 
+    # collision map: compare region by region, then replace ours (converts upstream's 4 flags to our 2)
+    python tools/shortestpath_sync.py collision-map --upstream /tmp/sp-up
+    python tools/shortestpath_sync.py collision-map --upstream /tmp/sp-up --write
+
     # just print the converted rows of an upstream file
     python tools/shortestpath_sync.py convert --upstream /tmp/sp-up canoes.tsv
 
@@ -85,7 +89,9 @@ split"), or a hand edit. After applying, run TransportDataIntegrityTest and the 
     ./gradlew :client:runUnitTests --tests 'net.runelite.client.plugins.projectx.shortestpath.*'
 
 Rows we deliberately do not want are listed in tools/shortestpath_sync_exclusions.tsv (with a
-reason); they are never imported. seasonal_transports.tsv (Leagues/Deadman),
+reason); they are never imported. Agility COURSE obstacles (RuneLite's Obstacles.OBSTACLE_IDS, resolved
+through gameval ObjectID) are excluded automatically from agility_shortcuts.tsv and transports.tsv.
+seasonal_transports.tsv (Leagues/Deadman),
 teleportation_boxes.tsv and teleportation_portals_poh.tsv (handled in code: Mounted* items and
 the PohPortal enum) are not synced.
 """
@@ -104,11 +110,20 @@ SKILL_JAVA = REPO / "runelite-api/src/main/java/net/runelite/api/Skill.java"
 RS2_SPELLS_JAVA = REPO / "runelite-client/src/main/java/net/runelite/client/plugins/projectx/util/magic/Rs2Spells.java"
 MAGIC_ACTION_JAVA = REPO / "runelite-client/src/main/java/net/runelite/client/plugins/skillcalculator/skills/MagicAction.java"
 EXCLUSIONS = pathlib.Path(__file__).resolve().parent / "shortestpath_sync_exclusions.tsv"
+GAMEVAL_OBJECT_ID = REPO / "runelite-api/src/main/java/net/runelite/api/gameval/ObjectID.java"
+AGILITY_OBSTACLES_JAVA = REPO / "runelite-client/src/main/java/net/runelite/client/plugins/agility/Obstacles.java"
+# Upstream files whose rows are checked against RuneLite's agility course obstacles.
+COURSE_CHECKED_FILES = {"agility_shortcuts.tsv", "transports.tsv"}
 
 UPSTREAM_REPO = "Skretzo/shortest-path"
 UPSTREAM_TRANSPORTS = "src/main/resources/transports"
 UPSTREAM_ITEM_VARIATIONS = "src/main/java/shortestpath/ItemVariations.java"
 ITEM_VARIATIONS_FILE = "ItemVariations.java"
+# Since late 2026 upstream keeps the variation table in a resource TSV (name, comma-separated
+# numeric ids, staves, offhands) and ItemVariations.java only loads it.
+UPSTREAM_ITEM_VARIATIONS_TSV = "src/main/resources/item-variations.tsv"
+UPSTREAM_COLLISION_MAP = "src/main/resources/collision-map.zip"
+ITEM_VARIATIONS_TSV_FILE = "item-variations.tsv"
 
 # upstream file -> our file. Files mapped to None are deliberately not synced.
 FILE_MAP = {
@@ -137,6 +152,7 @@ FILE_MAP = {
     "seasonal_transports.tsv": None,
     "teleportation_boxes.tsv": None,
     "teleportation_portals_poh.tsv": None,
+    "teleport_restrictions.tsv": None,  # generated item-family table for upstream's sidebar, not routes
 }
 
 # Column names exactly as Transport.java reads them.
@@ -181,7 +197,8 @@ CURRENCIES = {"COINS": "Coins", "ECTO_TOKEN": "Ecto-token"}
 # rows that start or end inside upstream's POH instance are never imported.
 POH_TILE = "1858 7051 0"
 # Multi-word menu options that do not occur in our data yet (the split is otherwise ambiguous).
-EXTRA_OPTIONS = ["Leave Tomb", "Walk through", "Jump off", "The Pandemonium", "Gloomthorn Trail"]
+EXTRA_OPTIONS = ["Leave Tomb", "Walk through", "Jump off", "The Pandemonium", "Gloomthorn Trail", "Climb up",
+                 "Climb down"]
 # Options that name an action rather than a destination (ships: the option is usually the port).
 GENERIC_OPTIONS = {"Travel", "Talk-to", "Take-boat", "Quick-Travel", "Board", "Charter"}
 # Teleports: an upstream row is "already present" when one of ours has the same key (shared item
@@ -258,8 +275,29 @@ def spell_resolves(display_info, spell_names):
     return any(key in name.lower() for name in spell_names)
 
 
+def load_item_variations_tsv(path, item_ids):
+    """Parses upstream item-variations.tsv (name, ids, staves, offhands) into NAME -> [numeric ids].
+    Only the ids column is used: staves/offhands relieve rune costs, which we check through Rs2Spells."""
+    known = set(item_ids.values())
+    variations = {}
+    for line in pathlib.Path(path).read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.startswith("#"):
+            continue
+        cols = line.split("\t")
+        ids = [int(x) for x in cols[1].split(",") if x.strip()]
+        unknown = [i for i in ids if i not in known]
+        if unknown:
+            print("NOTE item-variations %s: ids %s are not in our gameval ItemID (kept)" % (cols[0], unknown),
+                  file=sys.stderr)
+        variations[cols[0]] = ids
+    return variations
+
+
 def load_item_variations(path, item_ids):
     """Parses upstream ItemVariations.java into NAME -> [numeric ids]."""
+    tsv = pathlib.Path(path).parent / ITEM_VARIATIONS_TSV_FILE
+    if tsv.exists():
+        return load_item_variations_tsv(tsv, item_ids)
     text = strip_java_comments(pathlib.Path(path).read_text(encoding="utf-8"))
     body = text[text.index("enum ItemVariations"):]
     body = body[body.index("{") + 1:]
@@ -705,7 +743,32 @@ def load_exclusions():
     return out
 
 
+_COURSE_OBSTACLE_IDS = None
+
+
+def course_obstacle_ids():
+    """RuneLite's Obstacles.OBSTACLE_IDS (agility COURSE obstacles), resolved through gameval ObjectID.
+    Course obstacles are laps that can fail, not routes, so the walker never imports them."""
+    global _COURSE_OBSTACLE_IDS
+    if _COURSE_OBSTACLE_IDS is None:
+        object_ids = {}
+        const = re.compile(r"public static final int (\w+)\s*=\s*(-?\d+)\s*;")
+        for line in GAMEVAL_OBJECT_ID.read_text(encoding="utf-8").splitlines():
+            m = const.search(line)
+            if m and m.group(1) not in object_ids:
+                object_ids[m.group(1)] = int(m.group(2))
+        text = strip_java_comments(AGILITY_OBSTACLES_JAVA.read_text(encoding="utf-8"))
+        start = text.index("OBSTACLE_IDS = ImmutableSet.of(")
+        body = text[start:text.index(");", start)]
+        _COURSE_OBSTACLE_IDS = {object_ids[n] for n in re.findall(r"ObjectID\.(\w+)", body) if n in object_ids}
+    return _COURSE_OBSTACLE_IDS
+
+
 def exclusion_reason(exclusions, up_file, row):
+    if up_file in COURSE_CHECKED_FILES:
+        oid = object_id(row)
+        if oid and oid[2] in course_obstacle_ids():
+            return "agility course obstacle (RuneLite Obstacles.OBSTACLE_IDS): course laps, not routes for the walker"
     for origin, dest, match, reason in exclusions.get(up_file, []):
         if origin not in ("*", row.get(COL_ORIGIN, "")):
             continue
@@ -923,7 +986,10 @@ class FileSync:
             if not hits:
                 kept.append((line, section, row))
                 continue
-            movable = [h for h in hits if self._same_object(row, h[2]) and not stricter(h[2], row)]
+            # Never move a row out of agility_shortcuts.tsv: as a plain TRANSPORT it loses the walker's
+            # agility landing wait (movement gotcha 23, TransportDataIntegrityTest).
+            movable = [h for h in hits if self._same_object(row, h[2]) and not stricter(h[2], row)
+                       and h[0] != "agility_shortcuts.tsv"]
             if len(movable) == len(hits):
                 for f, i, r in movable:
                     self.relocations.append((f, i, r, line))
@@ -1004,6 +1070,11 @@ def cmd_fetch(args):
             (dest / name).write_bytes(gh_raw("%s/%s" % (UPSTREAM_TRANSPORTS, name)))
             print("fetched", name)
     (dest / ITEM_VARIATIONS_FILE).write_bytes(gh_raw(UPSTREAM_ITEM_VARIATIONS))
+    try:
+        (dest / ITEM_VARIATIONS_TSV_FILE).write_bytes(gh_raw(UPSTREAM_ITEM_VARIATIONS_TSV))
+    except subprocess.CalledProcessError:
+        pass  # older upstream: the table is inline in ItemVariations.java
+    (dest / "collision-map.zip").write_bytes(gh_raw(UPSTREAM_COLLISION_MAP))
     sha = subprocess.run(["gh", "api", "repos/%s/commits/master" % UPSTREAM_REPO, "--jq", ".sha"],
                          check=True, capture_output=True, text=True).stdout.strip()
     (dest / "UPSTREAM_SHA").write_text(sha + "\n")
@@ -1089,6 +1160,64 @@ def cmd_apply(args):
             print("   corrected: %s\n          -> %s   (upstream line %d)" % (old, new, line))
 
 
+# Collision map. Ours (pathfinder/FlagMap.java) stores 2 bits per tile: north and east edge open.
+# Since upstream #729 (2026-10-09) theirs stores 4: the same two, then FLAG_WALL_NORTH/FLAG_WALL_EAST
+# (edge closed by a wall or door rather than an object footprint). Bits 0/1 kept their meaning: the
+# map from just before #729 equals the #729 map with the wall bits dropped, region for region.
+REGION_TILES = 64 * 64
+
+
+def _java_bitset_bytes(data):
+    """The bytes java.util.BitSet.valueOf(byte[]) keeps (it ignores trailing zero bytes)."""
+    n = len(data)
+    while n > 0 and data[n - 1] == 0:
+        n -= 1
+    return bytes(data[:n])
+
+
+def collision_region_to_ours(data, upstream_flags):
+    """One region of upstream's map, re-packed with our 2 flags per tile."""
+    data = _java_bitset_bytes(data)
+    if upstream_flags == 2:
+        return data
+    size_bits = ((len(data) + 7) // 8) * 64  # BitSet.size(): whole longs, as FlagMap derives planes
+    planes = (size_bits + REGION_TILES * upstream_flags - 1) // (REGION_TILES * upstream_flags)
+    out = bytearray(planes * REGION_TILES * 2 // 8)
+    for tile in range(planes * REGION_TILES):
+        for flag in (0, 1):
+            src = tile * upstream_flags + flag
+            if src >> 3 < len(data) and (data[src >> 3] >> (src & 7)) & 1:
+                dst = tile * 2 + flag
+                out[dst >> 3] |= 1 << (dst & 7)
+    return _java_bitset_bytes(out)
+
+
+def cmd_collision_map(args):
+    import zipfile
+    ours_path = DATA_DIR / "collision-map.zip"
+    up_path = pathlib.Path(args.upstream) / "collision-map.zip"
+    if not up_path.exists():
+        raise SystemExit("%s not found -- run the fetch command first" % up_path)
+    with zipfile.ZipFile(ours_path) as z:
+        ours = {n: _java_bitset_bytes(z.read(n)) for n in z.namelist()}
+    with zipfile.ZipFile(up_path) as z:
+        conv = {n: collision_region_to_ours(z.read(n), args.flags) for n in z.namelist()}
+    shared = set(ours) & set(conv)
+    changed = sorted(n for n in shared if ours[n] != conv[n])
+    added = sorted(set(conv) - set(ours))
+    removed = sorted(set(ours) - set(conv))
+    print("regions: ours %d, upstream %d; identical %d, changed %d, added %d, removed %d"
+          % (len(ours), len(conv), len(shared) - len(changed), len(changed), len(added), len(removed)))
+    for label, names in (("changed", changed), ("added", added), ("removed", removed)):
+        if names:
+            print("  %s: %s" % (label, " ".join(names)))
+    if args.write:
+        with zipfile.ZipFile(ours_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+            for n in sorted(conv):
+                z.writestr(n, conv[n])
+        print("wrote", ours_path)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -1099,6 +1228,12 @@ def main():
     c.add_argument("--upstream", required=True)
     c.add_argument("file")
     c.set_defaults(func=cmd_convert)
+    m = sub.add_parser("collision-map", help="compare upstream's collision-map.zip with ours (--write replaces ours)")
+    m.add_argument("--upstream", required=True)
+    m.add_argument("--flags", type=int, default=4, choices=(2, 4),
+                   help="flags per tile in upstream's map (4 since upstream #729, 2 before)")
+    m.add_argument("--write", action="store_true")
+    m.set_defaults(func=cmd_collision_map)
     for name, fn in (("diff", cmd_diff), ("apply", cmd_apply)):
         s = sub.add_parser(name)
         s.add_argument("--upstream", required=True)

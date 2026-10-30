@@ -159,6 +159,8 @@ public class PohPanel extends PluginPanel {
         }
         detectButton.setEnabled(false);
         detectButton.setText("Detecting...");
+        // A fresh detection replaces the lists the walker found wrong, so stop excluding its failures.
+        net.runelite.client.plugins.projectx.shortestpath.pathfinder.PathfinderConfig.lockedPohTeleports.clear();
         try {
             detectSection("house features", () -> checkboxPanel.detectPohFacilities());
             detectSection("portals", () -> portalPanel.setAll(PohPortal.findPortalsInPoh()));

@@ -827,6 +827,57 @@ public class ShortestPathCoreTest {
 		return config;
 	}
 
+	@Test
+	public void testTaverleyBlueDragonsNeedTheDustyKeyForTheGate() {
+		// The dusty-key gate (object 2623) once had a keyless twin row, so a player without the key
+		// was routed into the locked gate and the banking planner never fetched the key.
+		WorldPoint ladderBottom = new WorldPoint(2884, 9798, 0);
+		WorldPoint blueDragons = new WorldPoint(2910, 9805, 0);
+		WorldPoint gateEast = new WorldPoint(2924, 9803, 0);
+		WorldPoint gateWest = new WorldPoint(2923, 9803, 0);
+
+		// No items and no skills: neither the key gate nor the 70 Agility pipe is usable.
+		Pathfinder keyless = new Pathfinder(createConfigWithTransportsWhere(
+				t -> t.getItemIdRequirements().isEmpty() && noSkills(t)), ladderBottom, blueDragons);
+		keyless.run();
+		assertTrue("keyless search should finish", keyless.isDone());
+		assertFalse("a player without the dusty key must not be routed through the key gate",
+				hasConsecutiveStep(keyless.getPath(), gateEast, gateWest));
+
+		// With the key (item rows allowed, still no Agility), the route goes through the gate.
+		Pathfinder withKey = new Pathfinder(createConfigWithTransportsWhere(ShortestPathCoreTest::noSkills),
+				ladderBottom, blueDragons);
+		withKey.run();
+		List<WorldPoint> path = withKey.getPath();
+		assertEquals("with the key the route reaches the blue dragons", blueDragons, path.get(path.size() - 1));
+		assertTrue("with the key the route uses the dusty-key gate", hasConsecutiveStep(path, gateEast, gateWest));
+	}
+
+	private static boolean noSkills(Transport t) {
+		return Arrays.stream(t.getSkillLevels()).allMatch(level -> level <= 1);
+	}
+
+	private PathfinderConfig createConfigWithTransportsWhere(java.util.function.Predicate<Transport> usable) {
+		HashMap<WorldPoint, Set<Transport>> allTransports = Transport.loadAllFromResources();
+		PathfinderConfig config = createMinimalConfig();
+		for (Map.Entry<WorldPoint, Set<Transport>> entry : allTransports.entrySet()) {
+			if (entry.getKey() == null) {
+				continue;
+			}
+			Set<Transport> kept = new HashSet<>();
+			for (Transport t : entry.getValue()) {
+				if (usable.test(t)) {
+					kept.add(t);
+				}
+			}
+			if (!kept.isEmpty()) {
+				config.getTransports().put(entry.getKey(), kept);
+				config.getTransportsPacked().put(WorldPointUtil.packWorldPoint(entry.getKey()), kept);
+			}
+		}
+		return config;
+	}
+
 	private PathfinderConfig createConfigWithUnavailableShortcutEdges(TransportType... unavailableTypes) {
 		Set<TransportType> unavailable = new HashSet<>(Arrays.asList(unavailableTypes));
 		HashMap<WorldPoint, Set<Transport>> allTransports = Transport.loadAllFromResources();
