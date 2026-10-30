@@ -89,6 +89,7 @@ import net.runelite.client.plugins.projectx.util.walker.lifecycle.Rs2WalkerLifec
 import net.runelite.client.plugins.skillcalculator.skills.MagicAction;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
+import net.runelite.client.util.Text;
 
 import javax.inject.Named;
 import java.awt.*;
@@ -11435,7 +11436,9 @@ public class Rs2Walker {
             return false;
         }
 
-        if (!Rs2Widget.isWidgetVisible(ComponentID.ADVENTURE_LOG_CONTAINER)) {
+        // The travel menu opens in the classic or the new menu interface (interface style setting);
+        // waiting only for the classic one left the new one open until the walker gave up.
+        if (!isListMenuOpen()) {
             TileObject spiritTree = Rs2GameObject.findObjectById(objectId);
             if (log.isDebugEnabled())
             {
@@ -11464,10 +11467,25 @@ public class Rs2Walker {
             }
         }
 
-        boolean result = interactWithAdventureLog(transport);
+        ListMenuPick pick = pickListMenuDestination(transport);
+        if (pick == ListMenuPick.NOT_OFFERED) {
+            // Not listed, or greyed out: close the menu and plan without this destination.
+            Rs2Keyboard.keyPress(KeyEvent.VK_ESCAPE);
+            sleepUntil(() -> !isListMenuOpen(), 1200);
+            PathfinderConfig.lockedSpiritTreeDestinations.add(transport.getDestination());
+            PathfinderConfig pathConfig = Rs2PathApi.getPathfinderConfig();
+            if (pathConfig != null) {
+                pathConfig.invalidateTransportRefreshCache();
+                pathConfig.refresh();
+            }
+            recalculatePath();
+            return false;
+        }
+        boolean result = pick == ListMenuPick.CLICKED
+                && sleepUntilTrue(() -> isPlayerWithinChebyshevOf(transport.getDestination(), OFFSET), 100, 5000);
         if (log.isDebugEnabled())
         {
-            log.debug("[Walker] handleSpiritTree: interactWithAdventureLog returned {}", result);
+            log.debug("[Walker] handleSpiritTree: menu pick {} landed {}", pick, result);
         }
         return result;
     }
@@ -12081,27 +12099,135 @@ public class Rs2Walker {
         }
     }
     /**
-     * interact with interfaces like spirit tree etc...
+     * Row containers of the list menu that spirit trees and Kourend minecarts open. The game shows
+     * it in one of two interfaces depending on the player's interface style: the new one
+     * (947, rows in child 9, keys coloured ffffff) or the classic one (187, rows in child 3, keys
+     * coloured 735a28). Rows read "&lt;col=..&gt;1&lt;/col&gt;: Tree Gnome Village"; unusable rows are greyed
+     * with 5f5f5f.
+     */
+    private static final int[] LIST_MENU_ROW_CONTAINERS = {InterfaceID.MenuNew.TEXT, InterfaceID.Menu.LJ_LAYER1};
+    private static final Pattern LIST_MENU_ROW_KEY = Pattern.compile("^\\s*([0-9A-Za-z]{1,2})\\s*:\\s*");
+    private static final String LIST_MENU_GREYED = "<col=5f5f5f>";
+
+    private enum ListMenuPick { CLICKED, NOT_OFFERED, NO_MENU }
+
+    /** One row of the open list menu: its raw text, and whether its whole box is on screen in the menu. */
+    private static final class ListMenuRow {
+        final String text;
+        final Rectangle bounds;
+        final boolean onScreen;
+
+        ListMenuRow(String text, Rectangle bounds, boolean onScreen) {
+            this.text = text;
+            this.bounds = bounds;
+            this.onScreen = onScreen;
+        }
+    }
+
+    /** The open list menu's rows, from whichever interface style is showing; empty when none is open. */
+    private static List<ListMenuRow> readListMenuRows() {
+        return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            for (int componentId : LIST_MENU_ROW_CONTAINERS) {
+                Widget container = ProjectX.getClient().getWidget(componentId);
+                if (container == null || container.isHidden()) continue;
+                Widget[] children = container.getDynamicChildren();
+                if (children == null || children.length == 0) continue;
+                List<ListMenuRow> rows = new ArrayList<>();
+                for (Widget child : children) {
+                    if (child == null || child.isHidden() || child.getText() == null || child.getText().isEmpty()) continue;
+                    Rectangle bounds = child.getBounds();
+                    // False when a scroll layer above the row clips it, so a click on its bounds would miss.
+                    boolean onScreen = bounds != null && !bounds.isEmpty();
+                    for (Widget parent = child.getParent(); onScreen && parent != null; parent = parent.getParent()) {
+                        Rectangle pb = parent.getBounds();
+                        onScreen = pb == null || pb.isEmpty() || pb.contains(bounds);
+                    }
+                    rows.add(new ListMenuRow(child.getText(), bounds, onScreen));
+                }
+                if (!rows.isEmpty()) return rows;
+            }
+            return Collections.<ListMenuRow>emptyList();
+        }).orElse(Collections.emptyList());
+    }
+
+    private static boolean isListMenuOpen() {
+        return !readListMenuRows().isEmpty();
+    }
+
+    /** "<col=ffffff>A</col>: <col=5f5f5f>Hosidius" or "A: Hosidius" to "Hosidius". */
+    static String listMenuRowName(String text) {
+        if (text == null) return "";
+        return LIST_MENU_ROW_KEY.matcher(Text.removeTags(text)).replaceFirst("").trim();
+    }
+
+    /**
+     * The row of the open list menu that travels to a transport's destination, chosen by its name
+     * ("4: Grand Exchange" names "Grand Exchange"), never by the key in the TSV: the keys shift when the
+     * game adds a destination. -1 when the menu does not list it or lists it greyed out (not usable).
+     */
+    static int listMenuRowIndex(String displayInfo, List<String> rowTexts) {
+        if (displayInfo == null || rowTexts == null) return -1;
+        String wanted = listMenuRowName(displayInfo).toLowerCase();
+        if (wanted.isEmpty()) return -1;
+        int found = -1;
+        for (int i = 0; i < rowTexts.size() && found < 0; i++) {
+            if (listMenuRowName(rowTexts.get(i)).equalsIgnoreCase(wanted)) found = i;
+        }
+        for (int i = 0; i < rowTexts.size() && found < 0; i++) {
+            if (listMenuRowName(rowTexts.get(i)).toLowerCase().contains(wanted)) found = i;
+        }
+        if (found < 0) return -1;
+        String text = rowTexts.get(found);
+        return text != null && text.toLowerCase().contains(LIST_MENU_GREYED) ? -1 : found;
+    }
+
+    /** The key shown at the start of a list menu row ("A" in "A: Hosidius"), or 0. */
+    static char listMenuRowKey(String text) {
+        if (text == null) return 0;
+        Matcher m = LIST_MENU_ROW_KEY.matcher(Text.removeTags(text));
+        return m.find() && m.group(1).length() == 1 ? m.group(1).charAt(0) : 0;
+    }
+
+    /** Waits for the list menu and picks the transport's destination by its name. */
+    private static ListMenuPick pickListMenuDestination(Transport transport) {
+        if (transport.getDisplayInfo() == null || transport.getDisplayInfo().isEmpty()) return ListMenuPick.NO_MENU;
+
+        boolean open = sleepUntilTrue(Rs2Walker::isListMenuOpen, Rs2Player::isMoving, 100, 10000);
+        List<ListMenuRow> rows = readListMenuRows();
+        if (!open || rows.isEmpty()) {
+            log.warn("[Walker] travel menu for \"{}\" did not open", transport.getDisplayInfo());
+            return ListMenuPick.NO_MENU;
+        }
+
+        List<String> texts = new ArrayList<>(rows.size());
+        for (ListMenuRow row : rows) texts.add(row.text);
+        int index = listMenuRowIndex(transport.getDisplayInfo(), texts);
+        if (index < 0) {
+            List<String> names = new ArrayList<>(texts.size());
+            for (String text : texts) names.add(Text.removeTags(text));
+            log.warn("[Walker] travel menu has no usable row for \"{}\" (rows {})", transport.getDisplayInfo(), names);
+            return ListMenuPick.NOT_OFFERED;
+        }
+
+        ListMenuRow row = rows.get(index);
+        char key = listMenuRowKey(row.text);
+        if (row.onScreen || key == 0) {
+            ProjectX.getMouse().click(row.bounds);
+        } else {
+            // Scrolled out of view: press the key the matching row shows, read from the menu itself.
+            Rs2Keyboard.keyPress(key);
+        }
+        log.info("Traveling to {} - ({})", transport.getDisplayInfo(), transport.getDestination());
+        return ListMenuPick.CLICKED;
+    }
+
+    /**
+     * Picks a destination in the spirit tree / minecart list menu and waits briefly to arrive.
      *
      * @param transport
      */
     private static boolean  interactWithAdventureLog(Transport transport) {
-        if (transport.getDisplayInfo() == null || transport.getDisplayInfo().isEmpty()) return false;
-
-        // Wait for the widget to become visible
-        boolean isAdventureLogVisible = sleepUntilTrue(() -> !Rs2Widget.isHidden(ComponentID.ADVENTURE_LOG_CONTAINER), Rs2Player::isMoving, 100, 10000);
-
-        if (!isAdventureLogVisible) {
-            log.error("Widget did not become visible within the timeout.");
-            return false;
-        }
-
-        String destinationString = transport.getDisplayInfo().replaceAll("^\\d+:\\s*", "");
-        Widget destinationWidget = Rs2Widget.findWidget(destinationString, List.of(Rs2Widget.getWidget(187, 3)));
-        if (destinationWidget == null) return false;
-
-        Rs2Widget.clickWidget(destinationWidget);
-        log.info("Traveling to {} - ({})", transport.getDisplayInfo(), transport.getDestination());
+        if (pickListMenuDestination(transport) != ListMenuPick.CLICKED) return false;
         return sleepUntilTrue(() -> isPlayerWithinChebyshevOf(transport.getDestination(), OFFSET), 100, 5000);
     }
 

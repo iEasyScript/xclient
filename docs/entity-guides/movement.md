@@ -431,3 +431,37 @@ Rs2Dialogue.clickOption(wanted, true);
 `PathfinderConfig.useTransport` skips destinations in `lockedFossilRowboatDestinations`.
 
 **Defensive check:** `FossilRowboatOptionTest`.
+
+## 21. A list menu has two interfaces; find the open one, then the row by its name
+
+The spirit tree travel menu (and the Kourend minecart menu) opens in one of two interfaces
+depending on the player's interface style setting: the classic `InterfaceID.MENU` (187, rows are
+the dynamic children of `Menu.LJ_LAYER1`, keys coloured `735a28`) or the new `InterfaceID.MENU_NEW`
+(947, rows under `MenuNew.TEXT`, keys coloured `ffffff`). Rows read `<col=..>4</col>: Grand
+Exchange`; rows that cannot be used are greyed with `<col=5f5f5f>`. Check both containers, choose
+the row by the destination's name (never the key from the TSV), and when it is missing or greyed,
+close the menu and route around that destination.
+
+**Why this matters:** `handleSpiritTree` waited only for `ComponentID.ADVENTURE_LOG_CONTAINER`
+(187). On the new interface style the menu opened, the walker waited 10 s for a widget that never
+appeared, gave up, and left the player on the selection screen (auto quest report, 2026-10-30).
+The pathfinder's own menu reader (`ShortestPathPlugin.onWidgetLoaded`) already read both.
+
+**Pattern to follow:**
+
+```java
+// Wrong: only the classic interface, and a contains-search for the TSV text
+sleepUntilTrue(() -> !Rs2Widget.isHidden(ComponentID.ADVENTURE_LOG_CONTAINER), ...);
+Rs2Widget.findWidget(displayInfo.replaceAll("^\\d+:\\s*", ""), List.of(Rs2Widget.getWidget(187, 3)));
+// Right: rows from whichever menu is open, matched by name, greyed rows refused
+int row = listMenuRowIndex(transport.getDisplayInfo(), rowTexts);
+if (row < 0) { /* Escape, PathfinderConfig.lockedSpiritTreeDestinations.add(dest), refresh, recalculate */ }
+```
+
+**Where this applies:** `Rs2Walker.handleSpiritTree`, `Rs2Walker.interactWithAdventureLog`
+(minecarts), `readListMenuRows`; `PathfinderConfig.useTransport` skips
+`lockedSpiritTreeDestinations`. Other readers of the 187 menu that do not yet check 947:
+`util/farming/SpiritTree.extractAvailableFromWidget`, `util/poh/data/MountedDigsite`,
+`util/poh/data/MountedXerics`.
+
+**Defensive check:** `SpiritTreeMenuRowTest`.

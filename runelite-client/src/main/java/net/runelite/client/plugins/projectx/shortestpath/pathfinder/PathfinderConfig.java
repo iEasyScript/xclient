@@ -82,6 +82,11 @@ public class PathfinderConfig {
 	 * trips the account has unlocked, so these routes are left out until the client restarts.
 	 */
 	public static final Set<WorldPoint> lockedFossilRowboatDestinations = ConcurrentHashMap.newKeySet();
+	/**
+	 * Spirit tree destinations the travel menu did not list, or listed greyed out, this session. Left out of
+	 * planning until the client restarts so the walker routes around them instead of reopening the menu.
+	 */
+	public static final Set<WorldPoint> lockedSpiritTreeDestinations = ConcurrentHashMap.newKeySet();
 
 	/** Order matches {@link #spiritTreeDestinationToggle(int)} — add destinations in both places only here + switch. */
 	private static final WorldPoint[] SPIRIT_TREE_DESTINATIONS_ORDERED = {
@@ -1317,6 +1322,11 @@ public class PathfinderConfig {
         }
         if (transport.getType() == TransportType.SPIRIT_TREE && !isSpiritTreeRouteEnabled(transport)) {
             log.debug("Transport ( O: {} D: {} ) is a spirit tree route but the tree is disabled", transport.getOrigin(), transport.getDestination());
+            return false;
+        }
+        if (transport.getType() == TransportType.SPIRIT_TREE
+                && lockedSpiritTreeDestinations.contains(transport.getDestination())) {
+            log.debug("Transport ( O: {} D: {} ) is a spirit tree destination the travel menu did not offer", transport.getOrigin(), transport.getDestination());
             return false;
         }
         if (transport.getType() == TransportType.BOAT

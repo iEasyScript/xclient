@@ -787,9 +787,9 @@ net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isUnresolvedRouteDoor
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#isUnresolvedRouteDoorObject(TileObject, WorldPoint, WorldPoint, WorldPoint, int): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$getPointWithWallDistance$18(WorldView, int[][], WorldPoint): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$getPointWithWallDistance$19(WorldView, int[][], WorldPoint): boolean  ->  net.runelite.api.coords.LocalPoint#fromWorld(WorldView, WorldPoint): LocalPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleFairyRing$201(Transport, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleMinigameTeleport$170(Widget, Object[]): boolean  ->  net.runelite.api.widgets.Widget#getOnOpListener(): Object[]
-net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleMinigameTeleport$172(String): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleFairyRing$203(Transport, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleMinigameTeleport$172(Widget, Object[]): boolean  ->  net.runelite.api.widgets.Widget#getOnOpListener(): Object[]
+net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleMinigameTeleport$174(String): boolean  ->  net.runelite.api.widgets.Widget#getText(): String
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$148(int, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$154(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getId(): int
 net.runelite.client.plugins.projectx.util.walker.Rs2Walker#lambda$handleObjectExceptions$154(WorldPoint, TileObject): boolean  ->  net.runelite.api.TileObject#getWorldLocation(): WorldPoint
