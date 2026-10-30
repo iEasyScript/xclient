@@ -92,6 +92,7 @@ import net.runelite.client.ui.overlay.worldmap.WorldMapPointManager;
 
 import javax.inject.Named;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10553,9 +10554,26 @@ public class Rs2Walker {
         if (Rs2GameObject.getObjectIdsByName("Fossil_Rowboat").contains(tileObject.getId())) {
             if (transport.getDisplayInfo() == null || transport.getDisplayInfo().isEmpty()) return false;
 
-            char option = transport.getDisplayInfo().charAt(0);
             Rs2Dialogue.sleepUntilSelectAnOption();
-            Rs2Keyboard.keyPress(option);
+            // The menu lists only the trips this account has unlocked, so the option numbers shift:
+            // pressing the number from boats.tsv could row the player back to the Digsite. Pick by text.
+            List<String> options = Rs2Dialogue.getDialogueOptionTexts();
+            String wanted = fossilRowboatOption(transport.getDisplayInfo(), options);
+            if (wanted == null) {
+                Rs2Keyboard.keyPress(KeyEvent.VK_ESCAPE);
+                if (options.isEmpty()) return false;
+                log.warn("[Walker] Fossil Island rowboat has no option for \"{}\" (options {}); not unlocked, routing around it",
+                        transport.getDisplayInfo(), options);
+                PathfinderConfig.lockedFossilRowboatDestinations.add(transport.getDestination());
+                PathfinderConfig pathConfig = Rs2PathApi.getPathfinderConfig();
+                if (pathConfig != null) {
+                    pathConfig.invalidateTransportRefreshCache();
+                    pathConfig.refresh();
+                }
+                recalculatePath();
+                return true;
+            }
+            Rs2Dialogue.clickOption(wanted, true);
             sleepUntil(() -> {
                 WorldPoint pl = Rs2Player.getWorldLocation();
                 WorldPoint td = transport.getDestination();
@@ -10588,6 +10606,32 @@ public class Rs2Walker {
             return MagicMushtree.handleTransport(transport);
         }
         return false;
+    }
+
+    /**
+     * The Fossil Island rowboat option for a boats.tsv destination ("2. North of Island", "3. The Camp",
+     * "4. To Sea"), found by its words, or null when the menu does not offer it. "Row out to sea, north of
+     * the island" is the sea trip, and "Row to the barge and travel to the Digsite" is not the camp.
+     */
+    static String fossilRowboatOption(String displayInfo, List<String> options) {
+        if (displayInfo == null || options == null) return null;
+        String destination = displayInfo.toLowerCase();
+        for (String option : options) {
+            if (option == null) continue;
+            String text = option.toLowerCase();
+            boolean match;
+            if (destination.contains("sea")) {
+                match = text.contains("sea");
+            } else if (destination.contains("north")) {
+                match = text.contains("north") && !text.contains("sea");
+            } else if (destination.contains("camp")) {
+                match = text.contains("camp") || (text.contains("barge") && !text.contains("digsite"));
+            } else {
+                match = false;
+            }
+            if (match) return option;
+        }
+        return null;
     }
 
     private static boolean handleWildernessObelisk(Transport transport) {

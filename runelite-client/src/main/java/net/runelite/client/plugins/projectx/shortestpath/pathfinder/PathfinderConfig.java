@@ -77,6 +77,11 @@ public class PathfinderConfig {
 	 * tree is only routed through once it is known to be usable.
 	 */
 	public volatile Set<String> availableSpiritTrees;
+	/**
+	 * Fossil Island rowboat destinations missing from the boat's menu this session. The menu only lists the
+	 * trips the account has unlocked, so these routes are left out until the client restarts.
+	 */
+	public static final Set<WorldPoint> lockedFossilRowboatDestinations = ConcurrentHashMap.newKeySet();
 
 	/** Order matches {@link #spiritTreeDestinationToggle(int)} — add destinations in both places only here + switch. */
 	private static final WorldPoint[] SPIRIT_TREE_DESTINATIONS_ORDERED = {
@@ -1312,6 +1317,11 @@ public class PathfinderConfig {
         }
         if (transport.getType() == TransportType.SPIRIT_TREE && !isSpiritTreeRouteEnabled(transport)) {
             log.debug("Transport ( O: {} D: {} ) is a spirit tree route but the tree is disabled", transport.getOrigin(), transport.getDestination());
+            return false;
+        }
+        if (transport.getType() == TransportType.BOAT
+                && lockedFossilRowboatDestinations.contains(transport.getDestination())) {
+            log.debug("Transport ( O: {} D: {} ) is a Fossil Island rowboat trip this account has not unlocked", transport.getOrigin(), transport.getDestination());
             return false;
         }
         // If you don't meet level requirements

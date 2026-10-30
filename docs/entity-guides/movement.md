@@ -403,3 +403,31 @@ LocalPoint lp = SceneSpace.toLocal(ProjectX.getClient().getTopLevelWorldView(), 
 **Defensive check:** `SceneSpaceTest` (both spaces resolve to one scene tile, and the template
 lookup inverts RuneLite's `fromLocalInstance` for all four chunk rotations) and
 `Rs2GameObjectFootprintReachableTest`.
+
+## 20. Choose a transport's menu option by its words, not its number
+
+A boat or NPC menu that lists only what the account has unlocked numbers its options differently
+from one account to the next. A transport row's display text ("2. North of Island") is a label for
+humans. Read the menu, choose the option whose text names the destination, and when it is missing,
+close the menu and route around that trip instead of pressing a key.
+
+**Why this matters:** the Fossil Island rowboat handler pressed the first character of the row's
+display text. On an account without the north-of-island trip, option 2 was "Row to the barge and
+travel to the Digsite", so the camp rowboat sent the player back to the Digsite, the barge brought
+them back, and it repeated every ~28 s (Fossil Island Crabs report, 2026-10-28).
+
+**Pattern to follow:**
+
+```java
+// Wrong: the number shifts with what is unlocked
+Rs2Keyboard.keyPress(transport.getDisplayInfo().charAt(0));
+// Right: match the words, and drop the route when the option is not offered
+String wanted = fossilRowboatOption(transport.getDisplayInfo(), Rs2Dialogue.getDialogueOptionTexts());
+if (wanted == null) { /* Escape, PathfinderConfig.lockedFossilRowboatDestinations.add(dest), refresh, recalculate */ }
+Rs2Dialogue.clickOption(wanted, true);
+```
+
+**Where this applies:** `Rs2Walker.handleObjectExceptions` (Fossil Island rowboats);
+`PathfinderConfig.useTransport` skips destinations in `lockedFossilRowboatDestinations`.
+
+**Defensive check:** `FossilRowboatOptionTest`.
