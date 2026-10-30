@@ -328,7 +328,10 @@ public class WalkerRouteCorpusTest {
     @Test
     public void zanarisShedDoorRequiresLostCity() {
         Transport shed = allTransports.getOrDefault(new WorldPoint(3202, 3169, 0), Collections.emptySet()).stream()
-                .filter(transport -> transport.getObjectId() == 2406)
+                // The same door also has plain rows for stepping in and out of the shed; the
+                // one that matters goes to Zanaris.
+                .filter(transport -> transport.getObjectId() == 2406
+                        && new WorldPoint(2452, 4473, 0).equals(transport.getDestination()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Zanaris shed door row is missing"));
 
