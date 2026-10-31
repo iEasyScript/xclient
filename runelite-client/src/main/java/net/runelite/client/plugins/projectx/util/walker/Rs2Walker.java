@@ -4433,11 +4433,30 @@ public class Rs2Walker {
         Rectangle viewport = new Rectangle(ProjectX.getClient().getViewportXOffset(),
                 ProjectX.getClient().getViewportYOffset(), ProjectX.getClient().getViewportWidth(),
                 ProjectX.getClient().getViewportHeight());
-        return isCanvasPointInsideViewport(canvasPoint, viewport) ? canvasPoint : null;
+        // In the resizable layouts the viewport is the whole canvas, so a point inside it can still be
+        // under the side panel, chatbox or minimap, and the WALK entry would click that interface.
+        if (!isCanvasPointInsideViewport(canvasPoint, viewport)
+                || isCanvasPointCoveredByInterface(canvasPoint, Rs2UiHelper.visibleSceneOverlayBounds())) {
+            return null;
+        }
+        return canvasPoint;
     }
 
     static boolean isCanvasPointInsideViewport(Point point, Rectangle viewport) {
         return point != null && viewport.contains(new Rectangle(point.getX() - 4, point.getY() - 4, 8, 8));
+    }
+
+    static boolean isCanvasPointCoveredByInterface(Point point, List<Rectangle> interfaceBounds) {
+        if (point == null || interfaceBounds == null) {
+            return false;
+        }
+        Rectangle clickArea = new Rectangle(point.getX() - 4, point.getY() - 4, 8, 8);
+        for (Rectangle bounds : interfaceBounds) {
+            if (bounds != null && !bounds.isEmpty() && bounds.intersects(clickArea)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static LocalPoint localPointForWorld(WorldPoint worldPoint) {

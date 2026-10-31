@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Point;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.RuneLiteProperties;
 import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.util.antiban.Rs2AntibanSettings;
@@ -12,6 +14,8 @@ import net.runelite.client.plugins.projectx.util.menu.NewMenuEntry;
 import net.runelite.client.plugins.projectx.util.text.Rs2TextSanitizer;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,6 +46,34 @@ public class Rs2UiHelper {
 
         return rectangle.getX() + rectangle.getWidth() <= (double) canvasWidth &&
                 rectangle.getY() + rectangle.getHeight() <= (double) canvasHeight;
+    }
+
+    /**
+     * Top-level containers drawn over the scene. In the resizable layouts the viewport covers the whole
+     * canvas, so a scene point inside the viewport can still be under one of these.
+     */
+    private static final int[] SCENE_OVERLAY_COMPONENTS = {
+            InterfaceID.ToplevelOsrsStretch.SIDE_MENU,
+            InterfaceID.ToplevelOsrsStretch.CHAT_CONTAINER,
+            InterfaceID.ToplevelOsrsStretch.MAP_CONTAINER,
+            InterfaceID.ToplevelPreEoc.SIDE_CONTAINER,
+            InterfaceID.ToplevelPreEoc.CHAT_CONTAINER,
+            InterfaceID.ToplevelPreEoc.MAP_CONTAINER
+    };
+
+    /** Bounds of the visible side panel, chatbox and minimap containers. Safe from any thread. */
+    public static List<Rectangle> visibleSceneOverlayBounds() {
+        return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            Client client = ProjectX.getClient();
+            List<Rectangle> bounds = new ArrayList<>();
+            for (int componentId : SCENE_OVERLAY_COMPONENTS) {
+                Widget widget = client.getWidget(componentId);
+                if (widget != null && !widget.isHidden()) {
+                    bounds.add(widget.getBounds());
+                }
+            }
+            return bounds;
+        }).orElseGet(ArrayList::new);
     }
 
     public static boolean isRectangleWithinRectangle(Rectangle main, Rectangle sub) {

@@ -556,3 +556,19 @@ config and recalculates. A success clears the count.
 **Where this applies:** `Rs2Walker.handleObject` (plane-change transports); `PathfinderConfig.useTransport`.
 
 **Defensive check:** `TransportLockTest`.
+
+## 27. In resizable mode the viewport runs under the side panel, chatbox and minimap
+
+`client.getViewportXOffset/YOffset/Width/Height` covers the whole canvas in the resizable layouts, so a
+tile that projects inside the viewport can still be drawn under the inventory/side panel, the chatbox or
+the minimap. A `WALK` menu entry clicks `param0/param1` exactly, so a scene click point under one of those
+interfaces lands on the interface. Reject scene click points whose click area touches a visible top-level
+container (`Rs2UiHelper.visibleSceneOverlayBounds`) and let the caller use the minimap instead.
+
+**Why this matters:** the walker clicked the inventory while walking: `sceneCanvasPoint` only tested the
+viewport rectangle, so `dispatchSceneWalk` clicked a tile point behind the side panel.
+
+**Where this applies:** `Rs2Walker.sceneCanvasPoint`, `Rs2Walker.dispatchSceneWalk`, and any helper that
+clicks a projected canvas point with a `WALK` entry.
+
+**Defensive check:** `Rs2WalkerUnitTest.sceneClickRejectsPointsCoveredByVisibleInterfaces`.

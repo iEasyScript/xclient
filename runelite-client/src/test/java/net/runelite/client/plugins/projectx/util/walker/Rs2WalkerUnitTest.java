@@ -1581,6 +1581,23 @@ public class Rs2WalkerUnitTest {
     }
 
     @Test
+    public void sceneClickRejectsPointsCoveredByVisibleInterfaces() {
+        java.util.List<java.awt.Rectangle> interfaces = java.util.Arrays.asList(
+                new java.awt.Rectangle(1030, 380, 250, 340),
+                new java.awt.Rectangle(0, 555, 519, 165),
+                new java.awt.Rectangle(0, 0, 0, 0),
+                null);
+        assertTrue(Rs2Walker.isCanvasPointCoveredByInterface(new net.runelite.api.Point(1100, 500), interfaces));
+        assertTrue(Rs2Walker.isCanvasPointCoveredByInterface(new net.runelite.api.Point(1028, 500), interfaces));
+        assertTrue(Rs2Walker.isCanvasPointCoveredByInterface(new net.runelite.api.Point(200, 600), interfaces));
+        assertFalse(Rs2Walker.isCanvasPointCoveredByInterface(new net.runelite.api.Point(640, 300), interfaces));
+        assertFalse(Rs2Walker.isCanvasPointCoveredByInterface(new net.runelite.api.Point(1020, 500), interfaces));
+        assertFalse(Rs2Walker.isCanvasPointCoveredByInterface(new net.runelite.api.Point(2, 2), interfaces));
+        assertFalse(Rs2Walker.isCanvasPointCoveredByInterface(null, interfaces));
+        assertFalse(Rs2Walker.isCanvasPointCoveredByInterface(new net.runelite.api.Point(640, 300), null));
+    }
+
+    @Test
     public void interimPreclickTiles_runHandsOffEarlierThanWalk() {
         assertEquals(6, Rs2Walker.interimPreclickTiles(false));
         assertEquals(8, Rs2Walker.interimPreclickTiles(true));
