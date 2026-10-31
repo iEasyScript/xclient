@@ -3,6 +3,7 @@ package net.runelite.client.plugins.projectx.util.walker.recovery;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.plugins.projectx.ProjectX;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -72,5 +73,33 @@ public class CantReachTargetRecoveryTest
 		assertEquals(1, doorClicks.get());
 		assertEquals(0, nestedRecoveries.get());
 		assertTrue(CantReachTargetRecovery.shouldStart(true, true));
+	}
+
+	@Test
+	public void givingUpClearsTheLatchAndReportsTheAttempts()
+	{
+		boolean savedCantReach = ProjectX.cantReachTarget;
+		int savedRetries = ProjectX.cantReachTargetRetries;
+		try
+		{
+			ProjectX.cantReachTarget = true;
+			ProjectX.cantReachTargetRetries = 4;
+
+			assertEquals(4, CantReachTargetRecovery.giveUp());
+			assertFalse(ProjectX.cantReachTarget);
+			assertEquals(0, ProjectX.cantReachTargetRetries);
+			assertFalse(CantReachTargetRecovery.shouldStart(true, ProjectX.cantReachTarget));
+
+			ProjectX.cantReachTarget = true;
+			ProjectX.cantReachTargetRetries = 2;
+			CantReachTargetRecovery.reset();
+			assertFalse(ProjectX.cantReachTarget);
+			assertEquals(0, ProjectX.cantReachTargetRetries);
+		}
+		finally
+		{
+			ProjectX.cantReachTarget = savedCantReach;
+			ProjectX.cantReachTargetRetries = savedRetries;
+		}
 	}
 }

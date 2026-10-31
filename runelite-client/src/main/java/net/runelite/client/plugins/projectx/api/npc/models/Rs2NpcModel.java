@@ -212,9 +212,10 @@ public class Rs2NpcModel extends Rs2ActorModel implements IEntity
                 if (!hasLineOfSight()) {
                     if (CantReachTargetRecovery.retryExhausted(
                             ProjectX.cantReachTargetRetries, Rs2Random.between(3, 5))) {
+                        int retries = CantReachTargetRecovery.giveUp();
                         ProjectX.pauseAllScripts.compareAndSet(false, true);
                         ProjectX.showMessage("Your bot tried to interact with an NPC for "
-                                + ProjectX.cantReachTargetRetries + " times but failed. Please take a look at what is happening.");
+                                + retries + " times but failed. Please take a look at what is happening.");
                         return false;
                     }
                     final WorldPoint npcWorldPoint = getWorldLocation();

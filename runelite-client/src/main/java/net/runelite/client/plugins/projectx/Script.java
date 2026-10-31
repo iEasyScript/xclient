@@ -12,6 +12,7 @@ import net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import net.runelite.client.plugins.projectx.util.reliability.ScriptReliability;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
+import net.runelite.client.plugins.projectx.util.walker.recovery.CantReachTargetRecovery;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -111,6 +112,7 @@ public abstract class Script extends Global implements IScript {
                 ProjectX.getClientThread().scheduledFuture.cancel(true);
             initialPlayerLocation = null;
             ProjectX.pauseAllScripts.set(false);
+            CantReachTargetRecovery.reset();
             Rs2Walker.disableTeleports = false;
             ProjectX.getSpecialAttackConfigs().reset();
         }

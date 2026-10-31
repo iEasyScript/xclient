@@ -3,6 +3,7 @@ package net.runelite.client.plugins.projectx.util.walker.recovery;
 import java.util.Objects;
 import java.util.function.BiPredicate;
 import net.runelite.api.coords.WorldPoint;
+import net.runelite.client.plugins.projectx.ProjectX;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
 
 /**
@@ -29,6 +30,24 @@ public final class CantReachTargetRecovery
 	public static boolean retryExhausted(int retries, int retryLimit)
 	{
 		return retries >= retryLimit;
+	}
+
+	/**
+	 * Clears the can't-reach latch once the failsafe has fired and returns how many attempts were
+	 * made. Left set, every later object or NPC click from any script re-entered the exhausted branch
+	 * and showed the message again until the client was restarted.
+	 */
+	public static int giveUp()
+	{
+		int retries = ProjectX.cantReachTargetRetries;
+		reset();
+		return retries;
+	}
+
+	public static void reset()
+	{
+		ProjectX.cantReachTarget = false;
+		ProjectX.cantReachTargetRetries = 0;
 	}
 
 	public static boolean walkTo(WorldPoint target, int distance)
