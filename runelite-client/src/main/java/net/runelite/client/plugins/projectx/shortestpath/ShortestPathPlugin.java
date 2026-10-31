@@ -34,6 +34,7 @@ import net.runelite.api.events.GameTick;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOpened;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.worldmap.WorldMap;
@@ -63,6 +64,8 @@ import net.runelite.client.plugins.projectx.shortestpath.pathfinder.live.LiveRou
 import net.runelite.client.plugins.projectx.shortestpath.pathfinder.SplitFlagMap;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import net.runelite.client.plugins.projectx.util.tile.Rs2Tile;
+import net.runelite.client.plugins.projectx.questhelper.util.worldmap.WorldMapArea;
+import net.runelite.client.plugins.projectx.questhelper.util.worldmap.WorldPointMapper;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.JagexColors;
@@ -1137,9 +1140,37 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
                     return null;
                 }
             }
-            return mapPoint;
+            return toRealWorldPoint(mapPoint, getViewedWorldMapArea());
         }
         return null;
+    }
+
+    /** The map area the world map is showing (the name in its map list), or ANY when unknown. */
+    private WorldMapArea getViewedWorldMapArea() {
+        Widget mapList = client.getWidget(InterfaceID.Worldmap.MAPLIST_DISPLAY);
+        Widget currentMap = mapList == null ? null : mapList.getChild(4);
+        return currentMap == null ? WorldMapArea.ANY : WorldMapArea.fromName(currentMap.getText());
+    }
+
+    /**
+     * Underground areas such as the Motherlode Mine are drawn offset inside their map area, so a world
+     * map click gives a display coordinate, not the real tile (the mine on the Dwarven Mines map reads
+     * 3116,9696, which is the Draynor sewers). Converts it back; surface and unknown areas are unchanged.
+     */
+    static WorldPoint toRealWorldPoint(WorldPoint mapPoint, WorldMapArea viewedArea) {
+        if (mapPoint == null || viewedArea == null || viewedArea == WorldMapArea.ANY) {
+            return mapPoint;
+        }
+        return WorldPointMapper.getRealWorldPointFromMapPoint(mapPoint, viewedArea).getWorldPoint();
+    }
+
+    /** The Target pin, drawn where the world map shows the target (dungeons are drawn offset). */
+    public static WorldMapPoint createTargetMarker(WorldPoint target) {
+        WorldMapPoint marker = new WorldMapPoint(WorldPointMapper.getMapWorldPointFromRealWorldPoint(target).getWorldPoint(), MARKER_IMAGE);
+        marker.setName("Target");
+        marker.setTarget(marker.getWorldPoint());
+        marker.setJumpOnClick(true);
+        return marker;
     }
 
     public void setTarget(WorldPoint target) {
@@ -1173,10 +1204,7 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
             }
             worldMapPointManager.removeIf(x -> x == marker);
             if (targets.size() == 1) {
-                marker = new WorldMapPoint(targets.iterator().next(), MARKER_IMAGE);
-                marker.setName("Target");
-                marker.setTarget(marker.getWorldPoint());
-                marker.setJumpOnClick(true);
+                marker = createTargetMarker(targets.iterator().next());
                 worldMapPointManager.add(marker);
             }
 
