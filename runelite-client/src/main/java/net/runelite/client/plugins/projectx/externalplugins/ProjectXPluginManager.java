@@ -91,6 +91,12 @@ public class ProjectXPluginManager {
     private static final File PLUGIN_DIR = new File(RuneLite.RUNELITE_DIR, "projectx-plugins");
     /** The developer folder. Never touched by the store refresh or the old-file cleanup. */
     private static final File DEV_DIR = new File(PLUGIN_DIR, "dev");
+    /**
+     * Where dev jars are actually loaded from: a copy. A classloader holds its jar open, and on
+     * Windows an open file can't be overwritten, so loading the developer's own file meant a new
+     * build couldn't even be copied in while the client ran.
+     */
+    private static final File DEV_LOADED_DIR = new File(DEV_DIR, ".loaded");
     private static final String INSTALLED_VERSION_GROUP = "projectxPluginVersions";
     private static final String INSTALLED_VERSION_KEY_PREFIX = "plugin.";
     private static final String UPDATE_NOTIFICATION_GROUP = "projectxPluginUpdateNotifications";
@@ -129,6 +135,11 @@ public class ProjectXPluginManager {
     private final Set<String> undeletableJars = ConcurrentHashMap.newKeySet();
     private final Set<Class<?>> devPluginClasses = ConcurrentHashMap.newKeySet();
     private final Map<Class<?>, String> devJarNames = new ConcurrentHashMap<>();
+    /** Per dev jar (by file name): the hash it was loaded at, its classloader, copy and plugins. */
+    private final Map<String, String> devJarSha = new ConcurrentHashMap<>();
+    private final Map<String, URLClassLoader> devJarLoaders = new ConcurrentHashMap<>();
+    private final Map<String, File> devJarCopies = new ConcurrentHashMap<>();
+    private final Map<String, List<Plugin>> devJarPlugins = new ConcurrentHashMap<>();
     private final AtomicBoolean devPluginsLoaded = new AtomicBoolean();
     private volatile boolean sideloadPhaseDone;
 
@@ -241,6 +252,10 @@ public class ProjectXPluginManager {
         executor.submit(() -> {
             try {
                 reconcile();
+                // Only on the button: a timer that reloads a developer's script mid-test would be a surprise.
+                if (refreshDevJars()) {
+                    eventBus.post(new ExternalPluginsChanged());
+                }
             } finally {
                 if (whenDone != null) {
                     whenDone.run();
@@ -897,6 +912,15 @@ public class ProjectXPluginManager {
         }
 
         DEV_DIR.mkdirs();
+        // Copies from the last run: nothing holds them now.
+        File[] stale = DEV_LOADED_DIR.listFiles();
+        if (stale != null) {
+            for (File f : stale) {
+                if (!f.delete()) {
+                    f.deleteOnExit();
+                }
+            }
+        }
 
         return PLUGIN_DIR.listFiles();
     }
@@ -1078,7 +1102,11 @@ public class ProjectXPluginManager {
 
     private void loadDevJar(File jar, boolean startNow) throws Exception {
         String sha = sha256Of(jar);
-        PluginJarClassLoader classLoader = new PluginJarClassLoader(jar, getClass().getClassLoader());
+        DEV_LOADED_DIR.mkdirs();
+        String base = jar.getName().endsWith(".jar") ? jar.getName().substring(0, jar.getName().length() - 4) : jar.getName();
+        File copy = new File(DEV_LOADED_DIR, base + "-" + sha.substring(0, 12) + ".jar");
+        java.nio.file.Files.copy(jar.toPath(), copy.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        PluginJarClassLoader classLoader = new PluginJarClassLoader(copy, getClass().getClassLoader());
         List<Class<?>> allowed = new ArrayList<>();
         for (ClassPath.ClassInfo classInfo : ClassPath.from(classLoader).getAllClasses()) {
             Class<?> clazz;
@@ -1112,8 +1140,12 @@ public class ProjectXPluginManager {
         }
         devPluginClasses.addAll(loaded.stream().map(Plugin::getClass).collect(Collectors.toSet()));
         loaded.forEach(p -> devJarNames.put(p.getClass(), jar.getName()));
+        devJarSha.put(jar.getName(), sha);
+        devJarLoaders.put(jar.getName(), classLoader);
+        devJarCopies.put(jar.getName(), copy);
+        devJarPlugins.put(jar.getName(), new ArrayList<>(loaded));
         for (Plugin p : loaded) {
-            log.info("Loaded local dev plugin {} (Local) from {}. Replacing the jar needs a client restart.",
+            log.info("Loaded local dev plugin {} (Local) from {}. Refresh scripts picks up a new build of the jar.",
                 p.getClass().getSimpleName(), jar.getName());
         }
         if (startNow) {
@@ -1127,6 +1159,90 @@ public class ProjectXPluginManager {
                     throw new RuntimeException(e);
                 }
             });
+        }
+    }
+
+    /**
+     * Brings the loaded dev plugins in line with the dev folder, for the Refresh scripts button: a new
+     * jar is loaded, a changed one is unloaded and loaded again (stopping its scripts), and a deleted
+     * one is unloaded. Returns true if anything changed.
+     */
+    private boolean refreshDevJars() {
+        if (safeMode || !devPluginsLoaded.get()) {
+            return false;
+        }
+        File[] files = DEV_DIR.listFiles((dir, name) -> name.endsWith(".jar"));
+        Map<String, File> present = new HashMap<>();
+        if (files != null) {
+            for (File f : files) {
+                if (f.isFile()) {
+                    present.put(f.getName(), f);
+                }
+            }
+        }
+        boolean changed = false;
+        for (String name : new ArrayList<>(devJarSha.keySet())) {
+            if (!present.containsKey(name)) {
+                log.info("Local dev jar {} was removed; unloading it", name);
+                unloadDevJar(name);
+                changed = true;
+            }
+        }
+        for (File jar : present.values()) {
+            String loadedSha = devJarSha.get(jar.getName());
+            String sha;
+            try {
+                sha = sha256Of(jar);
+            } catch (Exception e) {
+                log.warn("Could not read local dev jar {} (still being written?)", jar.getName(), e);
+                continue;
+            }
+            if (sha.equals(loadedSha)) {
+                continue;
+            }
+            if (loadedSha != null) {
+                log.info("Local dev jar {} changed; reloading it", jar.getName());
+                unloadDevJar(jar.getName());
+            } else {
+                log.info("New local dev jar {}; loading it", jar.getName());
+            }
+            try {
+                loadDevJar(jar, true);
+            } catch (Throwable t) {
+                log.warn("Could not load local dev plugin file {}", jar.getName(), t);
+            }
+            changed = true;
+        }
+        return changed;
+    }
+
+    /** Stops and removes the plugins loaded from one dev jar, and lets go of its copy. */
+    private void unloadDevJar(String jarName) {
+        List<Plugin> plugins = devJarPlugins.remove(jarName);
+        if (plugins != null) {
+            for (Plugin plugin : plugins) {
+                ProjectXSessionTracker.markStop(plugin, ProjectXSessionTracker.End.MANUAL);
+                try {
+                    SwingUtilities.invokeAndWait(() -> {
+                        try {
+                            pluginManager.stopPlugin(plugin);
+                        } catch (Exception e) {
+                            log.warn("Could not stop local dev plugin {}", plugin.getClass().getSimpleName(), e);
+                        }
+                    });
+                } catch (InterruptedException | InvocationTargetException e) {
+                    log.warn("Could not stop local dev plugin {}", plugin.getClass().getSimpleName(), e);
+                }
+                pluginManager.remove(plugin);
+                devPluginClasses.remove(plugin.getClass());
+                devJarNames.remove(plugin.getClass());
+            }
+        }
+        devJarSha.remove(jarName);
+        closeQuietly(devJarLoaders.remove(jarName));
+        File copy = devJarCopies.remove(jarName);
+        if (copy != null && !copy.delete()) {
+            copy.deleteOnExit();
         }
     }
 
