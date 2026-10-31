@@ -808,7 +808,13 @@ public class Rs2Walker {
         return false;
     }
 
-    /** Nearest walkable tile to {@code target} within {@code maxRadius}, or null. Diagnostics only. */
+    /** Nearest walkable tile to {@code target} within {@code maxRadius} in the pathfinder's collision map, or null. */
+    public static WorldPoint nearestWalkableTile(WorldPoint target, int maxRadius) {
+        PathfinderConfig config = Rs2PathApi.getPathfinderConfig();
+        return nearestWalkableTile(config != null ? config.getMap() : null, target, maxRadius);
+    }
+
+    /** Nearest walkable tile to {@code target} within {@code maxRadius}, or null. */
     static WorldPoint nearestWalkableTile(CollisionMap map, WorldPoint target, int maxRadius) {
         if (map == null || target == null) {
             return null;
