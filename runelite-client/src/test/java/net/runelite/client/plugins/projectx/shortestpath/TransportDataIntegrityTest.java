@@ -359,6 +359,37 @@ public class TransportDataIntegrityTest {
                 + "|" + row.fields.getOrDefault("menuOption menuTarget objectID", "").trim();
     }
 
+    /**
+     * The "Inventory (perm)" teleport-item setting skips consumable rows. Charged slayer rings
+     * crumble, the eternal ring does not, so they need separate rows: one shared row would either
+     * hide the eternal ring from that setting or let it use charged rings.
+     */
+    @Test
+    public void eternalSlayerRingRowsAreSeparateFromChargedRings() {
+        Set<Transport> originless = Transport.loadAllFromResources().get(null);
+        assertNotNull(originless);
+        Map<WorldPoint, Boolean> eternal = new HashMap<>();
+        Map<WorldPoint, Boolean> charged = new HashMap<>();
+        for (Transport transport : originless) {
+            if (transport.getType() != TransportType.TELEPORTATION_ITEM || transport.getDisplayInfo() == null
+                    || !transport.getDisplayInfo().startsWith("Slayer ring:")) {
+                continue;
+            }
+            Set<Integer> items = new HashSet<>();
+            transport.getItemIdRequirements().forEach(items::addAll);
+            if (items.contains(ItemID.SLAYER_RING_ETERNAL)) {
+                assertEquals("eternal ring row lists other rings: " + transport, 1, items.size());
+                assertFalse("eternal ring row is consumable: " + transport, transport.isConsumable());
+                eternal.put(transport.getDestination(), true);
+            } else {
+                assertTrue("charged slayer ring row is not consumable: " + transport, transport.isConsumable());
+                charged.put(transport.getDestination(), true);
+            }
+        }
+        assertEquals(5, charged.size());
+        assertEquals(charged.keySet(), eternal.keySet());
+    }
+
     @Test
     public void everyLoadedTransportHasACoordinateEndpoint() {
         HashMap<WorldPoint, Set<Transport>> transports = Transport.loadAllFromResources();
