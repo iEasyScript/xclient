@@ -369,6 +369,15 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
                 Rs2Camera.turnTo(tileObject);
             }
 
+            Rectangle clickArea = Rs2UiHelper.clearObjectClickArea(tileObject);
+            if (clickArea == null) {
+                Rs2Camera.turnTo(tileObject);
+                clickArea = Rs2UiHelper.clearObjectClickArea(tileObject);
+            }
+            if (clickArea == null) {
+                log.warn("Failed to interact with object {} - no part of it is clear of the interface", getId());
+                return false;
+            }
 
             ProjectX.doInvoke(new NewMenuEntry()
                             .param0(param0)
@@ -381,7 +390,7 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
                             .setWorldViewId(worldView.getId())
                             .gameObject(tileObject)
                     ,
-                    Rs2UiHelper.getObjectClickbox(tileObject));
+                    clickArea);
 // MenuEntryImpl(getOption=Use, getTarget=Barrier, getIdentifier=43700, getType=GAME_OBJECT_THIRD_OPTION, getParam0=53, getParam1=51, getItemId=-1, isForceLeftClick=true, getWorldViewId=-1, isDeprioritized=false)
             //Rs2Reflection.invokeMenu(param0, param1, menuAction.getId(), object.getId(),-1, "", "", -1, -1);
 

@@ -1897,6 +1897,18 @@ public class Rs2GameObject {
                 Rs2Camera.turnTo(object);
             }
 
+            // Click only the part of the object that is clear of the side panel, chatbox and minimap;
+            // in the resizable layouts a random point in the whole clickbox often hit the chatbox.
+            java.awt.Rectangle clickArea = Rs2UiHelper.clearObjectClickArea(object);
+            if (clickArea == null) {
+                Rs2Camera.turnTo(object);
+                clickArea = Rs2UiHelper.clearObjectClickArea(object);
+            }
+            if (clickArea == null) {
+                ProjectX.log("Failed to interact with object " + object.getId() + " - no part of it is clear of the interface");
+                return false;
+            }
+
             // both hands must be free before using MINECART
             if (objComp.getName().toLowerCase().contains("train cart")) {
                 Rs2Equipment.unEquip(EquipmentInventorySlot.WEAPON);
@@ -1934,7 +1946,7 @@ public class Rs2GameObject {
                     .gameObject(object)
                     .worldViewId(worldViewId)
                     ,
-                Rs2UiHelper.getObjectClickbox(object));
+                clickArea);
 // MenuEntryImpl(getOption=Use, getTarget=Barrier, getIdentifier=43700, getType=GAME_OBJECT_THIRD_OPTION, getParam0=53, getParam1=51, getItemId=-1, isForceLeftClick=true, getWorldViewId=-1, isDeprioritized=false)
             //Rs2Reflection.invokeMenu(param0, param1, menuAction.getId(), object.getId(),-1, "", "", -1, -1);
 

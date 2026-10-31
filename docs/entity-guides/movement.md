@@ -571,4 +571,12 @@ viewport rectangle, so `dispatchSceneWalk` clicked a tile point behind the side 
 **Where this applies:** `Rs2Walker.sceneCanvasPoint`, `Rs2Walker.dispatchSceneWalk`, and any helper that
 clicks a projected canvas point with a `WALK` entry.
 
-**Defensive check:** `Rs2WalkerUnitTest.sceneClickRejectsPointsCoveredByVisibleInterfaces`.
+Object clicks have the same trap: `Rs2Camera.isTileOnScreen` accepts a tile when any part of it is in the
+viewport. `Rs2GameObject.clickObject` and `Rs2TileObjectModel.click` therefore click only the part of the
+clickbox clear of those interfaces (`Rs2UiHelper.clearObjectClickArea`); when nothing is clear they turn
+the camera once, and if the object is still covered they return false instead of clicking the interface.
+The walker clicked the Lumbridge castle stairs and the Edgeville trapdoor at range this way and often hit
+the chatbox Report button.
+
+**Defensive check:** `Rs2WalkerUnitTest.sceneClickRejectsPointsCoveredByVisibleInterfaces` and
+`Rs2UiHelperInterfaceClearanceTest`.

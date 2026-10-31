@@ -76,6 +76,92 @@ public class Rs2UiHelper {
         }).orElseGet(ArrayList::new);
     }
 
+    static final int INTERFACE_CLEARANCE_PX = 4;
+
+    /** The scene viewport. In the resizable layouts it is the whole canvas. Safe from any thread. */
+    public static Rectangle sceneViewportBounds() {
+        return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            Client client = ProjectX.getClient();
+            return new Rectangle(client.getViewportXOffset(), client.getViewportYOffset(),
+                    client.getViewportWidth(), client.getViewportHeight());
+        }).orElse(null);
+    }
+
+    /**
+     * True for the stand-in rectangle {@link #getDefaultRectangle()} returns when there is no real
+     * clickbox (it starts at -1, 0 or 1 on both axes).
+     */
+    public static boolean isFallbackRectangle(Rectangle rectangle) {
+        return rectangle == null || (rectangle.x == rectangle.y && rectangle.x >= -1 && rectangle.x <= 1);
+    }
+
+    /**
+     * The largest part of {@code clickbox} that is inside the viewport and at least
+     * {@link #INTERFACE_CLEARANCE_PX} away from every interface rectangle, or null when nothing is
+     * clear. Pure, so it can be tested without a client.
+     */
+    public static Rectangle clearOfInterfaces(Rectangle clickbox, Rectangle viewport, List<Rectangle> interfaceBounds) {
+        if (clickbox == null || clickbox.isEmpty()) {
+            return null;
+        }
+        Rectangle visible = viewport == null ? new Rectangle(clickbox) : clickbox.intersection(viewport);
+        if (visible.isEmpty()) {
+            return null;
+        }
+        List<Rectangle> clear = new ArrayList<>();
+        clear.add(visible);
+        if (interfaceBounds != null) {
+            for (Rectangle bounds : interfaceBounds) {
+                if (bounds == null || bounds.isEmpty()) {
+                    continue;
+                }
+                Rectangle cover = new Rectangle(bounds);
+                cover.grow(INTERFACE_CLEARANCE_PX, INTERFACE_CLEARANCE_PX);
+                List<Rectangle> remaining = new ArrayList<>();
+                for (Rectangle area : clear) {
+                    if (!area.intersects(cover)) {
+                        remaining.add(area);
+                        continue;
+                    }
+                    addIfNotEmpty(remaining, new Rectangle(area.x, area.y, cover.x - area.x, area.height));
+                    addIfNotEmpty(remaining, new Rectangle(cover.x + cover.width, area.y,
+                            area.x + area.width - cover.x - cover.width, area.height));
+                    addIfNotEmpty(remaining, new Rectangle(area.x, area.y, area.width, cover.y - area.y));
+                    addIfNotEmpty(remaining, new Rectangle(area.x, cover.y + cover.height,
+                            area.width, area.y + area.height - cover.y - cover.height));
+                }
+                clear = remaining;
+            }
+        }
+        Rectangle largest = null;
+        for (Rectangle area : clear) {
+            if (largest == null || (long) area.width * area.height > (long) largest.width * largest.height) {
+                largest = area;
+            }
+        }
+        return largest;
+    }
+
+    private static void addIfNotEmpty(List<Rectangle> areas, Rectangle area) {
+        if (!area.isEmpty() && !areas.contains(area)) {
+            areas.add(area);
+        }
+    }
+
+    /**
+     * Where to click an object: the part of its clickbox that is inside the viewport and clear of the
+     * side panel, chatbox and minimap. A tile on screen does not mean the object is clickable: in the
+     * resizable layouts a random point in the whole clickbox often landed on the chatbox. Returns the
+     * fallback rectangle unchanged when the object has no clickbox, and null when no part is clear.
+     */
+    public static Rectangle clearObjectClickArea(TileObject object) {
+        Rectangle clickbox = getObjectClickbox(object);
+        if (isFallbackRectangle(clickbox)) {
+            return clickbox;
+        }
+        return clearOfInterfaces(clickbox, sceneViewportBounds(), visibleSceneOverlayBounds());
+    }
+
     public static boolean isRectangleWithinRectangle(Rectangle main, Rectangle sub) {
         return main.contains(sub);
     }
