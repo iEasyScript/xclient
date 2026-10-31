@@ -118,6 +118,13 @@ public class ProjectXPluginManager {
     private final ProjectXAccount account;
 
     private final Map<String, URLClassLoader> loaders = new ConcurrentHashMap<>();
+    /**
+     * The SHA-256 of the jar each store plugin was actually loaded from. Two clients can share the
+     * plugins folder: when one downloads an update, the other finds a jar that already matches the
+     * store and would keep running the old build until restarted. Comparing against this tells it
+     * the file it is running from has been replaced.
+     */
+    private final Map<String, String> loadedJarHash = new ConcurrentHashMap<>();
     /** Jars that could not be deleted, so the same file is only complained about once. */
     private final Set<String> undeletableJars = ConcurrentHashMap.newKeySet();
     private final Set<Class<?>> devPluginClasses = ConcurrentHashMap.newKeySet();
@@ -978,6 +985,7 @@ public class ProjectXPluginManager {
                 }
             }
             loadPlugins(plugins, null);
+            rememberLoadedJar(internalName);
 
             if (!loadedExternalNames().contains(internalName)) {
                 // The jar that was just tried, which can be an old one left on disk. Recording the
@@ -1559,6 +1567,7 @@ public class ProjectXPluginManager {
             needsDownload.addAll(needsRedownload);
 
             Set<String> needsReload = new HashSet<>(needsDownload);
+            needsReload.addAll(replacedSinceLoaded(loadedByInternalName, userManifestMap.keySet(), needsReload));
 
 
             Set<File> keepFiles = userManifestMap.keySet().stream()
@@ -1678,6 +1687,9 @@ public class ProjectXPluginManager {
                     }
 
                     newPlugins = loadPlugins(pluginClasses, null);
+                    if (!newPlugins.isEmpty()) {
+                        rememberLoadedJar(pluginName);
+                    }
 
                     boolean startup = SplashScreen.isOpen();
                     if (!startup && !newPlugins.isEmpty()) {
@@ -1874,12 +1886,43 @@ public class ProjectXPluginManager {
      * @return false when the plugin is loaded but its classloader is not known,
      *     in which case nothing was unloaded and the old classes are still live.
      */
+    /** Records the jar a store plugin was just loaded from (see {@link #loadedJarHash}). */
+    private void rememberLoadedJar(String internalName) {
+        String hash = calculateHash(internalName);
+        if (hash != null && loadedExternalNames().contains(internalName)) {
+            loadedJarHash.put(internalName, hash);
+        }
+    }
+
+    /**
+     * Loaded store plugins whose jar on disk is no longer the one they were loaded from, and is the
+     * store's current build: another client sharing this folder updated it. They are reloaded like
+     * a fresh download. A jar that doesn't match the store (half-written, or tampered with) is left
+     * to the normal hash check instead.
+     */
+    private Set<String> replacedSinceLoaded(Set<String> loaded, Set<String> installed, Set<String> alreadyReloading) {
+        Set<String> out = new HashSet<>();
+        for (String name : loaded) {
+            String loadedHash = loadedJarHash.get(name);
+            if (loadedHash == null || alreadyReloading.contains(name) || !installed.contains(name)) {
+                continue;
+            }
+            String onDisk = calculateHash(name);
+            if (onDisk != null && !onDisk.equalsIgnoreCase(loadedHash) && verifyHash(name)) {
+                log.info("{} was updated on disk since it was loaded (another client downloaded it); reloading", name);
+                out.add(name);
+            }
+        }
+        return out;
+    }
+
     private boolean unloadPlugin(String internalName) {
         var pluginToRemove = pluginManager.getPlugins().stream()
                 .filter(x -> x.getClass().getSimpleName().equalsIgnoreCase(internalName))
                 .findFirst();
 
         URLClassLoader cl = loaders.remove(internalName);
+        loadedJarHash.remove(internalName);
 
         if (pluginToRemove.isEmpty()) {
             // Not registered, but its classloader may still be open and holding the jar. Closing
