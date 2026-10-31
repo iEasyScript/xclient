@@ -11680,13 +11680,18 @@ public class Rs2Walker {
 
         Widget selectedWidget = Rs2Widget.getWidget(SELECTED_MINIGAME);
         if (selectedWidget == null) return false;
-        if (!selectedWidget.getText().equalsIgnoreCase(destination)) {
+        if (!widgetTextMatches(selectedWidget, destination)) {
             Widget dropdownBtn = Rs2Widget.getWidget(DROPDOWN_BUTTON_COMPONENT_ID);
             if (dropdownBtn == null) return false;
 
             if (dropdownBtn.getSpriteId() != DROPDOWN_SELECTED_SPRITE_ID) {
                 Rs2Widget.clickWidget(dropdownBtn);
-                sleepUntil(() -> Rs2Widget.findWidget(DROPDOWN_SELECTED_SPRITE_ID, List.of(Rs2Widget.getWidget(DROPDOWN_BUTTON_COMPONENT_ID))) != null);
+                sleepUntil(() -> {
+                    // The grouping tab can close or rebuild mid-selection; List.of(null) would throw.
+                    Widget currentDropdownBtn = Rs2Widget.getWidget(DROPDOWN_BUTTON_COMPONENT_ID);
+                    return currentDropdownBtn != null
+                            && Rs2Widget.findWidget(DROPDOWN_SELECTED_SPRITE_ID, List.of(currentDropdownBtn)) != null;
+                });
             }
 
             Widget minigameWidgetParent = Rs2Widget.getWidget(MINIGAME_LIST);
@@ -11708,7 +11713,8 @@ public class Rs2Walker {
                     .forceLeftClick(false);
 
             ProjectX.doInvoke(destinationMenuEntry, new Rectangle(1, 1));
-            sleepUntil(() -> Rs2Widget.getWidget(SELECTED_MINIGAME).getText().equalsIgnoreCase(destination));
+            boolean selected = sleepUntil(() -> widgetTextMatches(Rs2Widget.getWidget(SELECTED_MINIGAME), destination));
+            if (!selected) return false;
         }
 
         Widget teleportBtn = Rs2Widget.getWidget(TELEPORT_BUTTON);
@@ -11722,6 +11728,12 @@ public class Rs2Walker {
 
         sleepUntil(Rs2Player::isAnimating);
         return sleepUntilTrue(() -> !Rs2Player.isAnimating() && teleportGraphics.stream().noneMatch(Rs2Player::hasSpotAnimation), 100, 20000);
+    }
+
+    static boolean widgetTextMatches(Widget widget, String text) {
+        if (widget == null) return false;
+        String widgetText = widget.getText();
+        return widgetText != null && widgetText.equalsIgnoreCase(text);
     }
 
     private static boolean handleCanoe(Transport transport) {
