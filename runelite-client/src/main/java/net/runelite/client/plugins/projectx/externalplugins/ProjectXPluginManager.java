@@ -1847,6 +1847,16 @@ public class ProjectXPluginManager {
      * @return true if the plugin was successfully downloaded, false otherwise
      */
     private boolean downloadPlugin(String internalName, @Nullable String versionOverride) {
+        return downloadPlugin(internalName, versionOverride, false);
+    }
+
+    /**
+     * @param tellUser whether a refused paid download is explained in a dialog. Only an install the
+     *                 user asked for: the start-up update, the refresh and the background updater
+     *                 reach this for every outdated paid script on the machine, so an account without
+     *                 access to them got one dialog per script on every launch.
+     */
+    private boolean downloadPlugin(String internalName, @Nullable String versionOverride, boolean tellUser) {
         ProjectXPluginManifest manifest = manifestMap.get(internalName);
         if (manifest == null) {
             log.error("Cannot download plugin {}: manifest not found", internalName);
@@ -1882,7 +1892,7 @@ public class ProjectXPluginManager {
             try (Response response = clientWithoutProxy.newCall(request).execute()) {
                 if (response.code() == 401 || response.code() == 403) {
                     log.warn("Plugin {} is a marketplace script and needs active access to download", internalName);
-                    ProjectX.showMessage(manifest.getDisplayName() + " needs a subscription.\n\n"
+                    if (tellUser) ProjectX.showMessage(manifest.getDisplayName() + " needs a subscription.\n\n"
                             + (Strings.isNullOrEmpty(token)
                                 ? "Add your Project X API token in the Project X settings, then install it again."
                                 : "Get access at " + manifest.getStoreUrl() + " and then install it again."));
@@ -1975,7 +1985,8 @@ public class ProjectXPluginManager {
             return;
         }
 
-        var result = downloadPlugin(internalName, versionOverride);
+        // Installing is also reached on every entitlement sync; only a refusal there is quiet.
+        var result = downloadPlugin(internalName, versionOverride, !entitlements.isEntitled(internalName));
         if (result) {
             //verifiy hash inside loadSidePlugin doesn't work
             loadSideLoadPlugin(internalName);
