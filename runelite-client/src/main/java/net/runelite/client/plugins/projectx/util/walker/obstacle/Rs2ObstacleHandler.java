@@ -107,7 +107,10 @@ public final class Rs2ObstacleHandler {
                     log.error("Unable to find pickaxe to mine rockfall at {}", point);
                     return RockfallResult.NO_PICKAXE;
                 }
-                Rs2GameObject.interact(object, "mine");
+                if (!Rs2GameObject.interact(object, "mine")) {
+                    // A refused click (e.g. the rockfall is behind an interface) must not wait 5 s.
+                    return RockfallResult.NOT_APPLICABLE;
+                }
                 return Global.sleepUntil(() -> Rs2GameObject.getGameObject(point) == null)
                         ? RockfallResult.MINED : RockfallResult.NOT_APPLICABLE;
             }
