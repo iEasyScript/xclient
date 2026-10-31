@@ -1893,19 +1893,21 @@ public class Rs2GameObject {
                 menuAction = MenuAction.GAME_OBJECT_FIFTH_OPTION;
             }
 
+            boolean turned = false;
             if (!Rs2Camera.isTileOnScreen(object.getLocalLocation())) {
                 Rs2Camera.turnTo(object);
+                turned = true;
             }
 
             // Click only the part of the object that is clear of the side panel, chatbox and minimap;
             // in the resizable layouts a random point in the whole clickbox often hit the chatbox.
             java.awt.Rectangle clickArea = Rs2UiHelper.clearObjectClickArea(object);
-            if (clickArea == null) {
+            if (clickArea == null && !turned) {
                 Rs2Camera.turnTo(object);
                 clickArea = Rs2UiHelper.clearObjectClickArea(object);
             }
             if (clickArea == null) {
-                ProjectX.log("Failed to interact with object " + object.getId() + " - no part of it is clear of the interface");
+                Rs2UiHelper.warnObjectCoveredByInterface(object.getId(), objComp.getName());
                 return false;
             }
 

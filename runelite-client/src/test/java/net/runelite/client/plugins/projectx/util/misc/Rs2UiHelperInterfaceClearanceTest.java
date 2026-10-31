@@ -88,6 +88,22 @@ public class Rs2UiHelperInterfaceClearanceTest {
         assertFalse(Rs2UiHelper.isFallbackRectangle(new Rectangle(600, 300, 80, 60)));
     }
 
+    @Test
+    public void aClearAreaAtTheCanvasCornerIsMovedOffTheFallbackOrigin() {
+        Rectangle corner = Rs2UiHelper.clearOfInterfaces(new Rectangle(0, 0, 60, 40), VIEWPORT, INTERFACES);
+
+        assertEquals(new Rectangle(2, 2, 58, 38), corner);
+        assertFalse(Rs2UiHelper.isFallbackRectangle(corner));
+    }
+
+    @Test
+    public void aCoveredObjectIsWarnedAboutOncePerInterval() {
+        assertTrue(Rs2UiHelper.shouldWarnCovered(4242, 1_000_000L));
+        assertFalse(Rs2UiHelper.shouldWarnCovered(4242, 1_000_000L + Rs2UiHelper.COVERED_WARN_INTERVAL_MS - 1));
+        assertTrue(Rs2UiHelper.shouldWarnCovered(4242, 1_000_000L + Rs2UiHelper.COVERED_WARN_INTERVAL_MS));
+        assertTrue(Rs2UiHelper.shouldWarnCovered(4343, 1_000_000L + Rs2UiHelper.COVERED_WARN_INTERVAL_MS));
+    }
+
     private static Rectangle grown(Rectangle bounds) {
         Rectangle grown = new Rectangle(bounds);
         grown.grow(Rs2UiHelper.INTERFACE_CLEARANCE_PX, Rs2UiHelper.INTERFACE_CLEARANCE_PX);

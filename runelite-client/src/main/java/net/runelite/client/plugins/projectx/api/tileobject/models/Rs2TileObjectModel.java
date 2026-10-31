@@ -365,17 +365,19 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
                 menuAction = MenuAction.GAME_OBJECT_FIFTH_OPTION;
             }
 
+            boolean turned = false;
             if (!Rs2Camera.isTileOnScreen(getLocalLocation())) {
                 Rs2Camera.turnTo(tileObject);
+                turned = true;
             }
 
             Rectangle clickArea = Rs2UiHelper.clearObjectClickArea(tileObject);
-            if (clickArea == null) {
+            if (clickArea == null && !turned) {
                 Rs2Camera.turnTo(tileObject);
                 clickArea = Rs2UiHelper.clearObjectClickArea(tileObject);
             }
             if (clickArea == null) {
-                log.warn("Failed to interact with object {} - no part of it is clear of the interface", getId());
+                Rs2UiHelper.warnObjectCoveredByInterface(getId(), objName);
                 return false;
             }
 

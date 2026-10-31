@@ -135,11 +135,57 @@ public class Rs2UiHelper {
         }
         Rectangle largest = null;
         for (Rectangle area : clear) {
-            if (largest == null || (long) area.width * area.height > (long) largest.width * largest.height) {
-                largest = area;
+            Rectangle candidate = awayFromFallbackOrigin(area);
+            if (candidate == null) {
+                continue;
+            }
+            if (largest == null || (long) candidate.width * candidate.height > (long) largest.width * largest.height) {
+                largest = candidate;
             }
         }
         return largest;
+    }
+
+    static final int FALLBACK_ORIGIN_INSET_PX = 2;
+
+    /**
+     * A clear area that starts at the canvas corner looks like the fallback rectangle, and a click on
+     * it goes to the resting point instead; move it in by a couple of pixels.
+     */
+    private static Rectangle awayFromFallbackOrigin(Rectangle area) {
+        if (!isFallbackRectangle(area)) {
+            return area;
+        }
+        Rectangle moved = new Rectangle(FALLBACK_ORIGIN_INSET_PX, FALLBACK_ORIGIN_INSET_PX,
+                area.x + area.width - FALLBACK_ORIGIN_INSET_PX, area.y + area.height - FALLBACK_ORIGIN_INSET_PX);
+        return moved.isEmpty() ? null : moved;
+    }
+
+    static final long COVERED_WARN_INTERVAL_MS = 10_000;
+    private static int lastCoveredWarnId = -1;
+    private static long lastCoveredWarnAt;
+
+    /** One warning per object every 10 s; the walker retries a covered object every pass. */
+    static synchronized boolean shouldWarnCovered(int objectId, long now) {
+        if (objectId == lastCoveredWarnId && now - lastCoveredWarnAt < COVERED_WARN_INTERVAL_MS) {
+            return false;
+        }
+        lastCoveredWarnId = objectId;
+        lastCoveredWarnAt = now;
+        return true;
+    }
+
+    /** Logs that an object could not be clicked because interfaces cover it. */
+    public static void warnObjectCoveredByInterface(int objectId, String objectName) {
+        String name = objectName == null || objectName.isEmpty() || "null".equalsIgnoreCase(objectName)
+                ? "object " + objectId : stripColTags(objectName);
+        String message = "Can't click {} - it is behind the chatbox, side panel or minimap even after turning the camera."
+                + " If this keeps happening, zoom out or move the camera so it is in view.";
+        if (shouldWarnCovered(objectId, System.currentTimeMillis())) {
+            log.warn(message, name);
+        } else {
+            log.debug(message, name);
+        }
     }
 
     private static void addIfNotEmpty(List<Rectangle> areas, Rectangle area) {
