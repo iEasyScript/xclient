@@ -15,6 +15,28 @@ public final class Rs2DoorGeometry {
     private Rs2DoorGeometry() {
     }
 
+    /**
+     * Whether {@code at} has crossed the door axis between {@code from} and {@code to}, i.e. moved at
+     * least one tile past {@code from} in the direction of a cardinal edge. False for diagonal edges.
+     */
+    public static boolean crossedDoorAxis(WorldPoint from, WorldPoint to, WorldPoint at) {
+        if (from == null || to == null || at == null
+                || from.getPlane() != to.getPlane() || at.getPlane() != to.getPlane()) {
+            return false;
+        }
+        int dx = to.getX() - from.getX();
+        int dy = to.getY() - from.getY();
+        if (dx != 0 && dy == 0) {
+            int travelled = at.getX() - from.getX();
+            return dx > 0 ? travelled >= 1 : travelled <= -1;
+        }
+        if (dy != 0 && dx == 0) {
+            int travelled = at.getY() - from.getY();
+            return dy > 0 ? travelled >= 1 : travelled <= -1;
+        }
+        return false;
+    }
+
     public static boolean isDoorOnSegment(TileObject object, WorldPoint fromWp, WorldPoint toWp) {
         return isDoorOnSegment(object, object == null ? null : object.getWorldLocation(), fromWp, toWp);
     }

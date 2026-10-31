@@ -6807,7 +6807,14 @@ public class Rs2Walker {
         if (after.equals(toWp) || afterTo == 0) {
             return true;
         }
-        return afterTo <= 1 && afterTo < beforeTo;
+        boolean diagonalEdge = fromWp.getX() != toWp.getX() && fromWp.getY() != toWp.getY();
+        if (diagonalEdge) {
+            return afterTo <= 1 && afterTo < beforeTo;
+        }
+        // On a cardinal edge "closer to toWp" also passed a nudge that started two tiles out and stopped
+        // on fromWp, the near side of a locked door. Crossing the door's axis is the fact being tested,
+        // and it also sees a running player who skipped over toWp.
+        return Rs2DoorGeometry.crossedDoorAxis(fromWp, toWp, after);
     }
 
     private static int interimPreclickTiles() {

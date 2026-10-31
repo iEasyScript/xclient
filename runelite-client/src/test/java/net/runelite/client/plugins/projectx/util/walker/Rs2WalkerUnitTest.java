@@ -1374,6 +1374,26 @@ public class Rs2WalkerUnitTest {
     }
 
     @Test
+    public void isDoorEdgeNudgeResolved_stopsOnNearSideOfCardinalDoor_returnsFalse() {
+        // A locked door: the nudge started two tiles out and stopped on fromWp, one tile from toWp.
+        assertFalse(Rs2Walker.isDoorEdgeNudgeResolved(
+                new WorldPoint(3240, 3299, 0),
+                new WorldPoint(3240, 3301, 0),
+                new WorldPoint(3240, 3301, 0),
+                new WorldPoint(3240, 3302, 0)));
+    }
+
+    @Test
+    public void isDoorEdgeNudgeResolved_runsPastCardinalDoorTarget_returnsTrue() {
+        // Running covers two tiles a tick and can skip toWp itself.
+        assertTrue(Rs2Walker.isDoorEdgeNudgeResolved(
+                new WorldPoint(3240, 3301, 0),
+                new WorldPoint(3240, 3303, 0),
+                new WorldPoint(3240, 3301, 0),
+                new WorldPoint(3240, 3302, 0)));
+    }
+
+    @Test
     public void isDoorEdgeNudgeResolved_crossesToDoorTarget_returnsTrue() {
         assertTrue(Rs2Walker.isDoorEdgeNudgeResolved(
                 new WorldPoint(3240, 3301, 0),
