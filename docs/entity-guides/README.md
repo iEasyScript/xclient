@@ -19,6 +19,8 @@ Run-orb energy, geometry, and pending-click semantics: [movement gotcha 17](move
 
 Scene walk-click render validity and destination confirmation: [movement gotcha 18](movement.md#18-a-scene-walk-click-is-only-valid-on-a-tile-rendered-at-click-time).
 
+Scene and object clicks must not land under the side panel, chatbox or minimap: [movement gotcha 27](movement.md#27-in-resizable-mode-the-viewport-runs-under-the-side-panel-chatbox-and-minimap).
+
 ## Format
 
 Each entity guide is a numbered list of gotchas. Each entry follows this structure:
