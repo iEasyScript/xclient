@@ -853,6 +853,30 @@ public class ShortestPathCoreTest {
 		assertTrue("with the key the route uses the dusty-key gate", hasConsecutiveStep(path, gateEast, gateWest));
 	}
 
+	@Test
+	public void testElementalWorkshopWallNeedsTheBatteredKey() {
+		// The odd-looking wall in Seers' Village opens only with the battered key. Its edge is blocked,
+		// so the only way through is the key-gated transport.
+		WorldPoint outside = new WorldPoint(2709, 3494, 0);
+		WorldPoint workshop = new WorldPoint(2716, 9888, 0);
+		WorldPoint wallSouth = new WorldPoint(2709, 3495, 0);
+		WorldPoint wallNorth = new WorldPoint(2709, 3496, 0);
+
+		Pathfinder keyless = new Pathfinder(createConfigWithTransportsWhere(
+				t -> t.getItemIdRequirements().isEmpty() && noSkills(t)), outside, workshop);
+		keyless.run();
+		assertTrue("keyless search should finish", keyless.isDone());
+		assertFalse("a player without the battered key must not be routed through the wall",
+				hasConsecutiveStep(keyless.getPath(), wallSouth, wallNorth));
+
+		Pathfinder withKey = new Pathfinder(createConfigWithTransportsWhere(ShortestPathCoreTest::noSkills),
+				outside, workshop);
+		withKey.run();
+		List<WorldPoint> path = withKey.getPath();
+		assertEquals("with the key the route reaches the workshop", workshop, path.get(path.size() - 1));
+		assertTrue("with the key the route opens the wall", hasConsecutiveStep(path, wallSouth, wallNorth));
+	}
+
 	private static boolean noSkills(Transport t) {
 		return Arrays.stream(t.getSkillLevels()).allMatch(level -> level <= 1);
 	}
