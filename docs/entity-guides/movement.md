@@ -553,7 +553,9 @@ retry (Farm Run AIO report, 2026-10-31).
 `MAX_TRANSPORT_FAILURES` it adds `PathfinderConfig.transportKey` to `lockedTransports`, refreshes the
 config and recalculates. A success clears the count.
 
-**Where this applies:** `Rs2Walker.handleObject` (plane-change transports); `PathfinderConfig.useTransport`.
+**Where this applies:** `Rs2Walker.handleObject` (plane-change transports), `Rs2Walker.handleTransports`
+(a same-plane transport whose landing never resolved while the player is still on its origin,
+`isStillAtTransportOrigin`); `PathfinderConfig.useTransport`.
 
 **Defensive check:** `TransportLockTest`.
 

@@ -34,6 +34,29 @@ public class TransportLockTest {
     }
 
     @Test
+    public void aPlayerLeftOnTheOriginCountsAsARefusal() {
+        net.runelite.api.coords.WorldPoint origin = new net.runelite.api.coords.WorldPoint(3200, 3200, 0);
+        net.runelite.api.coords.WorldPoint dest = new net.runelite.api.coords.WorldPoint(3210, 3200, 0);
+        assertTrue(Rs2Walker.isStillAtTransportOrigin(origin, origin, dest));
+        assertTrue(Rs2Walker.isStillAtTransportOrigin(new net.runelite.api.coords.WorldPoint(3199, 3200, 0), origin, dest));
+        assertFalse("two tiles away is not on the origin",
+                Rs2Walker.isStillAtTransportOrigin(new net.runelite.api.coords.WorldPoint(3202, 3200, 0), origin, dest));
+        assertFalse("landed near the destination",
+                Rs2Walker.isStillAtTransportOrigin(dest, origin, dest));
+        assertFalse(Rs2Walker.isStillAtTransportOrigin(null, origin, dest));
+        assertFalse("another plane is not the origin",
+                Rs2Walker.isStillAtTransportOrigin(new net.runelite.api.coords.WorldPoint(3200, 3200, 1), origin, dest));
+    }
+
+    @Test
+    public void aDoorPlayerOnTheFarSideIsNotRefused() {
+        net.runelite.api.coords.WorldPoint origin = new net.runelite.api.coords.WorldPoint(3123, 3360, 0);
+        net.runelite.api.coords.WorldPoint dest = new net.runelite.api.coords.WorldPoint(3123, 3361, 0);
+        assertTrue(Rs2Walker.isStillAtTransportOrigin(origin, origin, dest));
+        assertFalse(Rs2Walker.isStillAtTransportOrigin(dest, origin, dest));
+    }
+
+    @Test
     public void ignoresATransportWithoutAKey() {
         assertFalse(Rs2Walker.recordTransportFailure(new HashMap<>(), null));
     }

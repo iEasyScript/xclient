@@ -9550,8 +9550,15 @@ public class Rs2Walker {
                                     POST_HANDLE_OBJECT_LANDING_WAIT_MS,
                                     compactWorldPoint(destWait),
                                     compactWorldPoint(afterInteraction));
+                            // Still on the origin: the transport refused (a catalog row the game does not
+                            // honour, say). Count it like a plane change that never started, so replans stop
+                            // choosing it after a few tries instead of until the tail-iteration cap.
+                            if (isStillAtTransportOrigin(afterInteraction, transport.getOrigin(), destWait)) {
+                                noteTransportFailure(transport);
+                            }
                         }
                         if (landedAfterObject) {
+                            transportFailures.remove(PathfinderConfig.transportKey(transport));
                             markAdjacentSamePlaneTransportHandled(transport, object);
                             return finishHandledTransport(transport);
                         }
@@ -9926,6 +9933,21 @@ public class Rs2Walker {
     /** Failed starts in a row per transport (PathfinderConfig.transportKey), this session. */
     private static final Map<String, Integer> transportFailures = new ConcurrentHashMap<>();
     static final int MAX_TRANSPORT_FAILURES = 3;
+
+    /**
+     * True when the player is on or beside a transport's origin and nearer to it than to the
+     * destination, i.e. the transport did not take them anywhere.
+     */
+    static boolean isStillAtTransportOrigin(WorldPoint player, WorldPoint origin, WorldPoint destination) {
+        if (player == null || origin == null || destination == null || player.getPlane() != origin.getPlane()) {
+            return false;
+        }
+        int toOrigin = player.distanceTo2D(origin);
+        if (toOrigin > 1) {
+            return false;
+        }
+        return player.getPlane() != destination.getPlane() || toOrigin < player.distanceTo2D(destination);
+    }
 
     /**
      * Counts a transport that did not start. After MAX_TRANSPORT_FAILURES in a row it is left out of
