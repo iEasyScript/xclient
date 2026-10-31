@@ -9857,6 +9857,7 @@ public class Rs2Walker {
             if (!started) {
                 WebWalkLog.spInfo("transport_plane_change | no_start startWaitMs={} obj={} action={} — returning for retry",
                         startWaitMs, tileObject.getId(), transport.getAction());
+                noteTransportFailure(transport);
                 return false;
             }
             WorldPoint plAfterStart = Rs2Player.getWorldLocation();
@@ -9877,8 +9878,49 @@ public class Rs2Walker {
             WebWalkLog.spInfo("transport_plane_change | changed={} startWaitMs={} planeWaitMs={} totalMs={} obj={}",
                     planeChanged, startWaitMs, planeWaitMs,
                     System.currentTimeMillis() - planeChangeStartedAt, tileObject.getId());
+            if (planeChanged) {
+                transportFailures.remove(PathfinderConfig.transportKey(transport));
+            } else {
+                noteTransportFailure(transport);
+            }
             return planeChanged;
         }
+    }
+
+    /**
+     * Counts one more failure for this transport. True when it has now failed MAX_TRANSPORT_FAILURES
+     * times in a row and should be locked; its count is cleared then.
+     */
+    static boolean recordTransportFailure(Map<String, Integer> failures, String key) {
+        if (key == null) return false;
+        if (failures.merge(key, 1, Integer::sum) < MAX_TRANSPORT_FAILURES) return false;
+        failures.remove(key);
+        return true;
+    }
+
+    /** Failed starts in a row per transport (PathfinderConfig.transportKey), this session. */
+    private static final Map<String, Integer> transportFailures = new ConcurrentHashMap<>();
+    static final int MAX_TRANSPORT_FAILURES = 3;
+
+    /**
+     * Counts a transport that did not start. After MAX_TRANSPORT_FAILURES in a row it is left out of
+     * planning for the session and the route recalculated: a staircase that never climbs (a customer's
+     * Wizards' Guild stairs, 2026-10-31) was otherwise clicked for minutes on end.
+     */
+    private static void noteTransportFailure(Transport transport) {
+        String key = PathfinderConfig.transportKey(transport);
+        if (!recordTransportFailure(transportFailures, key)) {
+            return;
+        }
+        PathfinderConfig.lockedTransports.add(key);
+        log.warn("[Walker] {} at {} did not work {} times in a row; routing around it until the client restarts",
+                transport.getAction(), transport.getOrigin(), MAX_TRANSPORT_FAILURES);
+        PathfinderConfig pathConfig = Rs2PathApi.getPathfinderConfig();
+        if (pathConfig != null) {
+            pathConfig.invalidateTransportRefreshCache();
+            pathConfig.refresh();
+        }
+        recalculatePath();
     }
 
     /**

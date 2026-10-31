@@ -88,6 +88,17 @@ public class PathfinderConfig {
 	 */
 	public static final Set<WorldPoint> lockedSpiritTreeDestinations = ConcurrentHashMap.newKeySet();
 	/**
+	 * Any transport (by {@link #transportKey}) that failed to start several times in a row this session:
+	 * a staircase or ladder the account cannot use, an object that has moved. Left out of planning until
+	 * the client restarts, so the walker routes around it instead of clicking it for ever.
+	 */
+	public static final Set<String> lockedTransports = ConcurrentHashMap.newKeySet();
+
+	/** Identifies one transport row: where it starts, where it lands and the object used. */
+	public static String transportKey(Transport transport) {
+		return transport.getOrigin() + "|" + transport.getDestination() + "|" + transport.getObjectId();
+	}
+	/**
 	 * POH teleports (by display info) that failed twice in a row this session: listed in the Web Walker's
 	 * POH panel but not usable in the house (no such nexus slot, portal or jewellery box). Left out of
 	 * planning until the client restarts or the POH panel's Detect button is pressed.
@@ -1338,6 +1349,10 @@ public class PathfinderConfig {
         if (transport.getType() == TransportType.POH
                 && lockedPohTeleports.contains(transport.getDisplayInfo())) {
             log.debug("Transport ( O: {} D: {} ) is a POH teleport that failed in the house", transport.getOrigin(), transport.getDestination());
+            return false;
+        }
+        if (!lockedTransports.isEmpty() && lockedTransports.contains(transportKey(transport))) {
+            log.debug("Transport ( O: {} D: {} ) failed to start repeatedly this session", transport.getOrigin(), transport.getDestination());
             return false;
         }
         if (transport.getType() == TransportType.BOAT

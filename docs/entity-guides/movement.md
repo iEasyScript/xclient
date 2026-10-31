@@ -538,3 +538,21 @@ on every pass, so the walker kept opening the portal nexus to look for it (POH r
 `PohTeleports.usePortalNexus`.
 
 **Defensive check:** `PohTeleportLockTest`.
+
+## 26. A transport that fails to start must not be retried for ever
+
+A staircase, ladder or object can fail for reasons the data cannot see: a requirement the row does not
+model, an object that has moved, a level the account lacks. Count failed starts per transport and, after
+a few in a row, leave it out of planning for the session so the route goes another way.
+
+**Why this matters:** a customer's walk from Fossil Island to the Motherlode Mine went through the
+Wizards' Guild in Yanille and clicked its upper staircase for minutes; each "no start" just returned for
+retry (Farm Run AIO report, 2026-10-31).
+
+**Pattern to follow:** `Rs2Walker.noteTransportFailure` on every failed plane-change transport; after
+`MAX_TRANSPORT_FAILURES` it adds `PathfinderConfig.transportKey` to `lockedTransports`, refreshes the
+config and recalculates. A success clears the count.
+
+**Where this applies:** `Rs2Walker.handleObject` (plane-change transports); `PathfinderConfig.useTransport`.
+
+**Defensive check:** `TransportLockTest`.
