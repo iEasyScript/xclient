@@ -78,13 +78,15 @@ public class Rs2UiHelper {
 
     static final int INTERFACE_CLEARANCE_PX = 4;
 
-    /** The scene viewport. In the resizable layouts it is the whole canvas. Safe from any thread. */
+    /**
+     * The scene viewport. In the resizable layouts it is the whole canvas. Plain field reads, safe from
+     * any thread; reading them inside a client-thread lambda would make the guardrail treat these
+     * getters as client-thread-only for every other caller.
+     */
     public static Rectangle sceneViewportBounds() {
-        return ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-            Client client = ProjectX.getClient();
-            return new Rectangle(client.getViewportXOffset(), client.getViewportYOffset(),
-                    client.getViewportWidth(), client.getViewportHeight());
-        }).orElse(null);
+        Client client = ProjectX.getClient();
+        return new Rectangle(client.getViewportXOffset(), client.getViewportYOffset(),
+                client.getViewportWidth(), client.getViewportHeight());
     }
 
     /**
