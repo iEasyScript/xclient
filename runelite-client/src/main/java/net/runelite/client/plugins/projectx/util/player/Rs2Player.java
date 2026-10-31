@@ -1695,7 +1695,10 @@ public class Rs2Player {
      * @return {@code true} if the player is inside a cave, {@code false} otherwise.
      */
     public static boolean isInCave() {
-        return Rs2Player.getWorldLocation().getY() >= 6400
+        // Null while the area loads right after a transport; the walker asks then.
+        WorldPoint location = Rs2Player.getWorldLocation();
+        return location != null
+                && location.getY() >= 6400
                 && !ProjectX.getClient().getTopLevelWorldView().isInstance();
     }
     
