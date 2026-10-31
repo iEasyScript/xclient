@@ -9773,7 +9773,7 @@ public class Rs2Walker {
             } else if (transport.getType() == TransportType.TELEPORTATION_PORTAL) {
                 sleepTickJitter(2); // wait extra 2 game ticks before moving
             } else {
-                Rs2Player.waitForWalking();
+                waitForSamePlaneTransportStart(transport, before);
                 Rs2Dialogue.clickOption("Yes please"); //shillo village cart
                 if (isAdjacentSamePlaneTransport(transport)) {
                     // A ranged dispatch clicks the gate from up to a dozen tiles away and the server walks
@@ -9981,6 +9981,30 @@ public class Rs2Walker {
             return defaultRadius;
         }
         return Math.min(defaultRadius, hop - 1);
+    }
+
+    /**
+     * Waits for a same-plane object transport to start. A ladder or entrance that moves the player far
+     * on the same plane (Stronghold of Security entrance and ladders, many caves) is a teleport, not a
+     * walk, so waiting only for movement burned the full 5 s after the player had already landed. The
+     * wait also ends on landing near a far destination or when an area warning opens; the warning is
+     * answered here rather than by the next walk pass, after the landing waits had timed out.
+     */
+    private static void waitForSamePlaneTransportStart(Transport transport, WorldPoint before) {
+        WorldPoint dest = transport.getDestination();
+        boolean landsFar = dest != null && before != null && before.distanceTo2D(dest) > OFFSET;
+        boolean started = sleepUntilTrue(() -> Rs2Player.isMoving()
+                || (landsFar && isPlayerWithinChebyshevInclusive(dest, OFFSET))
+                || AreaWarning.isOpen(), 100, 5000);
+        if (started && Rs2Player.isMoving()) {
+            sleepUntil(() -> !Rs2Player.isMoving());
+            if (landsFar) {
+                sleepUntilTrue(() -> isPlayerWithinChebyshevInclusive(dest, OFFSET) || AreaWarning.isOpen(), 100, 1800);
+            }
+        }
+        if (AreaWarning.acceptIfOpen() && landsFar) {
+            sleepUntilTrue(() -> isPlayerWithinChebyshevInclusive(dest, OFFSET), 100, 5000);
+        }
     }
 
     /**
