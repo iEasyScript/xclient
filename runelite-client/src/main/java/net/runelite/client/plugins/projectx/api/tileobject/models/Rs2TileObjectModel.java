@@ -176,7 +176,8 @@ public class Rs2TileObjectModel implements TileObject, IEntity {
 
     @Override
     public @Nullable Shape getClickbox() {
-        return tileObject.getClickbox();
+        // The game asserts getClickbox runs on the client thread; script threads call this.
+        return ProjectX.getClientThread().runOnClientThreadOptional(tileObject::getClickbox).orElse(null);
     }
 
     @Override
