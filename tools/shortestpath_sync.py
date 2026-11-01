@@ -79,6 +79,8 @@ Usage (from the repository root):
     # collision map: compare region by region, then replace ours (converts upstream's 4 flags to our 2)
     python tools/shortestpath_sync.py collision-map --upstream /tmp/sp-up
     python tools/shortestpath_sync.py collision-map --upstream /tmp/sp-up --write
+    # both reopen RUNTIME_OPENED_TILES (the Motherlode rockfalls); open-obstacles does only that, to ours
+    python tools/shortestpath_sync.py open-obstacles --write
 
     # just print the converted rows of an upstream file
     python tools/shortestpath_sync.py convert --upstream /tmp/sp-up canoes.tsv
@@ -1192,6 +1194,81 @@ def collision_region_to_ours(data, upstream_flags):
     return _java_bitset_bytes(out)
 
 
+# Tiles our walker opens at runtime, so the map has to call them passable: the pathfinder then
+# plans a route through them and the runtime handler clears them (Rs2Walker.handleRockfall for the
+# Motherlode Mine rockfalls, objects 26679/26680, which LiveCollisionCapture defers to this map).
+# Upstream's map walls them off, and syncing it on 2026-10-08 sealed the mine entrance off from the
+# rest of the mine. Each entry is a tile and the sides that are open once the obstacle is gone
+# (N, S, E, W), taken from our map before that sync. Applied by collision-map and open-obstacles.
+RUNTIME_OPENED_TILES = (
+    (3719, 5664, "NSEW"),
+    (3720, 5665, "NSW"),
+    (3726, 5643, "NSEW"),
+    (3726, 5654, "NSW"),
+    (3727, 5652, "SEW"),
+    (3727, 5683, "NSW"),
+    (3728, 5651, "NSEW"),
+    (3728, 5688, "NSEW"),
+    (3731, 5683, "NSW"),
+    (3733, 5680, "NSEW"),
+    (3744, 5640, "NSEW"),
+    (3745, 5689, "NSEW"),
+    (3748, 5684, "SEW"),
+    (3748, 5689, "NSW"),
+    (3755, 5640, "SEW"),
+    (3756, 5639, "NSEW"),
+    (3757, 5677, "NSEW"),
+    (3759, 5690, "SEW"),
+    (3762, 5652, "NSEW"),
+    (3762, 5668, "SEW"),
+    (3762, 5687, "NSEW"),
+    (3765, 5688, "NSW"),
+    (3766, 5639, "NSEW"),
+    (3766, 5647, "NSEW"),
+    (3766, 5670, "NSW"),
+    (3768, 5674, "NSEW"),
+    (3768, 5679, "NSEW"),
+    (3769, 5642, "SEW"),
+    (3769, 5658, "NSEW"),
+    (3769, 5680, "NSEW"),
+    (3770, 5659, "NSW"),
+    (3771, 5638, "NSEW"),
+)
+
+
+def _set_bit(data, index):
+    while index >> 3 >= len(data):
+        data.append(0)
+    data[index >> 3] |= 1 << (index & 7)
+
+
+def open_runtime_obstacles(regions):
+    """Opens RUNTIME_OPENED_TILES in a {region name: bytes} map, in place. Returns edges opened."""
+    opened = 0
+    for x, y, sides in RUNTIME_OPENED_TILES:
+        edges = []
+        for side in sides:
+            if side == "N":
+                edges.append((x, y, 0))
+            elif side == "S":
+                edges.append((x, y - 1, 0))
+            elif side == "E":
+                edges.append((x, y, 1))
+            elif side == "W":
+                edges.append((x - 1, y, 1))
+        for ex, ey, flag in edges:
+            name = "%d_%d" % (ex >> 6, ey >> 6)
+            if name not in regions:
+                continue
+            data = bytearray(regions[name])
+            index = (((ey & 63) * 64) + (ex & 63)) * 2 + flag
+            if not (index >> 3 < len(data) and (data[index >> 3] >> (index & 7)) & 1):
+                _set_bit(data, index)
+                opened += 1
+            regions[name] = _java_bitset_bytes(bytes(data))
+    return opened
+
+
 def cmd_collision_map(args):
     import zipfile
     ours_path = DATA_DIR / "collision-map.zip"
@@ -1202,6 +1279,7 @@ def cmd_collision_map(args):
         ours = {n: _java_bitset_bytes(z.read(n)) for n in z.namelist()}
     with zipfile.ZipFile(up_path) as z:
         conv = {n: collision_region_to_ours(z.read(n), args.flags) for n in z.namelist()}
+    print("runtime-opened obstacle edges reopened in upstream's map:", open_runtime_obstacles(conv))
     shared = set(ours) & set(conv)
     changed = sorted(n for n in shared if ours[n] != conv[n])
     added = sorted(set(conv) - set(ours))
@@ -1215,6 +1293,20 @@ def cmd_collision_map(args):
         with zipfile.ZipFile(ours_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
             for n in sorted(conv):
                 z.writestr(n, conv[n])
+        print("wrote", ours_path)
+
+
+def cmd_open_obstacles(args):
+    import zipfile
+    ours_path = DATA_DIR / "collision-map.zip"
+    with zipfile.ZipFile(ours_path) as z:
+        regions = {n: _java_bitset_bytes(z.read(n)) for n in z.namelist()}
+    opened = open_runtime_obstacles(regions)
+    print("edges to reopen in our map:", opened)
+    if args.write and opened:
+        with zipfile.ZipFile(ours_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+            for n in sorted(regions):
+                z.writestr(n, regions[n])
         print("wrote", ours_path)
 
 
@@ -1234,6 +1326,9 @@ def main():
                    help="flags per tile in upstream's map (4 since upstream #729, 2 before)")
     m.add_argument("--write", action="store_true")
     m.set_defaults(func=cmd_collision_map)
+    o = sub.add_parser("open-obstacles", help="reopen RUNTIME_OPENED_TILES in our collision-map.zip (--write saves it)")
+    o.add_argument("--write", action="store_true")
+    o.set_defaults(func=cmd_open_obstacles)
     for name, fn in (("diff", cmd_diff), ("apply", cmd_apply)):
         s = sub.add_parser(name)
         s.add_argument("--upstream", required=True)

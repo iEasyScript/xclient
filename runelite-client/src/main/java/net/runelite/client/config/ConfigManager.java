@@ -1309,10 +1309,15 @@ public class ConfigManager
 			if (Objects.equals(current, valueString) || (Strings.isNullOrEmpty(current) && Strings.isNullOrEmpty(valueString)))
 			{
 				if (isInventorySetup) {
+					// An unset setup setting takes the first saved setup that holds something. The first
+					// one is often the blank "default" setup, and a script handed that one either stops
+					// ("no weapon") or banks everything the player carries to match an empty loadout.
+					// With no non-empty setup saved, the setting stays unset for the player to choose.
 					var setups = configInventorySetupDataManager.loadV3Setups(this);
-					if (!setups.isEmpty()) {
-						setConfiguration(group.value(), item.keyName(), gson.toJson(setups.get(0), InventorySetup.class));
-					}
+					setups.stream()
+							.filter(ConfigManager::setupHoldsItems)
+							.findFirst()
+							.ifPresent(setup -> setConfiguration(group.value(), item.keyName(), gson.toJson(setup, InventorySetup.class)));
 				}
 				continue; // already set to the default value
 			}
@@ -1349,6 +1354,23 @@ public class ConfigManager
 				setConfiguration(group.value(), item.keyName(), valueString);
 			}
 		}
+	}
+
+	/** True when a saved setup has at least one real item worn or carried (empty slots have id -1). */
+	private static boolean setupHoldsItems(InventorySetup setup)
+	{
+		if (setup == null)
+		{
+			return false;
+		}
+		for (var items : Arrays.asList(setup.getEquipment(), setup.getInventory()))
+		{
+			if (items != null && items.stream().anyMatch(i -> i != null && i.getId() != -1))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	Object stringToObject(String str, Type type)
