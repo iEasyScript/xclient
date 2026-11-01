@@ -2434,6 +2434,17 @@ public class MInventorySetupsPlugin extends Plugin
 	{
 		final String newName = InventorySetupUtilities.findNewName(newSetup.getName(), cache.getInventorySetupNames().keySet());
 		newSetup.setName(newName);
+
+		// An import carries item ids only. Scripts withdraw and equip a setup by item name, so
+		// fill the names in now, as loading setups from the config does. Without this an imported
+		// setup matched nothing in the bank until the client was restarted (Slayer, 2026-11-01).
+		for (final InventorySetupsItem item : InventorySetup.getSetupItems(newSetup))
+		{
+			if (item != null && item.getId() >= 0)
+			{
+				item.setName(itemManager.getItemComposition(item.getId()).getName());
+			}
+		}
 	}
 
 	private Path showMassImportFolderDialog()
