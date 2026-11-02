@@ -2582,7 +2582,18 @@ public class Rs2Bank {
     public static boolean isNearBank(BankLocation bankLocation, int distance) {
         WorldPoint playerLocation = Rs2Player.getWorldLocation();
         if (playerLocation == null) return false;
-        return Rs2Walker.getDistanceBetween(playerLocation, bankLocation.getWorldPoint()) <= distance;
+        return withinTiles(playerLocation, bankLocation.getWorldPoint(), distance);
+    }
+
+    /**
+     * Straight-line tiles on the same floor. Rs2Walker.getDistanceBetween counts the
+     * pathfinder's route instead, which is short or empty when the route starts with a
+     * teleport or cannot be completed: far-away players were taken to be at the bank, the
+     * walk was skipped, opening failed, and scripts tried again every loop (AIO Fighter
+     * Plus, 2026-11-02).
+     */
+    private static boolean withinTiles(WorldPoint a, WorldPoint b, int tiles) {
+        return a != null && b != null && a.getPlane() == b.getPlane() && a.distanceTo2D(b) <= tiles;
     }
 
     /**
@@ -2622,7 +2633,7 @@ public class Rs2Bank {
         if (Rs2Bank.isOpen()) return true;
         Rs2Player.toggleRunEnergy(toggleRun);
         ProjectX.status = "Walking to nearest bank " + bankLocation.toString();
-        boolean result = Rs2Walker.getDistanceBetween(Rs2Player.getWorldLocation(), bankLocation.getWorldPoint()) <= 8;
+        boolean result = withinTiles(Rs2Player.getWorldLocation(), bankLocation.getWorldPoint(), 8);
         if (!result) {
             Rs2Walker.walkTo(bankLocation.getWorldPoint());
         }
