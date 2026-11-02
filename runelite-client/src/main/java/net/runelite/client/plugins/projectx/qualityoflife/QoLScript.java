@@ -1,0 +1,312 @@
+package net.runelite.client.plugins.projectx.qualityoflife;
+
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Player;
+import net.runelite.api.widgets.Widget;
+import net.runelite.client.plugins.projectx.ProjectX;
+import net.runelite.client.plugins.projectx.Script;
+import net.runelite.client.plugins.projectx.util.Rs2InventorySetup;
+import net.runelite.client.plugins.projectx.util.bank.Rs2Bank;
+import net.runelite.client.plugins.projectx.util.dialogues.Rs2Dialogue;
+import net.runelite.client.plugins.projectx.util.inventory.Rs2Inventory;
+import net.runelite.client.plugins.projectx.util.math.Rs2Random;
+import net.runelite.client.plugins.projectx.util.menu.NewMenuEntry;
+import net.runelite.client.plugins.projectx.util.npc.Rs2NpcManager;
+import net.runelite.client.plugins.projectx.util.player.Rs2Player;
+import net.runelite.client.plugins.projectx.util.widget.Rs2Widget;
+
+import java.awt.*;
+import java.util.concurrent.TimeUnit;
+
+@Slf4j
+public class QoLScript extends Script {
+
+    /**
+     * When anti-PK prayer is on and we are fighting another player, space out eat attempts so they do not
+     * contend with prayer switching on every script tick (300ms). Eating still happens; it is not disabled.
+     */
+    private static final long ANTI_PK_PLAYER_COMBAT_EAT_ATTEMPT_GAP_MS = 800L;
+
+    private long lastAntiPkPlayerCombatEatAttemptMs = 0L;
+
+    private final boolean bankOpen = false;
+
+    public boolean run(QoLConfig config) {
+        ProjectX.enableAutoRunOn = false;
+        loadNpcData();
+        mainScheduledFuture = scheduledExecutorService.scheduleWithFixedDelay(() -> {
+            try {
+                if (!ProjectX.isLoggedIn()) {
+                    return;
+                }
+				if (!super.run()) return;
+
+                if (config.autoDrinkPrayerPot() && !config.enablePotionManager()) {
+                    handleAutoDrinkPrayPot(config.drinkPrayerPotPoints());
+                }
+
+                if (config.autoEatFood()) {
+                    handleAutoEat(config);
+                }
+
+                if (QoLPlugin.executeBankActions) {
+                    handleBankActions();
+                }
+
+                if (QoLPlugin.executeFurnaceActions) {
+                    handleFurnaceActions();
+                }
+
+                if (QoLPlugin.executeAnvilActions) {
+                    handleAnvilActions();
+                }
+
+                if (QoLPlugin.executeWorkbenchActions) {
+                    handleWorkbenchActions();
+                }
+
+                if (QoLPlugin.executeLoadoutActions && QoLPlugin.loadoutToLoad != null) {
+                    handleInventorySetup();
+                }
+
+                if (config.useDialogueAutoContinue() && Rs2Dialogue.isInDialogue()) {
+                    handleDialogueContinue();
+                }
+
+                if (config.useQuestDialogueOptions() && Rs2Dialogue.isInDialogue()) {
+                    Rs2Dialogue.handleQuestOptionDialogueSelection();
+                }
+
+                if (config.autoPayTreeRemoval() && Rs2Dialogue.isInDialogue()) {
+                    handleTreeRemovalPayment();
+                }
+
+
+            } catch (Exception ex) {
+                log.error("Error in QoLScript execution: {}", ex.getMessage(), ex);
+            }
+        }, 0, 300, TimeUnit.MILLISECONDS);
+        return true;
+    }
+
+    private void loadNpcData() {
+        try {
+            Rs2NpcManager.loadJson();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load NPC data", e);
+        }
+    }
+
+    // handle inventory setup
+    private void handleInventorySetup() {
+        if (!openBank()) {
+            ProjectX.log("Bank did not open");
+            QoLPlugin.executeLoadoutActions = false;
+            QoLPlugin.loadoutToLoad = null;
+            return;
+        }
+
+        try {
+            Rs2InventorySetup inventorySetup = new Rs2InventorySetup(QoLPlugin.loadoutToLoad.getName(), mainScheduledFuture);
+
+            if (!inventorySetup.doesEquipmentMatch()) {
+                inventorySetup.loadEquipment();
+            }
+            if (!inventorySetup.doesInventoryMatch()) {
+                inventorySetup.loadInventory();
+            }
+			if (!inventorySetup.getAdditionalItems().isEmpty()) {
+				inventorySetup.prePot();
+			}
+            QoLPlugin.executeLoadoutActions = false;
+            QoLPlugin.loadoutToLoad = null;
+        } catch (Exception ignored) {
+            QoLPlugin.executeLoadoutActions = false;
+            QoLPlugin.loadoutToLoad = null;
+			ProjectX.pauseAllScripts.compareAndSet(true, false);
+            ProjectX.log("Failed to load inventory setup");
+        }
+
+    }
+
+    /**
+     * Client-only reads via {@code ProjectX.getClientThread().invoke} (see AutoPrayer).
+     * With anti-PK prayer on, eating is still allowed in PvP; we only throttle eat attempts while interacting
+     * with another player so auto-eat does not fire every tick against prayer switching.
+     */
+    private void handleAutoEat(QoLConfig config) {
+        ProjectX.getClientThread().invoke(() -> {
+            if (ProjectX.getClient() == null) {
+                return;
+            }
+            if (config.autoPrayAgainstPlayers()) {
+                Player local = ProjectX.getClient().getLocalPlayer();
+                if (local != null) {
+                    if (local.getInteracting() instanceof Player) {
+                        long now = System.currentTimeMillis();
+                        if (now - lastAntiPkPlayerCombatEatAttemptMs < ANTI_PK_PLAYER_COMBAT_EAT_ATTEMPT_GAP_MS) {
+                            return;
+                        }
+                        lastAntiPkPlayerCombatEatAttemptMs = now;
+                    }
+                }
+            }
+            Rs2Player.eatAt(config.eatFoodPercentage(), true);
+        });
+    }
+
+    private void handleAutoDrinkPrayPot(int points) {
+        Rs2Player.drinkPrayerPotionAt(points);
+    }
+
+    // Auto-confirm the farming "Pay X Coins to have your tree chopped down?" prompt (tree removal
+    // after a check-health) so farm runs don't wait on a manual 'Yes.'. Matched on the question
+    // title so it never fires on unrelated Yes/No dialogues; amount-agnostic on purpose.
+    private void handleTreeRemovalPayment() {
+        if (Rs2Dialogue.hasQuestion("to have your tree chopped down")
+                && Rs2Dialogue.hasDialogueOption("Yes")) {
+            Rs2Dialogue.clickOption("Yes");
+        }
+    }
+
+    // handle dialogue continue
+    private void handleDialogueContinue() {
+        Rs2Dialogue.clickContinue();
+    }
+
+    private void handleWorkbenchActions() {
+        // get all pouches in inventory except for the "Rune pouch"
+        Rs2Inventory.all().stream()
+                .filter(item -> item.getName().contains("pouch") && !item.getName().equals("Rune pouch"))
+                .forEach(item -> {
+                    Rs2Inventory.interact(item, "Fill");
+                    //sleep(200);
+                });
+
+        ProjectX.doInvoke(QoLPlugin.workbenchMenuEntry, new Rectangle(1, 1));
+        QoLPlugin.executeWorkbenchActions = false;
+    }
+
+    private void handleBankActions() {
+        if (!openBank()) {
+            log.warn("Bank did not open");
+            QoLPlugin.executeBankActions = false;
+            return;
+        }
+
+        for (NewMenuEntry menuEntry : QoLPlugin.bankMenuEntries) {
+            processBankMenuEntry(menuEntry);
+        }
+        QoLPlugin.executeBankActions = false;
+    }
+
+    private boolean openBank() {
+        sleepUntil(Rs2Bank::isOpen, 10000);
+        return Rs2Bank.isOpen();
+    }
+
+    private void processBankMenuEntry(NewMenuEntry menuEntry) {
+        log.info("Executing action: {} {}", menuEntry.getOption(), menuEntry.getTarget());
+
+        if (menuEntry.getOption().contains("Withdraw")) {
+            int itemTab = Rs2Bank.getItemTabForBankItem(menuEntry.getParam0());
+            openAndScrollToTab(itemTab, menuEntry);
+        } else if (menuEntry.getOption().contains("Deposit") &&
+                !menuEntry.getOption().equals("Deposit inventory") &&
+                !menuEntry.getOption().equals("Deposit worn items")) {
+
+            if (Rs2Inventory.isSlotEmpty(menuEntry.getParam0())) {
+                int nonEmptySlot = Rs2Inventory.slot(menuEntry.getItemId());
+                if (nonEmptySlot != -1) {
+                    menuEntry.setParam0(nonEmptySlot);
+                } else {
+                    log.info("No item found in inventory to deposit, skipping action");
+                    return;
+                }
+            }
+        }
+        ProjectX.doInvoke(menuEntry, invokeBounds(menuEntry));
+        //Rs2Random.wait(200, 500);
+    }
+
+    private void openAndScrollToTab(int itemTab, NewMenuEntry menuEntry) {
+        if (!Rs2Bank.isTabOpen(itemTab)) {
+            log.info("Switching to tab: {}", itemTab);
+            Rs2Bank.openTab(itemTab);
+            sleepUntil(() -> Rs2Bank.isTabOpen(itemTab), 5000);
+        }
+
+        Rs2Bank.scrollBankToSlot(menuEntry.getParam0());
+        Rs2Random.wait(200, 500);
+        menuEntry.setWidget(Rs2Bank.getItemWidget(menuEntry.getParam0()));
+    }
+
+    private void handleFurnaceActions() {
+        if (!openFurnace()) {
+            log.warn("Production widget did not open");
+            QoLPlugin.executeFurnaceActions = false;
+            return;
+        }
+
+        for (NewMenuEntry menuEntry : QoLPlugin.furnaceMenuEntries) {
+            processFurnaceMenuEntry(menuEntry);
+        }
+        QoLPlugin.executeFurnaceActions = false;
+    }
+
+    private boolean openFurnace() {
+        sleepUntil(() -> Rs2Widget.isProductionWidgetOpen() || Rs2Widget.isGoldCraftingWidgetOpen() || Rs2Widget.isSilverCraftingWidgetOpen(), 10000);
+        return Rs2Widget.isProductionWidgetOpen() || Rs2Widget.isGoldCraftingWidgetOpen() || Rs2Widget.isSilverCraftingWidgetOpen();
+    }
+
+
+    private boolean openAnvil() {
+        sleepUntil(Rs2Widget::isSmithingWidgetOpen, 10000);
+        return Rs2Widget.isSmithingWidgetOpen();
+    }
+
+    private void processFurnaceMenuEntry(NewMenuEntry menuEntry) {
+        log.info("Executing action: {} {}", menuEntry.getOption(), menuEntry.getTarget());
+        ProjectX.doInvoke(menuEntry, invokeBounds(menuEntry));
+        Rs2Random.wait(200, 500);
+    }
+
+    private void handleAnvilActions() {
+        if (!openAnvil()) {
+            log.warn("Production widget did not open");
+            QoLPlugin.executeAnvilActions = false;
+            return;
+        }
+
+        for (NewMenuEntry menuEntry : QoLPlugin.anvilMenuEntries) {
+            processAnvilMenuEntry(menuEntry);
+        }
+        QoLPlugin.executeAnvilActions = false;
+    }
+
+    private void processAnvilMenuEntry(NewMenuEntry menuEntry) {
+        log.info("Executing action: {} {}", menuEntry.getOption(), menuEntry.getTarget());
+        ProjectX.doInvoke(menuEntry, invokeBounds(menuEntry));
+        Rs2Random.wait(200, 500);
+    }
+
+    static Rectangle invokeBounds(NewMenuEntry menuEntry) {
+        Widget widget = menuEntry.getWidget();
+        return widget != null ? widget.getBounds() : new Rectangle(1, 1);
+    }
+
+    // reset all stored menu entries
+    //Decrepatated use resetMenuEntries method in main class
+    @Deprecated(since = "1.5.8 Use resetMenuEntries method in main class", forRemoval = true)
+    public void resetMenuEntries() {
+        QoLPlugin.bankMenuEntries.clear();
+        QoLPlugin.furnaceMenuEntries.clear();
+        QoLPlugin.anvilMenuEntries.clear();
+    }
+
+    @Override
+    public void shutdown() {
+        super.shutdown();
+        log.info("QoLScript shutdown complete.");
+    }
+}

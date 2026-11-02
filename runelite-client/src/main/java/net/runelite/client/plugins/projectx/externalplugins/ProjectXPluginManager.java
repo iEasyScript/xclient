@@ -1306,12 +1306,35 @@ public class ProjectXPluginManager {
                 .map(Object::getClass)
                 .collect(Collectors.toSet());
 
+        /*
+         * Plugins built into the client, by simple name (the store's internalName).
+         * A jar loads its classes child-first, so a store, hub or dev jar carrying a
+         * plugin of the same name -- QoLPlugin from before it was built in, say --
+         * would be a second, distinct class and run beside the built-in one on the
+         * same config group. The built-in wins; the jar's copy is never loaded.
+         */
+        // Only our own built-ins (the projectx package). RuneLite's core plugins share names
+        // with store scripts -- HerbiboarPlugin, PestControlPlugin -- and those must still load.
+        Set<String> builtInNames = pluginManager.getPlugins().stream()
+                .filter(p -> !isFromPluginJar(p))
+                .filter(p -> p.getClass().getName().startsWith("net.runelite.client.plugins.projectx."))
+                .map(p -> p.getClass().getSimpleName().toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
+
         for (Class<?> clazz : plugins) {
             if (alreadyLoaded.contains(clazz)) {
                 log.debug("Plugin {} is already loaded, skipping duplicate.", clazz.getSimpleName());
                 continue;
             }
             PluginDescriptor pluginDescriptor = clazz.getAnnotation(PluginDescriptor.class);
+
+            if (pluginDescriptor != null
+                    && clazz.getClassLoader() instanceof PluginJarClassLoader
+                    && builtInNames.contains(clazz.getSimpleName().toLowerCase(Locale.ROOT))) {
+                log.warn("Not loading {} from a plugin jar: a plugin of that name is built into the client.",
+                        clazz.getSimpleName());
+                continue;
+            }
 
             if (pluginDescriptor == null) {
                 if (clazz.getSuperclass() == Plugin.class) {

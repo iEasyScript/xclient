@@ -8,6 +8,7 @@ import net.runelite.client.plugins.projectx.breakhandler.breakhandlerv2.BreakHan
 import net.runelite.client.plugins.projectx.example.ExamplePlugin;
 import net.runelite.client.plugins.projectx.inventorysetups.MInventorySetupsPlugin;
 import net.runelite.client.plugins.projectx.mouserecorder.MouseMacroRecorderPlugin;
+import net.runelite.client.plugins.projectx.qualityoflife.QoLPlugin;
 import net.runelite.client.plugins.projectx.questhelper.QuestHelperPlugin;
 import net.runelite.client.plugins.projectx.shortestpath.ShortestPathPlugin;
 import net.runelite.client.plugins.projectx.util.antiban.AntibanPlugin;
@@ -23,6 +24,7 @@ public enum ProjectXPluginChoice {
     INVENTORY_SETUPS("Inventory Setups", MInventorySetupsPlugin.class),
     BREAK_HANDLER("BreakHandler (v1)", BreakHandlerPlugin.class),
     BREAK_HANDLER_V2("BreakHandler V2", BreakHandlerV2Plugin.class),
+    QOL("QoL", QoLPlugin.class),
     EXAMPLE("Example Plugin", ExamplePlugin.class);
 
     private final String displayName;
