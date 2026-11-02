@@ -40,6 +40,8 @@ import okhttp3.Response;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -395,6 +397,33 @@ public class ProjectXAccount
         @SerializedName("balanceCents")
         private Integer balanceCents;
 
+        /** The live membership; null when there is none, or the site is too old to say. */
+        @SerializedName("membership")
+        private Membership membership;
+
+        /** The plan the site suggests to a non-member; null for a member or an older site. */
+        @SerializedName("membershipOffer")
+        private MembershipOffer membershipOffer;
+
+        /** Instance slots and use; null when the site is too old to say. */
+        @SerializedName("instances")
+        private Instances instances;
+
+        public Membership membership()
+        {
+            return membership;
+        }
+
+        public MembershipOffer membershipOffer()
+        {
+            return membershipOffer;
+        }
+
+        public Instances instances()
+        {
+            return instances;
+        }
+
         /** Spendable X Tokens in cents, or null if the site did not say. */
         public Integer balanceCents()
         {
@@ -435,6 +464,145 @@ public class ProjectXAccount
                 log.debug("Unknown Project X role '{}'; treating as USER", role);
                 return Role.USER;
             }
+        }
+    }
+
+    /** A live membership, as {@code /api/v1/me} reports it. */
+    public static class Membership
+    {
+        @SerializedName("tier")
+        private String tier;
+
+        @SerializedName("name")
+        private String name;
+
+        @SerializedName("endsAt")
+        private String endsAt;
+
+        @SerializedName("extraAccounts")
+        private Integer extraAccounts;
+
+        @SerializedName("scriptDiscountPercent")
+        private Double scriptDiscountPercent;
+
+        /** "Rune"; the tier itself if the site sent no name. */
+        public String name()
+        {
+            if (!Strings.isNullOrEmpty(name))
+            {
+                return name;
+            }
+            return Strings.isNullOrEmpty(tier) ? "Member" : tier.charAt(0) + tier.substring(1).toLowerCase();
+        }
+
+        /** When it runs out, or null if the site did not say or said something unreadable. */
+        public Instant endsAt()
+        {
+            if (Strings.isNullOrEmpty(endsAt))
+            {
+                return null;
+            }
+            try
+            {
+                return Instant.parse(endsAt);
+            }
+            catch (DateTimeParseException e)
+            {
+                return null;
+            }
+        }
+
+        public Integer extraAccounts()
+        {
+            return extraAccounts;
+        }
+
+        public Double scriptDiscountPercent()
+        {
+            return scriptDiscountPercent;
+        }
+    }
+
+    /** The membership plan the site suggests to someone without one. */
+    public static class MembershipOffer
+    {
+        @SerializedName("name")
+        private String name;
+
+        /** Whole X Tokens for 30 days. */
+        @SerializedName("price")
+        private Double price;
+
+        @SerializedName("extraAccounts")
+        private Integer extraAccounts;
+
+        @SerializedName("scriptDiscountPercent")
+        private Double scriptDiscountPercent;
+
+        @SerializedName("rentalDiscountPercent")
+        private Double rentalDiscountPercent;
+
+        public String name()
+        {
+            return name;
+        }
+
+        public Double price()
+        {
+            return price;
+        }
+
+        public Integer extraAccounts()
+        {
+            return extraAccounts;
+        }
+
+        public Double scriptDiscountPercent()
+        {
+            return scriptDiscountPercent;
+        }
+
+        public Double rentalDiscountPercent()
+        {
+            return rentalDiscountPercent;
+        }
+    }
+
+    /** Instance slots: how many clients this account may run at once, both games together. */
+    public static class Instances
+    {
+        @SerializedName("slots")
+        private Integer slots;
+
+        @SerializedName("running")
+        private Integer running;
+
+        @SerializedName("fromMembership")
+        private Integer fromMembership;
+
+        @SerializedName("salePercent")
+        private Double salePercent;
+
+        public Integer slots()
+        {
+            return slots;
+        }
+
+        /** Clients running scripts now, or null if the site did not say. */
+        public Integer running()
+        {
+            return running;
+        }
+
+        public Integer fromMembership()
+        {
+            return fromMembership;
+        }
+
+        /** Percent off every instance during a sale, or null when there is none. */
+        public Double salePercent()
+        {
+            return salePercent;
         }
     }
 }

@@ -1,5 +1,6 @@
 package net.runelite.client.plugins.projectx.ui;
 
+import com.google.common.html.HtmlEscapers;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.RuneLiteProperties;
 import net.runelite.client.plugins.Plugin;
@@ -59,6 +60,9 @@ public class ProjectXHomePanel extends PluginPanel
 {
     private static final int REFRESH_MS = 2000;
 
+    /** Wrap width of the upgrade lines: the panel's inner width less the card's padding, with room to spare. */
+    private static final int LINE_WIDTH = 170;
+
     private final PluginManager pluginManager;
     private final ProjectXPluginManager projectxPluginManager;
     private final ProjectXPluginListPanel pluginListPanel;
@@ -70,6 +74,10 @@ public class ProjectXHomePanel extends PluginPanel
     private final JLabel balance = new JLabel();
     private final MyScriptsWindow myScripts;
     private final JLabel scriptCount = new JLabel();
+    private final JLabel membershipLine = new JLabel();
+    private final JLabel instancesLine = new JLabel();
+    private final JButton membershipButton = button("Membership", true, () -> browse(ProjectXSite.membership()));
+    private final JButton instancesButton = button("Instances", false, () -> browse(ProjectXSite.instances()));
     private final Timer timer;
 
     /** Opens the Scripts tab; set by whoever owns it. */
@@ -132,7 +140,12 @@ public class ProjectXHomePanel extends PluginPanel
         scriptCount.setFont(FontManager.getRunescapeSmallFont());
         scriptCount.setForeground(ProjectXTheme.INK_FAINT);
         add(left(scriptCount));
-        add(gap(8));
+        add(gap(14));
+
+        add(left(eyebrow("Upgrades")));
+        add(gap(6));
+        add(left(upgradesCard()));
+        add(gap(10));
         JLabel footer = new JLabel("Project X " + Objects.toString(RuneLiteProperties.getProjectXVersion(), "") + "  ·  xclient.dev");
         footer.setFont(FontManager.getRunescapeSmallFont());
         footer.setForeground(ProjectXTheme.INK_FAINT);
@@ -226,6 +239,41 @@ public class ProjectXHomePanel extends PluginPanel
         return card;
     }
 
+    /**
+     * The two things the platform itself sells: membership and instance slots. One
+     * plain line each, from what the site says about this account, and a button to
+     * the page. Facts only: no countdowns, nothing made to look scarcer than it is.
+     */
+    private JPanel upgradesCard()
+    {
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(ProjectXTheme.OBSIDIAN_2);
+        card.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+        for (JLabel line : new JLabel[]{membershipLine, instancesLine})
+        {
+            line.setFont(FontManager.getRunescapeSmallFont());
+            line.setForeground(ProjectXTheme.INK_DIM);
+        }
+        for (JButton b : new JButton[]{membershipButton, instancesButton})
+        {
+            b.setAlignmentX(Component.LEFT_ALIGNMENT);
+            b.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+        }
+
+        card.add(left(membershipLine));
+        card.add(gap(5));
+        card.add(membershipButton);
+        card.add(gap(10));
+        card.add(left(instancesLine));
+        card.add(gap(5));
+        card.add(instancesButton);
+
+        updateUpgrades(null);
+        return card;
+    }
+
     // ---- refreshing
 
     private void refresh()
@@ -252,11 +300,118 @@ public class ProjectXHomePanel extends PluginPanel
         {
             signedIn.setText(ProjectXAccount.token() == null ? "Not signed in" : "Connecting…");
             balance.setText("—");
+            updateUpgrades(null);
             return;
         }
         signedIn.setText("Signed in as " + identity.displayName());
         Integer cents = identity.balanceCents();
         balance.setText(cents == null ? "—" : ProjectXSite.formatX(cents));
+        updateUpgrades(identity);
+    }
+
+    private void updateUpgrades(ProjectXAccount.Identity identity)
+    {
+        setLine(membershipLine, membershipText(identity, Instant.now()));
+        setLine(instancesLine, instancesText(identity));
+        // Gold until we know they are a member, then the same quiet style as the rest.
+        boolean member = identity != null && identity.membership() != null;
+        if (member == isPrimary(membershipButton))
+        {
+            style(membershipButton, !member);
+        }
+    }
+
+    private static void setLine(JLabel label, String text)
+    {
+        String html = "<html><div style='width:" + LINE_WIDTH + "px'>" + HtmlEscapers.htmlEscaper().escape(text) + "</div></html>";
+        if (!html.equals(label.getText()))
+        {
+            label.setText(html);
+        }
+    }
+
+    /** The membership line: the suggested plan for a non-member, the tier and days left for a member. */
+    static String membershipText(ProjectXAccount.Identity identity, Instant now)
+    {
+        String general = "More accounts at once and money off every paid script. 30 days or a year, never renews by itself.";
+        if (identity == null || identity.instances() == null)
+        {
+            // Signed out, or a site from before it said: nothing account-specific to go on.
+            return general;
+        }
+
+        ProjectXAccount.Membership membership = identity.membership();
+        if (membership != null)
+        {
+            Instant ends = membership.endsAt();
+            return membership.name() + " member" + (ends == null ? "" : ", " + daysLeft(now, ends))
+                + ". Buy again any time and the days are added on.";
+        }
+
+        ProjectXAccount.MembershipOffer offer = identity.membershipOffer();
+        if (offer == null || offer.name() == null || offer.extraAccounts() == null || offer.scriptDiscountPercent() == null)
+        {
+            return general;
+        }
+        int more = offer.extraAccounts();
+        return offer.name() + ": " + more + " more " + (more == 1 ? "account" : "accounts") + " at once and "
+            + number(offer.scriptDiscountPercent()) + "% off every paid script"
+            + (offer.price() == null ? "" : ". " + number(offer.price()) + " X for 30 days")
+            + ", never renews by itself.";
+    }
+
+    /** The instances line: slots and how many are running, and the way to more. */
+    static String instancesText(ProjectXAccount.Identity identity)
+    {
+        ProjectXAccount.Instances instances = identity == null ? null : identity.instances();
+        if (instances == null || instances.slots() == null)
+        {
+            return "Run more accounts at the same time: rent a slot by the week or buy one outright.";
+        }
+
+        int slots = instances.slots();
+        Integer running = instances.running();
+        String text;
+        if (running != null && running >= slots)
+        {
+            text = slots == 1
+                ? "Your 1 slot is in use. Add one to run a second account at the same time."
+                : "All " + slots + " slots are in use. Add one to run another account at the same time.";
+        }
+        else if (running != null && running > 0)
+        {
+            text = running + " of " + slots + " slots in use. Add more to run more accounts at once.";
+        }
+        else
+        {
+            text = slots == 1
+                ? "1 account at a time. Add slots to run more at once, by the week or for good."
+                : slots + " accounts at once. Add slots to run more, by the week or for good.";
+        }
+
+        Double sale = instances.salePercent();
+        if (sale != null && sale > 0)
+        {
+            text += " Instances are " + number(sale) + "% off.";
+        }
+        return text;
+    }
+
+    /** "10", or "7.5" when it is not whole. */
+    private static String number(double value)
+    {
+        return value == Math.rint(value) ? String.valueOf((long) value) : String.valueOf(value);
+    }
+
+    /** "12 days left", "1 day left", "less than a day left". Whole days: this is a status, not a countdown. */
+    static String daysLeft(Instant now, Instant ends)
+    {
+        long days = Duration.between(now, ends).toHours() / 24;
+        if (days < 1)
+        {
+            return "less than a day left";
+        }
+        return days == 1 ? "1 day left" : days + " days left";
     }
 
     private void refreshScriptsNow(JButton button)
@@ -334,12 +489,23 @@ public class ProjectXHomePanel extends PluginPanel
         JButton b = new JButton(text);
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        style(b, primary);
+        b.addActionListener(e -> action.run());
+        return b;
+    }
+
+    /** Makes a button gold (primary) or ghost; for one whose emphasis changes with the account. */
+    private static void style(JButton b, boolean primary)
+    {
         b.setForeground(primary ? ProjectXTheme.OBSIDIAN_0 : ProjectXTheme.GOLD_HI);
         b.setBackground(primary ? ProjectXTheme.GOLD : ProjectXTheme.OBSIDIAN_3);
         Border edge = BorderFactory.createMatteBorder(1, 1, 1, 1, primary ? ProjectXTheme.GOLD_HI : ProjectXTheme.GOLD_DEEP);
         b.setBorder(BorderFactory.createCompoundBorder(edge, BorderFactory.createEmptyBorder(4, 8, 4, 8)));
-        b.addActionListener(e -> action.run());
-        return b;
+    }
+
+    private static boolean isPrimary(JButton b)
+    {
+        return ProjectXTheme.GOLD.equals(b.getBackground());
     }
 
     private static <T extends JComponent> T left(T c)

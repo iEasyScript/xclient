@@ -186,6 +186,12 @@ public final class ProjectXSite
         return shared("instances");
     }
 
+    /** Membership: the Bronze, Rune and Dragon passes. */
+    public static HttpUrl membership()
+    {
+        return shared("membership");
+    }
+
     /** A page both games share, asked for as OSRS. */
     private static HttpUrl shared(String path)
     {
