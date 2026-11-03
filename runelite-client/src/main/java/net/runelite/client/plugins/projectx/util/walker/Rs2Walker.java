@@ -84,6 +84,7 @@ import net.runelite.client.plugins.projectx.util.walker.banking.WithdrawNoteMode
 import net.runelite.client.plugins.projectx.util.walker.awaits.Rs2WalkerRuntimeAwaits;
 import net.runelite.client.plugins.projectx.util.walker.puzzles.DraynorBasementSolver;
 import net.runelite.client.plugins.projectx.util.walker.stall.Rs2WalkerStallPolicy;
+import net.runelite.client.plugins.projectx.util.walker.stall.WalkClickStallRecovery;
 import net.runelite.client.plugins.projectx.util.walker.transport.Rs2WalkerTransportAwaits;
 import net.runelite.client.plugins.projectx.util.walker.special.DigTransports;
 import net.runelite.client.plugins.projectx.util.walker.special.GnomeGliderMenu;
@@ -3174,6 +3175,13 @@ public class Rs2Walker {
                                 WorldPoint now = Rs2Player.getWorldLocation();
                                 return now != null && (b.distanceTo2D(now) <= proximityWake || !now.equals(before) || Rs2Player.isMoving());
                             }, 1200);
+                        }
+                        // Click and retry left the player standing: DAX step-failure recovery (camera,
+                        // backoff, collision refresh). It never clicks; the loop does.
+                        if (hasPlayerMovedFrom2D(before)) {
+                            WalkClickStallRecovery.onProgress();
+                        } else if (!Rs2Player.isMoving()) {
+                            WalkClickStallRecovery.afterWalkClick(clickedAt, before, () -> isWalkCancelled(target));
                         }
                         if (walkCancelledDiag(target, "processWalk:after-click-wait", processWalkTail)) {
                             return WalkerState.EXIT;
