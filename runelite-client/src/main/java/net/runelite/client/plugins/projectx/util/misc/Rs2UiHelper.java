@@ -273,7 +273,16 @@ public class Rs2UiHelper {
     public static Rectangle getObjectClickbox(TileObject object) {
 
         if (object == null) return getDefaultRectangle();  //return a small rectangle if object is null
-        Shape clickbox = ProjectX.getClientThread().runOnClientThreadOptional(object::getClickbox).orElse(null);
+        // The game's own getClickbox can throw a NullPointerException while an object's model is
+        // being swapped (seen on Guardians of the Rift guardians); treat that as "no clickbox"
+        // instead of logging an error from the client thread.
+        Shape clickbox = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
+            try {
+                return object.getClickbox();
+            } catch (RuntimeException e) {
+                return null;
+            }
+        }).orElse(null);
         if (clickbox == null) return getDefaultRectangle();  //return a small rectangle if clickbox is null
         if (clickbox.getBounds() == null) return getDefaultRectangle();
 
