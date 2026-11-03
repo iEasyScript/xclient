@@ -1609,6 +1609,10 @@
 # Log Balance
 # Pipes
 # Crevice
+# The only way into the bronze/iron/steel dragon area. Kept here, not in agility_shortcuts.tsv, so the
+# "Use agility shortcuts" setting cannot cut it off (it needs no Agility level).
+2697 9436 0	2684 9436 0	Enter;Crevice;30198								3
+2684 9436 0	2697 9436 0	Enter;Crevice;30198								3
 # Brimhaven Dungeon - CKR Fairy Ring Alternate Entrance
 2761 3062 0	2734 9478 0	Climb;Rope;66
 2761 3063 0	2734 9478 0	Climb;Rope;66

@@ -350,12 +350,12 @@
 2019 6434 0		28327				Y	T	19	4	Ring of shadows: The Scar
 2588 6435 0		28327				Y	T	19	4	Ring of shadows: Lassar Undercity
 1175 3424 0		28327				Y	T	19	4	Ring of shadows: The Stranglewood
-1491 3283 0		29893		11175=1		Y	T	19	4	Pendant of ates: Darkfrost
-1668 3223 0		29893		11176=1		Y	T	19	4	Pendant of ates: Twilight Temple
-1459 3138 0		29893		11177=1		Y	T	19	4	Pendant of ates: Ralos' Rise
-1426 2995 0		29893		11178=1		Y	T	19	4	Pendant of ates: North Aldarin
-1366 3086 0		29893		16752=1		Y	T	19	4	Pendant of ates: Kastori
-1364 3277 0		29893		16757=1		Y	T	19	4	Pendant of ates: Nemus Retreat
+1491 3283 0		29893		11175=1;16175>0		Y	T	19	4	Pendant of ates: Darkfrost
+1668 3223 0		29893		11176=1;16175>0		Y	T	19	4	Pendant of ates: Twilight Temple
+1459 3138 0		29893		11177=1;16175>0		Y	T	19	4	Pendant of ates: Ralos' Rise
+1426 2995 0		29893		11178=1;16175>0		Y	T	19	4	Pendant of ates: North Aldarin
+1366 3086 0		29893		16752=1;16175>0		Y	T	19	4	Pendant of ates: Kastori
+1364 3277 0		29893		16757=1;16175>0		Y	T	19	4	Pendant of ates: Nemus Retreat
 										
 #Quetzal Whistle — one row per map destination; quest Children of the Sun (item unlock). Varbit columns match quetzals.tsv for locked map pins.
 1389 2901 0		29271 29273 29275	Children of the Sun			Y	T	19	4	Quetzal whistle: Aldarin

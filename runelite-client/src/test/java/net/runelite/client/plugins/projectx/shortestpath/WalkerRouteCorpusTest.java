@@ -325,6 +325,28 @@ public class WalkerRouteCorpusTest {
                 visits(surface, TUNNEL_EAST_UNDER, 5));
     }
 
+    // ---- Brimhaven Dungeon metal dragons (AIO Fighter Plus report, 2026-11-04) ---------------------
+
+    /**
+     * The bronze/iron/steel dragon pocket (2632-2678, 9417-9459) is walled off from the rest of the
+     * dungeon; its only mapped entry is the Crevice (object 30198, BRIMHAVEN_SLAYER_DRAGON_TUNNEL) at
+     * 2697,9436 -> 2684,9436. The live walk stopped at 2695,9427 with "no-walkable-path" six times: with
+     * the crevice filed as an agility shortcut, turning off "Use agility shortcuts" walled the area off.
+     * Routed here with every agility shortcut disabled, as that setting does.
+     */
+    @Test
+    public void brimhavenSteelDragons_reachedThroughTheCrevice() {
+        WorldPoint stuckAt = new WorldPoint(2695, 9427, 0);
+        WorldPoint steelDragons = new WorldPoint(2646, 9424, 0);
+        List<WorldPoint> path = route(configWith(t -> unrestricted(t)
+                        && t.getType() != TransportType.AGILITY_SHORTCUT),
+                stuckAt, steelDragons);
+        assertTrue("steel dragons must be reachable from the black demon side, path end="
+                        + (path == null || path.isEmpty() ? null : path.get(path.size() - 1)),
+                arrives(path, steelDragons, 3));
+        assertTrue("the route must use the crevice", visits(path, new WorldPoint(2684, 9436, 0), 1));
+    }
+
     @Test
     public void zanarisShedDoorRequiresLostCity() {
         Transport shed = allTransports.getOrDefault(new WorldPoint(3202, 3169, 0), Collections.emptySet()).stream()
