@@ -85,6 +85,8 @@ import net.runelite.client.plugins.projectx.util.walker.awaits.Rs2WalkerRuntimeA
 import net.runelite.client.plugins.projectx.util.walker.puzzles.DraynorBasementSolver;
 import net.runelite.client.plugins.projectx.util.walker.stall.Rs2WalkerStallPolicy;
 import net.runelite.client.plugins.projectx.util.walker.transport.Rs2WalkerTransportAwaits;
+import net.runelite.client.plugins.projectx.util.walker.special.WalkerDialogueAnswers;
+import net.runelite.client.plugins.projectx.util.walker.special.WalkerSpecialObstacles;
 import net.runelite.client.plugins.projectx.util.walker.lifecycle.Rs2WalkerLifecycleRuntime;
 import net.runelite.client.plugins.skillcalculator.skills.MagicAction;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
@@ -2146,6 +2148,8 @@ public class Rs2Walker {
 
             // "Are you sure?" area warnings: desert, Stronghold of Security ladders, Mort Myre gate, ...
             AreaWarning.acceptIfOpen();
+            // Walker prompts left open by an earlier click (DAX dialogue answers, shared table).
+            WalkerDialogueAnswers.answerIfOpen();
 
 
             if (Rs2Widget.enterWilderness()) {
@@ -9786,6 +9790,9 @@ public class Rs2Walker {
     private static boolean handleObject(Transport transport, TileObject tileObject, String action) {
         ensureRequiredItemBeforeTransport(transport);
         WorldPoint before = Rs2Player.getWorldLocation();
+        // Cobwebs and obstacles that open a dialogue or warning first (DAX special objects).
+        Boolean special = WalkerSpecialObstacles.handle(transport, tileObject, action);
+        if (special != null) return special;
         Rs2GameObject.interact(tileObject, action);
         if (handleObjectExceptions(transport, tileObject)) return true;
         WorldPoint tdObj = transport.getDestination();
@@ -10660,22 +10667,7 @@ public class Rs2Walker {
                 }
             }
         }
-        // Handle Cobwebs blocking path
-        if (tileObject.getId() == ObjectID.BIGWEB_SLASHABLE && !Rs2Equipment.isWearing(ItemID.ARANEA_BOOTS)) {
-            sleepUntil(() -> !Rs2Player.isMoving() && !Rs2Player.isAnimating(1200));
-            final WorldPoint webLocation = tileObject.getWorldLocation();
-            final WorldPoint currentPlayerPoint = Rs2Player.getWorldLocation();
-            boolean doesWebStillExist = Rs2GameObject.getAll(o -> Objects.equals(webLocation, o.getWorldLocation()) && o.getId() == ObjectID.BIGWEB_SLASHABLE).stream().findFirst().isPresent();
-            if (doesWebStillExist) {
-                sleepUntil(() -> Rs2GameObject.getAll(o -> Objects.equals(webLocation, o.getWorldLocation()) && o.getId() == ObjectID.BIGWEB_SLASHABLE).stream().findFirst().isEmpty(),
-                        () -> {
-                            Rs2GameObject.interact(tileObject, "slash");
-                            Rs2Player.waitForAnimation();
-                        }, 8000, 1200);
-            }
-            Rs2Walker.walkFastCanvas(transport.getDestination());
-            return sleepUntil(() -> !Objects.equals(currentPlayerPoint, Rs2Player.getWorldLocation()));
-        }
+        // Cobwebs: WalkerSpecialObstacles / WebCutting, before the click.
 
         // Handle Brimhaven Dungeon Entrance
         if (tileObject.getId() == 20877) {
@@ -10718,20 +10710,7 @@ public class Rs2Walker {
             Rs2Player.waitForAnimation();
         }
 
-        // Handle Rev Cave Dialogue
-        if (tileObject.getId() == ObjectID.WILD_CAVE_ENTRANCE_LOW) {
-            if (Rs2Player.isMoving()) {
-                Rs2Player.waitForWalking();
-            }
-            Widget dialogueSprite = Rs2Dialogue.getDialogueSprite();
-            if (dialogueSprite != null && dialogueSprite.getItemId() == 1004) {
-                Rs2Dialogue.clickContinue();
-                Rs2Dialogue.sleepUntilSelectAnOption();
-                Rs2Dialogue.clickOption("Yes, don't ask again");
-                Rs2Dialogue.sleepUntilNotInDialogue();
-            }
-            return true;
-        }
+        // Revenant caves (low, high, mid): WalkerSpecialObstacles, before the click.
 
         if (tileObject.getId() == ObjectID.HEROROCKSLIDE) {
             Rs2Player.waitForAnimation(600 * 4);

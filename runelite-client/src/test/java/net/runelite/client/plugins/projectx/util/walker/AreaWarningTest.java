@@ -28,7 +28,30 @@ public class AreaWarningTest {
         for (int group = InterfaceID.CWS_WARNING_9; group <= InterfaceID.CWS_WARNING_20; group++) {
             assertTrue("warning interface " + group + " is not answered", groups.contains(group));
         }
-        assertEquals(21, groups.size());
+        // 21 Doomsayer warnings plus the revenant crevice warning (720)
+        assertTrue(groups.contains(InterfaceID.WILDERNESS_CAVE_MID_WARNING));
+        assertEquals(22, groups.size());
+    }
+
+    @Test
+    public void revenantCrevicePrefersTheDontWarnAgainButton() {
+        Map<Integer, Widget> widgets = new HashMap<>();
+        widgets.put(InterfaceID.WildernessCaveMidWarning.WARN1, widget(false, "Let me jump"));
+        widgets.put(InterfaceID.WildernessCaveMidWarning.WARN2, widget(false, "Let me jump, and don't warn me again!"));
+        int proceed = AreaWarning.openProceedButton(widgets::get);
+        assertEquals(InterfaceID.WildernessCaveMidWarning.WARN1, proceed);
+        assertEquals(InterfaceID.WildernessCaveMidWarning.WARN2, AreaWarning.preferredButton(proceed, widgets::get));
+    }
+
+    @Test
+    public void revenantCreviceFallsBackToProceedAndOtherWarningsAreUntouched() {
+        Map<Integer, Widget> widgets = new HashMap<>();
+        widgets.put(InterfaceID.WildernessCaveMidWarning.WARN1, widget(false, "Jump"));
+        assertEquals(InterfaceID.WildernessCaveMidWarning.WARN1,
+                AreaWarning.preferredButton(InterfaceID.WildernessCaveMidWarning.WARN1, widgets::get));
+        assertEquals(InterfaceID.CwsWarning13.WARN1,
+                AreaWarning.preferredButton(InterfaceID.CwsWarning13.WARN1, id -> widget(false, "Proceed regardless")));
+        assertEquals(-1, AreaWarning.preferredButton(-1, id -> null));
     }
 
     @Test
@@ -47,6 +70,12 @@ public class AreaWarningTest {
     private static Widget widget(boolean hidden) {
         Widget w = mock(Widget.class);
         when(w.isHidden()).thenReturn(hidden);
+        return w;
+    }
+
+    private static Widget widget(boolean hidden, String action) {
+        Widget w = widget(hidden);
+        when(w.getActions()).thenReturn(new String[]{action});
         return w;
     }
 }
