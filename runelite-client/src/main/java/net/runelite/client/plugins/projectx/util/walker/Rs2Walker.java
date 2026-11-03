@@ -85,6 +85,8 @@ import net.runelite.client.plugins.projectx.util.walker.awaits.Rs2WalkerRuntimeA
 import net.runelite.client.plugins.projectx.util.walker.puzzles.DraynorBasementSolver;
 import net.runelite.client.plugins.projectx.util.walker.stall.Rs2WalkerStallPolicy;
 import net.runelite.client.plugins.projectx.util.walker.transport.Rs2WalkerTransportAwaits;
+import net.runelite.client.plugins.projectx.util.walker.special.KaramjaShipFare;
+import net.runelite.client.plugins.projectx.util.walker.special.QuetzalWhistle;
 import net.runelite.client.plugins.projectx.util.walker.special.WalkerDialogueAnswers;
 import net.runelite.client.plugins.projectx.util.walker.special.WalkerSpecialObstacles;
 import net.runelite.client.plugins.projectx.util.walker.lifecycle.Rs2WalkerLifecycleRuntime;
@@ -8642,6 +8644,16 @@ public class Rs2Walker {
         while (dialogueAnswer == null && attempts < maxAttempts) {
             if (currentTarget == null) break;
             dialogueAnswer = StrongholdAnswer.findAnswer(Rs2Dialogue.getDialogueText());
+            if (dialogueAnswer == null && Rs2Dialogue.hasSelectAnOption()) {
+                // Reworded question already showing its options: pick the known correct answer (DAX).
+                String known = StrongholdAnswer.findKnownAnswerOption(Rs2Dialogue.getDialogueOptionTexts());
+                if (known != null && Rs2Dialogue.clickOption(known, true)) {
+                    Rs2Dialogue.sleepUntilHasContinue();
+                    sleepUntil(() -> !Rs2Dialogue.hasContinue(), Rs2Dialogue::clickContinue, 5000, Rs2Random.between(600, 800));
+                    Rs2Player.waitForAnimation(1200);
+                    return true;
+                }
+            }
             if (dialogueAnswer == null) {
                 Rs2Dialogue.clickContinue();
                 Rs2Random.waitEx(800, 100);
@@ -9171,7 +9183,7 @@ public class Rs2Walker {
                             Rs2NpcModel npc = Rs2Npc.getNpc(transport.getName());
 
                             // Wrap with observation so Leagues blocked-region chat can attribute this attempt.
-                            if (attemptObserved(transport, () -> npc != null && Rs2Npc.canWalkTo(npc, 20) && Rs2Npc.interact(npc, transport.getAction()))) {
+                            if (attemptObserved(transport, () -> npc != null && Rs2Npc.canWalkTo(npc, 20) && KaramjaShipFare.interact(npc, transport))) {
                                 Rs2Player.waitForWalking();
                                 sleepUntil(Rs2Dialogue::isInDialogue,600*2);
 
@@ -10877,6 +10889,11 @@ public class Rs2Walker {
     private static boolean handleInventoryTeleports(Transport transport, int itemId) {
         Rs2ItemModel rs2Item = Rs2Inventory.get(itemId);
         if (rs2Item == null) return false;
+        if (isQuetzalWhistleItemId(itemId)) {
+            // One click when the whistle's last destination is the target (DAX Quetzal.teleport).
+            Boolean viaLast = QuetzalWhistle.tryLastDestination(rs2Item, transport.getDestination());
+            if (viaLast != null) return viaLast;
+        }
 
         // A list of generic teleports that can be used if no parsable destination action is found
         List<String> genericKeyWords = Arrays.asList(
@@ -11976,6 +11993,10 @@ public class Rs2Walker {
         Rs2Player.waitForAnimation(1800);
         sleepUntil(() -> isQuetzalMapInterfaceVisible() || !Rs2Player.isAnimating(), 1400);
         sleep(Rs2Random.between(120, 260));
+        if (!isQuetzalMapInterfaceVisible()) {
+            // "...no charges" instead of the map: remember it so planning stops using the whistle.
+            QuetzalWhistle.noteIfOutOfCharges();
+        }
         return clickQuetzalMapDestination(mapLabel, dest);
     }
 

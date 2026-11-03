@@ -75,6 +75,50 @@ public enum StrongholdAnswer {
     private final String question;
     private final String answer;
 
+    /**
+     * Correct answers DAX knew in wordings ours does not (DAX Web Walker, Apache-2.0, see
+     * shortestpath/THIRD_PARTY_DAX.txt; PathObjectHandler.handleStrongholdQuestions). DAX's own
+     * misspelt entries are left out.
+     */
+    static final java.util.List<String> EXTRA_KNOWN_ANSWERS = java.util.Arrays.asList(
+            "Delete it - it is fake!",
+            "Report the stream. Real Jagex streams have a 'verified' mark.",
+            "It's never used on other websites or accounts.",
+            "Don't give them the information and send an 'Abuse report'");
+
+    /**
+     * The offered option that is a known correct answer, for a question whose text we do not
+     * recognise (the game rewords them). Short answers ("No.", "Me.", "Nobody.") are skipped: they
+     * could also be a wrong option of another question. Pure.
+     *
+     * @return the option text as offered, or null when none is known
+     */
+    public static String findKnownAnswerOption(java.util.List<String> options) {
+        if (options == null) {
+            return null;
+        }
+        for (String option : options) {
+            if (option == null) {
+                continue;
+            }
+            String o = option.trim();
+            if (o.split("\\s+").length < 3) {
+                continue;
+            }
+            for (StrongholdAnswer pair : values()) {
+                if (pair.getAnswer().equalsIgnoreCase(o)) {
+                    return option;
+                }
+            }
+            for (String extra : EXTRA_KNOWN_ANSWERS) {
+                if (extra.equalsIgnoreCase(o)) {
+                    return option;
+                }
+            }
+        }
+        return null;
+    }
+
     public static String findAnswer(String question) {
         StrongholdAnswer strongholdAnswer = Arrays.stream(StrongholdAnswer.values())
                 .filter(txt -> question.toLowerCase().contains(txt.getQuestion().toLowerCase()))

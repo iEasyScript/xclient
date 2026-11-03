@@ -25,6 +25,7 @@ import net.runelite.client.plugins.projectx.util.magic.Runes;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import net.runelite.client.plugins.projectx.util.leaguetransport.Rs2LeaguesTransport;
 import net.runelite.client.plugins.projectx.util.poh.PohPresence;
+import net.runelite.client.plugins.projectx.util.walker.special.QuetzalWhistle;
 import net.runelite.client.plugins.projectx.util.walker.special.WebCutting;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
 import net.runelite.client.plugins.projectx.util.walker.WebWalkLog;
@@ -1655,6 +1656,16 @@ public class PathfinderConfig {
         // Check consumable items configuration
         if (useTeleportationItems == TeleportationItem.INVENTORY_NON_CONSUMABLE && transport.isConsumable())
             return false;
+        // A charged quetzal whistle known to be empty (DAX Quetzal charge tracking).
+        if (QuetzalWhistle.isWhistleTransport(transport)) {
+            boolean hasInfinite = refreshAvailableItemIds != null
+                    ? refreshAvailableItemIds.contains(ItemID.HG_QUETZALWHISTLE_PERFECTED_INFINITE)
+                    : Rs2Inventory.hasItem(ItemID.HG_QUETZALWHISTLE_PERFECTED_INFINITE);
+            if (!QuetzalWhistle.isUsable(transport, hasInfinite)) {
+                log.debug("Transport ( D: {} ) needs a quetzal whistle charge and the whistle is empty", transport.getDestination());
+                return false;
+            }
+        }
 
         return hasRequiredItems(transport);
     }
@@ -2052,6 +2063,7 @@ public class PathfinderConfig {
         // Web usability depends on the weapon category varbit and carried blades, neither of which
         // any transport row declares, so the key must carry the verdict itself.
         boolean canCutWebs = WebCutting.canCutWebs();
+        boolean whistleEmpty = QuetzalWhistle.isKnownEmpty();
         long houseDone = System.nanoTime();
         int hash = Objects.hash(
                 packTransportRefreshToggleBits(),
@@ -2069,6 +2081,7 @@ public class PathfinderConfig {
                 usePoh,
                 inHouse,
                 canCutWebs,
+                whistleEmpty,
                 maxSimilar,
                 preferTp,
                 distanceBeforeUsingTeleport);

@@ -22,6 +22,7 @@ import net.runelite.client.plugins.projectx.ui.ProjectXHomePanel;
 import net.runelite.client.plugins.projectx.ui.ProjectXPluginConfigurationDescriptor;
 import net.runelite.client.plugins.projectx.ui.ProjectXPluginListPanel;
 import net.runelite.client.plugins.projectx.ui.ProjectXTopLevelConfigPanel;
+import net.runelite.client.plugins.projectx.util.walker.special.QuetzalWhistle;
 import net.runelite.client.plugins.projectx.util.bank.Rs2Bank;
 import net.runelite.client.plugins.projectx.util.equipment.Rs2Equipment;
 import net.runelite.client.plugins.projectx.util.huntkit.Rs2HuntKit;
@@ -499,6 +500,7 @@ public class ProjectXPlugin extends Plugin
 			if (msg != null)
 			{
 				Rs2LeaguesTransport.onLockedRegionGameMessage(msg);
+				QuetzalWhistle.onGameMessage(msg);
 			}
 		}
 		ProjectX.getPouchScript().onChatMessage(event);

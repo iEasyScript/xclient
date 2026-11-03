@@ -57,6 +57,33 @@ public class WalkerSpecialTest {
     }
 
     @Test
+    public void whistleChargeMessages() {
+        assertEquals(17, QuetzalWhistle.chargesFromMessage("Your basic quetzal whistle has 17 charges remaining."));
+        assertEquals(1, QuetzalWhistle.chargesFromMessage("<col=ef1020>Your perfected quetzal whistle has 1 charge remaining.</col>"));
+        assertEquals(0, QuetzalWhistle.chargesFromMessage("Your quetzal whistle has no charges left."));
+        assertEquals(-1, QuetzalWhistle.chargesFromMessage("You have 17 coins remaining."));
+        assertEquals(-1, QuetzalWhistle.chargesFromMessage(null));
+    }
+
+    @Test
+    public void storedEmptyWhistleExpires() {
+        long now = 10_000_000L;
+        assertEquals(5, QuetzalWhistle.parseStoredCharges("5", now));
+        assertEquals(0, QuetzalWhistle.parseStoredCharges("0:" + (now - 1000), now));
+        assertEquals(-1, QuetzalWhistle.parseStoredCharges("0:" + (now - QuetzalWhistle.EMPTY_VERDICT_TTL_MS - 1), now));
+        assertEquals(-1, QuetzalWhistle.parseStoredCharges("junk", now));
+        assertEquals(-1, QuetzalWhistle.parseStoredCharges(null, now));
+    }
+
+    @Test
+    public void whistleLastDestinationValues() {
+        assertEquals(1, QuetzalWhistle.lastDestinationValue(new net.runelite.api.coords.WorldPoint(1697, 3140, 0)));
+        assertEquals(9, QuetzalWhistle.lastDestinationValue(new net.runelite.api.coords.WorldPoint(1389, 2901, 0)));
+        assertEquals(-1, QuetzalWhistle.lastDestinationValue(new net.runelite.api.coords.WorldPoint(3200, 3200, 0)));
+        assertEquals(-1, QuetzalWhistle.lastDestinationValue(null));
+    }
+
+    @Test
     public void specialObjectsAreTheDaxOnes() {
         assertTrue(WalkerSpecialObstacles.isSpecial(ObjectID.BIGWEB_SLASHABLE));
         assertTrue(WalkerSpecialObstacles.isSpecial(ObjectID.WILD_CAVE_ENTRANCE_LOW));
