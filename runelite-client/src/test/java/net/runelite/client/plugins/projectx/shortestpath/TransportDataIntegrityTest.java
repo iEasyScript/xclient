@@ -140,7 +140,10 @@ public class TransportDataIntegrityTest {
                     }
                     break;
                 case "menuOption menuTarget objectID":
-                    if (transport.getObjectId() <= 0 || transport.getAction() == null || transport.getName() == null) {
+                    // "Dig;Spade;0" rows have no object by design (DigTransports); they must gate on the spade.
+                    boolean digRow = "Dig".equals(transport.getAction()) && transport.getObjectId() == 0
+                            && transport.getItemIdRequirements().stream().anyMatch(g -> g.contains(952));
+                    if (!digRow && (transport.getObjectId() <= 0 || transport.getAction() == null || transport.getName() == null)) {
                         problems.add(row.where() + " object cell '" + value + "' did not parse");
                     }
                     break;

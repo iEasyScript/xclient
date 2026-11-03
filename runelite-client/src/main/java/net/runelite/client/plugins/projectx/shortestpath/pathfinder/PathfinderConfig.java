@@ -25,6 +25,8 @@ import net.runelite.client.plugins.projectx.util.magic.Runes;
 import net.runelite.client.plugins.projectx.util.player.Rs2Player;
 import net.runelite.client.plugins.projectx.util.leaguetransport.Rs2LeaguesTransport;
 import net.runelite.client.plugins.projectx.util.poh.PohPresence;
+import net.runelite.client.plugins.projectx.util.walker.special.QuetzalWhistle;
+import net.runelite.client.plugins.projectx.util.walker.special.WebCutting;
 import net.runelite.client.plugins.projectx.util.walker.Rs2Walker;
 import net.runelite.client.plugins.projectx.util.walker.WebWalkLog;
 import java.io.File;
@@ -252,6 +254,8 @@ public class PathfinderConfig {
     private Set<Integer> refreshAvailableItemIds;
     private int[] refreshBoostedLevels;
     private Map<String, int[]> refreshCurrencyCache;
+    /** Whether cobwebs can be cut, read once per {@link #refreshTransports} pass (null outside one). */
+    private Boolean refreshCanCutWebs;
     // Varplayer values snapshot for the current refreshTransports pass. Without it, every varp
     // condition on every transport paid a full cross-thread hop (getLiveVarplayerValue), and the
     // global state cache never retains zero-valued varps — ~115 varp-gated rows accounted for
@@ -594,6 +598,7 @@ public class PathfinderConfig {
         long cacheStart = System.currentTimeMillis();
         refreshAvailableItemIds = new HashSet<>();
         refreshCurrencyCache = new HashMap<>();
+        refreshCanCutWebs = WebCutting.canCutWebs();
         Rs2Inventory.items().forEach(item -> refreshAvailableItemIds.add(item.getId()));
         Rs2Equipment.all().forEach(item -> refreshAvailableItemIds.add(item.getId()));
         if (useBankItems) {
@@ -747,6 +752,7 @@ public class PathfinderConfig {
         refreshAvailableItemIds = null;
         refreshBoostedLevels = null;
         refreshCurrencyCache = null;
+        refreshCanCutWebs = null;
         refreshVarplayerValues = null;
 
         // varbit/varplayer counts = distinct ids referenced by merged transport definitions this refresh, not total client var space.
@@ -1337,6 +1343,12 @@ public class PathfinderConfig {
             log.debug("Transport ( O: {} D: {} ) requires members world", transport.getOrigin(), transport.getDestination());
             return false;
         }
+        // Cobwebs need a slashing weapon, a knife or a carried blade (DAX canLeftclickWeb/useBladeOnWeb).
+        if (WebCutting.isWebTransport(transport)
+                && !(refreshCanCutWebs != null ? refreshCanCutWebs : WebCutting.canCutWebs())) {
+            log.debug("Transport ( O: {} D: {} ) is a cobweb and nothing carried can cut it", transport.getOrigin(), transport.getDestination());
+            return false;
+        }
         if (transport.getType() == TransportType.SPIRIT_TREE && !isSpiritTreeRouteEnabled(transport)) {
             log.debug("Transport ( O: {} D: {} ) is a spirit tree route but the tree is disabled", transport.getOrigin(), transport.getDestination());
             return false;
@@ -1644,6 +1656,16 @@ public class PathfinderConfig {
         // Check consumable items configuration
         if (useTeleportationItems == TeleportationItem.INVENTORY_NON_CONSUMABLE && transport.isConsumable())
             return false;
+        // A charged quetzal whistle known to be empty (DAX Quetzal charge tracking).
+        if (QuetzalWhistle.isWhistleTransport(transport)) {
+            boolean hasInfinite = refreshAvailableItemIds != null
+                    ? refreshAvailableItemIds.contains(ItemID.HG_QUETZALWHISTLE_PERFECTED_INFINITE)
+                    : Rs2Inventory.hasItem(ItemID.HG_QUETZALWHISTLE_PERFECTED_INFINITE);
+            if (!QuetzalWhistle.isUsable(transport, hasInfinite)) {
+                log.debug("Transport ( D: {} ) needs a quetzal whistle charge and the whistle is empty", transport.getDestination());
+                return false;
+            }
+        }
 
         return hasRequiredItems(transport);
     }
@@ -2038,6 +2060,10 @@ public class PathfinderConfig {
                 : -2;
         long contextDone = System.nanoTime();
         boolean inHouse = usePoh && PohPresence.isInHouse();
+        // Web usability depends on the weapon category varbit and carried blades, neither of which
+        // any transport row declares, so the key must carry the verdict itself.
+        boolean canCutWebs = WebCutting.canCutWebs();
+        boolean whistleEmpty = QuetzalWhistle.isKnownEmpty();
         long houseDone = System.nanoTime();
         int hash = Objects.hash(
                 packTransportRefreshToggleBits(),
@@ -2054,6 +2080,8 @@ public class PathfinderConfig {
                 chronicleCharges,
                 usePoh,
                 inHouse,
+                canCutWebs,
+                whistleEmpty,
                 maxSimilar,
                 preferTp,
                 distanceBeforeUsingTeleport);

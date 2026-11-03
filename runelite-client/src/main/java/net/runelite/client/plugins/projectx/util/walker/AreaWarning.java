@@ -22,7 +22,7 @@ import static net.runelite.client.plugins.projectx.util.Global.sleepUntil;
  * calling (script) thread. The "don't ask again" toggle is left as the player set it.
  */
 @Slf4j
-final class AreaWarning {
+public final class AreaWarning {
 
     /** Proceed button ({@code WARN1}) of every warning interface that has one. */
     static final int[] PROCEED_BUTTONS = {
@@ -47,7 +47,22 @@ final class AreaWarning {
             InterfaceID.CwsWarning21.WARN1,
             InterfaceID.CwsWarning22.WARN1,
             InterfaceID.CwsWarning23.WARN1,
+            // Revenant cave "Jump-Down" crevice (DAX DoomsToggle REVENANTS_TOGGLE, interface 720)
+            InterfaceID.WildernessCaveMidWarning.WARN1,
     };
+
+    /**
+     * The revenant crevice warning offers a plain jump and a "don't warn me again" jump. DAX pressed
+     * the second one ("Let me jump, and don't warn me again!"); without it the warning comes back on
+     * every trip. Picked by its action text, so a layout change falls back to {@code WARN1}.
+     */
+    static final int[] REVENANT_JUMP_BUTTONS = {
+            InterfaceID.WildernessCaveMidWarning.WARN1,
+            InterfaceID.WildernessCaveMidWarning.WARN2,
+            InterfaceID.WildernessCaveMidWarning.WARN3,
+    };
+
+    private static final String DONT_WARN_AGAIN = "don't warn me again";
 
     private static final int CLOSE_WAIT_MS = 1800;
 
@@ -68,8 +83,30 @@ final class AreaWarning {
         return -1;
     }
 
+    /**
+     * The button to press for the open warning {@code proceed}: on the revenant crevice warning the
+     * "don't warn me again" button when there is one, otherwise {@code proceed} itself. Pure.
+     */
+    static int preferredButton(int proceed, IntFunction<Widget> lookup) {
+        if (proceed == -1 || (proceed >>> 16) != InterfaceID.WILDERNESS_CAVE_MID_WARNING) {
+            return proceed;
+        }
+        for (int component : REVENANT_JUMP_BUTTONS) {
+            Widget button = lookup.apply(component);
+            if (button == null || button.isHidden() || button.getActions() == null) {
+                continue;
+            }
+            for (String action : button.getActions()) {
+                if (action != null && action.toLowerCase().contains(DONT_WARN_AGAIN)) {
+                    return component;
+                }
+            }
+        }
+        return proceed;
+    }
+
     /** True while one of the warnings is open. Safe from any thread. */
-    static boolean isOpen() {
+    public static boolean isOpen() {
         return ProjectX.getClientThread()
                 .runOnClientThreadOptional(() -> openProceedButton(ProjectX.getClient()::getWidget) != -1)
                 .orElse(false);
@@ -81,9 +118,10 @@ final class AreaWarning {
      *
      * @return true when a warning was open and its proceed button was clicked
      */
-    static boolean acceptIfOpen() {
+    public static boolean acceptIfOpen() {
         Rectangle bounds = ProjectX.getClientThread().runOnClientThreadOptional(() -> {
-            int component = openProceedButton(ProjectX.getClient()::getWidget);
+            int component = preferredButton(openProceedButton(ProjectX.getClient()::getWidget),
+                    ProjectX.getClient()::getWidget);
             if (component == -1) {
                 return null;
             }

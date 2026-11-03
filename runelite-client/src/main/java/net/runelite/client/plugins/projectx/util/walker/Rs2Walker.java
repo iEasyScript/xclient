@@ -84,7 +84,14 @@ import net.runelite.client.plugins.projectx.util.walker.banking.WithdrawNoteMode
 import net.runelite.client.plugins.projectx.util.walker.awaits.Rs2WalkerRuntimeAwaits;
 import net.runelite.client.plugins.projectx.util.walker.puzzles.DraynorBasementSolver;
 import net.runelite.client.plugins.projectx.util.walker.stall.Rs2WalkerStallPolicy;
+import net.runelite.client.plugins.projectx.util.walker.stall.WalkClickStallRecovery;
 import net.runelite.client.plugins.projectx.util.walker.transport.Rs2WalkerTransportAwaits;
+import net.runelite.client.plugins.projectx.util.walker.special.DigTransports;
+import net.runelite.client.plugins.projectx.util.walker.special.GnomeGliderMenu;
+import net.runelite.client.plugins.projectx.util.walker.special.KaramjaShipFare;
+import net.runelite.client.plugins.projectx.util.walker.special.QuetzalWhistle;
+import net.runelite.client.plugins.projectx.util.walker.special.WalkerDialogueAnswers;
+import net.runelite.client.plugins.projectx.util.walker.special.WalkerSpecialObstacles;
 import net.runelite.client.plugins.projectx.util.walker.lifecycle.Rs2WalkerLifecycleRuntime;
 import net.runelite.client.plugins.skillcalculator.skills.MagicAction;
 import net.runelite.client.ui.overlay.worldmap.WorldMapPoint;
@@ -2147,6 +2154,8 @@ public class Rs2Walker {
 
             // "Are you sure?" area warnings: desert, Stronghold of Security ladders, Mort Myre gate, ...
             AreaWarning.acceptIfOpen();
+            // Walker prompts left open by an earlier click (DAX dialogue answers, shared table).
+            WalkerDialogueAnswers.answerIfOpen();
 
 
             if (Rs2Widget.enterWilderness()) {
@@ -3167,6 +3176,13 @@ public class Rs2Walker {
                                 WorldPoint now = Rs2Player.getWorldLocation();
                                 return now != null && (b.distanceTo2D(now) <= proximityWake || !now.equals(before) || Rs2Player.isMoving());
                             }, 1200);
+                        }
+                        // Click and retry left the player standing: DAX step-failure recovery (camera,
+                        // backoff, collision refresh). It never clicks; the loop does.
+                        if (hasPlayerMovedFrom2D(before)) {
+                            WalkClickStallRecovery.onProgress();
+                        } else if (!Rs2Player.isMoving()) {
+                            WalkClickStallRecovery.afterWalkClick(clickedAt, before, () -> isWalkCancelled(target));
                         }
                         if (walkCancelledDiag(target, "processWalk:after-click-wait", processWalkTail)) {
                             return WalkerState.EXIT;
@@ -8631,6 +8647,16 @@ public class Rs2Walker {
         while (dialogueAnswer == null && attempts < maxAttempts) {
             if (currentTarget == null) break;
             dialogueAnswer = StrongholdAnswer.findAnswer(Rs2Dialogue.getDialogueText());
+            if (dialogueAnswer == null && Rs2Dialogue.hasSelectAnOption()) {
+                // Reworded question already showing its options: pick the known correct answer (DAX).
+                String known = StrongholdAnswer.findKnownAnswerOption(Rs2Dialogue.getDialogueOptionTexts());
+                if (known != null && Rs2Dialogue.clickOption(known, true)) {
+                    Rs2Dialogue.sleepUntilHasContinue();
+                    sleepUntil(() -> !Rs2Dialogue.hasContinue(), Rs2Dialogue::clickContinue, 5000, Rs2Random.between(600, 800));
+                    Rs2Player.waitForAnimation(1200);
+                    return true;
+                }
+            }
             if (dialogueAnswer == null) {
                 Rs2Dialogue.clickContinue();
                 Rs2Random.waitEx(800, 100);
@@ -9160,7 +9186,7 @@ public class Rs2Walker {
                             Rs2NpcModel npc = Rs2Npc.getNpc(transport.getName());
 
                             // Wrap with observation so Leagues blocked-region chat can attribute this attempt.
-                            if (attemptObserved(transport, () -> npc != null && Rs2Npc.canWalkTo(npc, 20) && Rs2Npc.interact(npc, transport.getAction()))) {
+                            if (attemptObserved(transport, () -> npc != null && Rs2Npc.canWalkTo(npc, 20) && KaramjaShipFare.interact(npc, transport))) {
                                 Rs2Player.waitForWalking();
                                 sleepUntil(Rs2Dialogue::isInDialogue,600*2);
 
@@ -9403,6 +9429,14 @@ public class Rs2Walker {
                                     TRANSPORT_LANDING_WAIT_POLL_MS, TRANSPORT_LANDING_WAIT_TIMEOUT_MS);
                             return finishHandledTransport(transport);
                         }
+                    }
+
+                    // "Dig here" rows have no object: walk onto the tile and dig (DAX dig transports).
+                    if (DigTransports.isDig(transport)) {
+                        if (attemptObserved(transport, () -> DigTransports.dig(transport))) {
+                            return finishHandledTransport(transport);
+                        }
+                        break;
                     }
 
                     if (transport.getObjectId() <= 0) break;
@@ -9812,6 +9846,9 @@ public class Rs2Walker {
     private static boolean handleObject(Transport transport, TileObject tileObject, String action) {
         ensureRequiredItemBeforeTransport(transport);
         WorldPoint before = Rs2Player.getWorldLocation();
+        // Cobwebs and obstacles that open a dialogue or warning first (DAX special objects).
+        Boolean special = WalkerSpecialObstacles.handle(transport, tileObject, action);
+        if (special != null) return special;
         Rs2GameObject.interact(tileObject, action);
         if (handleObjectExceptions(transport, tileObject)) return true;
         WorldPoint tdObj = transport.getDestination();
@@ -10697,22 +10734,7 @@ public class Rs2Walker {
                 }
             }
         }
-        // Handle Cobwebs blocking path
-        if (tileObject.getId() == ObjectID.BIGWEB_SLASHABLE && !Rs2Equipment.isWearing(ItemID.ARANEA_BOOTS)) {
-            sleepUntil(() -> !Rs2Player.isMoving() && !Rs2Player.isAnimating(1200));
-            final WorldPoint webLocation = tileObject.getWorldLocation();
-            final WorldPoint currentPlayerPoint = Rs2Player.getWorldLocation();
-            boolean doesWebStillExist = Rs2GameObject.getAll(o -> Objects.equals(webLocation, o.getWorldLocation()) && o.getId() == ObjectID.BIGWEB_SLASHABLE).stream().findFirst().isPresent();
-            if (doesWebStillExist) {
-                sleepUntil(() -> Rs2GameObject.getAll(o -> Objects.equals(webLocation, o.getWorldLocation()) && o.getId() == ObjectID.BIGWEB_SLASHABLE).stream().findFirst().isEmpty(),
-                        () -> {
-                            Rs2GameObject.interact(tileObject, "slash");
-                            Rs2Player.waitForAnimation();
-                        }, 8000, 1200);
-            }
-            Rs2Walker.walkFastCanvas(transport.getDestination());
-            return sleepUntil(() -> !Objects.equals(currentPlayerPoint, Rs2Player.getWorldLocation()));
-        }
+        // Cobwebs: WalkerSpecialObstacles / WebCutting, before the click.
 
         // Handle Brimhaven Dungeon Entrance
         if (tileObject.getId() == 20877) {
@@ -10755,20 +10777,7 @@ public class Rs2Walker {
             Rs2Player.waitForAnimation();
         }
 
-        // Handle Rev Cave Dialogue
-        if (tileObject.getId() == ObjectID.WILD_CAVE_ENTRANCE_LOW) {
-            if (Rs2Player.isMoving()) {
-                Rs2Player.waitForWalking();
-            }
-            Widget dialogueSprite = Rs2Dialogue.getDialogueSprite();
-            if (dialogueSprite != null && dialogueSprite.getItemId() == 1004) {
-                Rs2Dialogue.clickContinue();
-                Rs2Dialogue.sleepUntilSelectAnOption();
-                Rs2Dialogue.clickOption("Yes, don't ask again");
-                Rs2Dialogue.sleepUntilNotInDialogue();
-            }
-            return true;
-        }
+        // Revenant caves (low, high, mid): WalkerSpecialObstacles, before the click.
 
         if (tileObject.getId() == ObjectID.HEROROCKSLIDE) {
             Rs2Player.waitForAnimation(600 * 4);
@@ -10935,6 +10944,11 @@ public class Rs2Walker {
     private static boolean handleInventoryTeleports(Transport transport, int itemId) {
         Rs2ItemModel rs2Item = Rs2Inventory.get(itemId);
         if (rs2Item == null) return false;
+        if (isQuetzalWhistleItemId(itemId)) {
+            // One click when the whistle's last destination is the target (DAX Quetzal.teleport).
+            Boolean viaLast = QuetzalWhistle.tryLastDestination(rs2Item, transport.getDestination());
+            if (viaLast != null) return viaLast;
+        }
 
         // A list of generic teleports that can be used if no parsable destination action is found
         List<String> genericKeyWords = Arrays.asList(
@@ -12034,6 +12048,10 @@ public class Rs2Walker {
         Rs2Player.waitForAnimation(1800);
         sleepUntil(() -> isQuetzalMapInterfaceVisible() || !Rs2Player.isAnimating(), 1400);
         sleep(Rs2Random.between(120, 260));
+        if (!isQuetzalMapInterfaceVisible()) {
+            // "...no charges" instead of the map: remember it so planning stops using the whistle.
+            QuetzalWhistle.noteIfOutOfCharges();
+        }
         return clickQuetzalMapDestination(mapLabel, dest);
     }
 
@@ -12476,14 +12494,6 @@ public class Rs2Walker {
     }
 
     private static boolean handleGlider(Transport transport) {
-        int TA_QUIR_PRIW = 9043972;
-        int SINDARPOS = 9043975;
-        int LEMANTO_ANDRA = 9043978;
-        int KAR_HEWO = 9043981;
-        int GANDIUS = 9043984;
-        int OOKOOKOLLY_UNDRI = 9043993;
-        int LEMANTOLLY_UNDRI = 9043989;
-
         // Get Transport Information
         String displayInfo = transport.getDisplayInfo();
         String npcName = transport.getName();
@@ -12518,25 +12528,8 @@ public class Rs2Walker {
 
         if (displayInfo.isEmpty()) return false;
 
-        switch (displayInfo) {
-            case "Kar-Hewo":
-                return Rs2Widget.clickWidget(KAR_HEWO);
-            case "Ta Quir Priw":
-                return Rs2Widget.clickWidget(TA_QUIR_PRIW);
-            case "Sindarpos":
-                return Rs2Widget.clickWidget(SINDARPOS);
-            case "Lemanto Andra":
-                return Rs2Widget.clickWidget(LEMANTO_ANDRA);
-            case "Gandius":
-                return Rs2Widget.clickWidget(GANDIUS);
-            case "Ookookolly Undri":
-                return Rs2Widget.clickWidget(OOKOOKOLLY_UNDRI);
-            case "Lemantolly Undri":
-                return Rs2Widget.clickWidget(LEMANTOLLY_UNDRI);
-            default:
-                log.error("{} not found on the interface.", displayInfo);
-                return false;
-        }
+        // By the button's action text, with the old component ids as the fallback (DAX GnomeGlider).
+        return GnomeGliderMenu.clickDestination(displayInfo);
     }
 
     // Constants for widget IDs

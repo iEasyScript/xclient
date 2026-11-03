@@ -6552,3 +6552,20 @@
 # The Great Conch, Gryphon cave (north-western cave)
 3122 2490 0	3125 8880 0	Enter;Cave entrance;57908								2
 3125 8880 0	3122 2490 0	Exit;Cave exit;57909								2
+# Obstacles ported from the DAX web walker (Apache-2.0); ids checked against gameval, cache and the OSRS wiki											
+# Chaos Druid Tower, north of East Ardougne: pick-lock from outside (east), plain Open from inside											
+2565 3356 0	2564 3356 0	Pick-lock;Door;11723	46 Thieving						Y	4	Chaos Druid Tower door
+2564 3356 0	2565 3356 0	Open;Door;11723							Y	2	Chaos Druid Tower door
+# Ross' house, East Ardougne (pick-lock in from the east)											
+2611 3316 0	2610 3316 0	Pick-lock;Door;40178	13 Thieving						Y	3	Ross' house door
+# H.A.M. Hideout jail cell (one way out; cannot be picked from outside)											
+3183 9611 0	3182 9611 0	Pick-lock;Door;5501							Y	4	H.A.M. Hideout jail door
+# Khazard battlefield crumbled wall (a dialogue follows the click)											
+2509 3252 0	2509 3254 0	Climb-over;Crumbled wall;2185							Y	4	Khazard battlefield crumbled wall
+2509 3254 0	2509 3252 0	Climb-over;Crumbled wall;2185							Y	4	Khazard battlefield crumbled wall
+# Lunar Isle Return Orb to Rellekka (elite Fremennik Diary; confirm with "Yes.")											
+2101 3918 0	2631 3678 0	Teleport;Return Orb;30160					4494=1		Y	6	Return Orb: Rellekka
+# Dig-with-a-spade transports (DAX GIANT_MOLE_HOLE / BRINE_RAT_CAVE_TREE): no object, the walker stands on the origin and digs											
+2996 3377 0	1752 5237 0	Dig;Spade;0		952					Y	4	Dig: Giant Mole lair (Falador Park mole hill)
+2748 3732 0	2697 10120 0	Dig;Spade;0		952		Olaf's Quest=IN_PROGRESS			Y	4	Dig: Brine Rat Cavern
+2748 3732 0	2697 10120 0	Dig;Spade;0		952		Olaf's Quest			Y	4	Dig: Brine Rat Cavern

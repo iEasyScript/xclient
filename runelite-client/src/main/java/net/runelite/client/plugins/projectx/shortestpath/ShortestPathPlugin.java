@@ -666,6 +666,18 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
         liveCollisionDirty = true;
     }
 
+    /** Set from the walker thread; folded into {@link #liveCollisionDirty} on the next tick. */
+    private static volatile boolean liveCollisionRefreshRequested = false;
+
+    /**
+     * Asks for a live-collision recapture on the next tick (the walker calls it when a walk click did
+     * not move the player, as DAX rebuilt its collision on a failed step). No-op while live collision
+     * is off. Safe from any thread.
+     */
+    public static void requestLiveCollisionRefresh() {
+        liveCollisionRefreshRequested = true;
+    }
+
     /**
      * Wipes everything the live overlay has learned — the in-memory accumulation and the on-disk store for
      * every cache revision — then forces an immediate recapture so, while the flag is still on, the store
@@ -769,6 +781,10 @@ public class ShortestPathPlugin extends Plugin implements KeyListener {
                 liveCollisionPersistence.shutdown();
                 liveCollisionPersistence = null;
             }
+        }
+        if (liveCollisionRefreshRequested) {
+            liveCollisionRefreshRequested = false;
+            liveCollisionDirty = enabled;
         }
         if (!enabled) {
             liveCollisionDirty = false;
