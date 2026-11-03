@@ -85,6 +85,8 @@ import net.runelite.client.plugins.projectx.util.walker.awaits.Rs2WalkerRuntimeA
 import net.runelite.client.plugins.projectx.util.walker.puzzles.DraynorBasementSolver;
 import net.runelite.client.plugins.projectx.util.walker.stall.Rs2WalkerStallPolicy;
 import net.runelite.client.plugins.projectx.util.walker.transport.Rs2WalkerTransportAwaits;
+import net.runelite.client.plugins.projectx.util.walker.special.DigTransports;
+import net.runelite.client.plugins.projectx.util.walker.special.GnomeGliderMenu;
 import net.runelite.client.plugins.projectx.util.walker.special.KaramjaShipFare;
 import net.runelite.client.plugins.projectx.util.walker.special.QuetzalWhistle;
 import net.runelite.client.plugins.projectx.util.walker.special.WalkerDialogueAnswers;
@@ -9428,6 +9430,14 @@ public class Rs2Walker {
                         }
                     }
 
+                    // "Dig here" rows have no object: walk onto the tile and dig (DAX dig transports).
+                    if (DigTransports.isDig(transport)) {
+                        if (attemptObserved(transport, () -> DigTransports.dig(transport))) {
+                            return finishHandledTransport(transport);
+                        }
+                        break;
+                    }
+
                     if (transport.getObjectId() <= 0) break;
 
                     final int transportObjectId = transport.getObjectId();
@@ -12439,14 +12449,6 @@ public class Rs2Walker {
     }
 
     private static boolean handleGlider(Transport transport) {
-        int TA_QUIR_PRIW = 9043972;
-        int SINDARPOS = 9043975;
-        int LEMANTO_ANDRA = 9043978;
-        int KAR_HEWO = 9043981;
-        int GANDIUS = 9043984;
-        int OOKOOKOLLY_UNDRI = 9043993;
-        int LEMANTOLLY_UNDRI = 9043989;
-
         // Get Transport Information
         String displayInfo = transport.getDisplayInfo();
         String npcName = transport.getName();
@@ -12481,25 +12483,8 @@ public class Rs2Walker {
 
         if (displayInfo.isEmpty()) return false;
 
-        switch (displayInfo) {
-            case "Kar-Hewo":
-                return Rs2Widget.clickWidget(KAR_HEWO);
-            case "Ta Quir Priw":
-                return Rs2Widget.clickWidget(TA_QUIR_PRIW);
-            case "Sindarpos":
-                return Rs2Widget.clickWidget(SINDARPOS);
-            case "Lemanto Andra":
-                return Rs2Widget.clickWidget(LEMANTO_ANDRA);
-            case "Gandius":
-                return Rs2Widget.clickWidget(GANDIUS);
-            case "Ookookolly Undri":
-                return Rs2Widget.clickWidget(OOKOOKOLLY_UNDRI);
-            case "Lemantolly Undri":
-                return Rs2Widget.clickWidget(LEMANTOLLY_UNDRI);
-            default:
-                log.error("{} not found on the interface.", displayInfo);
-                return false;
-        }
+        // By the button's action text, with the old component ids as the fallback (DAX GnomeGlider).
+        return GnomeGliderMenu.clickDestination(displayInfo);
     }
 
     // Constants for widget IDs

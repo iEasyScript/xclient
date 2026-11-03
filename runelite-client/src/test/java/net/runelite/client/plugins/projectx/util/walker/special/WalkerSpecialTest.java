@@ -84,6 +84,21 @@ public class WalkerSpecialTest {
     }
 
     @Test
+    public void gliderButtonsByActionWithTheOldIdsAsFallback() {
+        assertTrue(GnomeGliderMenu.actionsName(new String[]{null, "Travel to <col=ff9040>Kar-Hewo</col>"}, "Kar-Hewo"));
+        assertFalse(GnomeGliderMenu.actionsName(new String[]{"Travel to Gandius"}, "Kar-Hewo"));
+        assertFalse(GnomeGliderMenu.actionsName(null, "Kar-Hewo"));
+        // The component ids the walker used to hardcode.
+        assertEquals(9043972, (int) GnomeGliderMenu.FALLBACK_BUTTONS.get("Ta Quir Priw"));
+        assertEquals(9043975, (int) GnomeGliderMenu.FALLBACK_BUTTONS.get("Sindarpos"));
+        assertEquals(9043978, (int) GnomeGliderMenu.FALLBACK_BUTTONS.get("Lemanto Andra"));
+        assertEquals(9043981, (int) GnomeGliderMenu.FALLBACK_BUTTONS.get("Kar-Hewo"));
+        assertEquals(9043984, (int) GnomeGliderMenu.FALLBACK_BUTTONS.get("Gandius"));
+        assertEquals(9043993, (int) GnomeGliderMenu.FALLBACK_BUTTONS.get("Ookookolly Undri"));
+        assertEquals(9043989, (int) GnomeGliderMenu.FALLBACK_BUTTONS.get("Lemantolly Undri"));
+    }
+
+    @Test
     public void specialObjectsAreTheDaxOnes() {
         assertTrue(WalkerSpecialObstacles.isSpecial(ObjectID.BIGWEB_SLASHABLE));
         assertTrue(WalkerSpecialObstacles.isSpecial(ObjectID.WILD_CAVE_ENTRANCE_LOW));

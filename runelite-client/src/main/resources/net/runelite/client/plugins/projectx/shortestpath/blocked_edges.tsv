@@ -130,3 +130,7 @@
 3299 3178 0	3299 3179 0	true	Al Kharid mine north edge
 3300 3178 0	3300 3179 0	true	Al Kharid mine north edge
 2709 3495 0	2709 3496 0	true	Elemental Workshop odd-looking wall
+# Locked doors crossed only by their pick-lock rows in transports.tsv (DAX special objects); the static map leaves them open
+2565 3356 0	2564 3356 0	true	Chaos Druid Tower locked door
+2611 3316 0	2610 3316 0	false	Ross' house locked door (in from the east)
+3183 9611 0	3182 9611 0	true	H.A.M. Hideout jail door
