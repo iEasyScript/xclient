@@ -11855,20 +11855,29 @@ public class Rs2Walker {
                 sleepUntil(Rs2Player::isMoving, 2000);
                 sleepUntilTrue(() -> !Rs2Player.isMoving(), 100, 30000);
 
-                // OSRS update moved the canoe destination map from group 647 to
-                // CanoeMapLum (953) for the river Lum chain. CanoeMapDougne (952)
-                // is for a different chain not currently used by canoes.tsv.
+                // The destination map is one of two interfaces: CanoeMapLum (953) for the
+                // River Lum chain (Lumbridge to Edgeville) and CanoeMapDougne (952) for the
+                // Ardougne river chain (Castle Wars to the Gnome Stronghold), which canoes.tsv
+                // also uses. Waiting only for the Lum map stalled every Ardougne canoe trip.
                 boolean isDestinationMapVisible = sleepUntilTrue(
-                        () -> Rs2Widget.isWidgetVisible(InterfaceID.CanoeMapLum.MAIN_MAP),
+                        () -> Rs2Widget.isWidgetVisible(InterfaceID.CanoeMapLum.MAIN_MAP)
+                                || Rs2Widget.isWidgetVisible(InterfaceID.CanoeMapDougne.MAIN_MAP),
                         100, 10000);
                 if (!isDestinationMapVisible) {
-                    log.error("Canoe destination map (CanoeMapLum) not visible within timeout period");
+                    log.error("Canoe destination map (CanoeMapLum or CanoeMapDougne) not visible within timeout period");
                     return false;
                 }
 
-                Widget destinationListWidget = Rs2Widget.getWidget(InterfaceID.CanoeMapLum.DESTINATIONS);
+                int destinationsId = Rs2Widget.isWidgetVisible(InterfaceID.CanoeMapDougne.MAIN_MAP)
+                        ? InterfaceID.CanoeMapDougne.DESTINATIONS
+                        : InterfaceID.CanoeMapLum.DESTINATIONS;
+                Widget destinationListWidget = Rs2Widget.getWidget(destinationsId);
                 if (destinationListWidget == null) return false;
                 Widget destination = Rs2Widget.findWidget("Travel to " + displayInfo, List.of(destinationListWidget), false);
+                if (destination == null) {
+                    // Fall back to the destination's label in case this map words its action differently.
+                    destination = Rs2Widget.findWidget(displayInfo, List.of(destinationListWidget), false);
+                }
                 if (destination == null) {
                     log.error("Could not find canoe destination widget for: {}", displayInfo);
                     return false;
