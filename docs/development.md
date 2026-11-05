@@ -12,7 +12,7 @@ Local setup, build commands, and script authoring entry points.
 - Helpers/utilities: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/util`
 - Queryable API: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/api`
 - Config UI: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/ui/ProjectXConfigPanel`
-- Runtime agent server: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/agentserver`
+- Runtime MCP server (and legacy REST API): `runelite-client/src/main/java/net/runelite/client/plugins/projectx/agentserver` (MCP in `agentserver/mcp`)
 - Composite build members: `cache`, `runelite-api`, `runelite-gradle-plugin`, `runelite-jshell`, and `:client`
 
 ## Build & Run

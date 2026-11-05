@@ -14,7 +14,7 @@ A single-page reference for every tool available when **creating or debugging** 
 | **Logged out** | Client open, not logged in | All offline tools + `profile`, `login`, `state`, `widgets`, `screenshot` |
 | **Logged in** | Client + game session | Everything |
 
-The **Agent Server** plugin (port 8081, localhost) must be enabled for any CLI/HTTP command. It is enabled by default.
+The **MCP Server** plugin (formerly "Agent Server"; port 8081, localhost) must be enabled for any MCP, CLI or HTTP command. AI agents should connect over MCP (`http://127.0.0.1:8081/mcp`, see [MCP.md](MCP.md)), which offers every command below as a tool; `projectx-cli` and the REST routes remain as the legacy path.
 
 ```bash
 # Quick connectivity check

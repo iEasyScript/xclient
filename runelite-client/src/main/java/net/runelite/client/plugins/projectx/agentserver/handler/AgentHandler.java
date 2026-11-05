@@ -20,6 +20,7 @@ public abstract class AgentHandler implements HttpHandler {
 
 	private static final int MAX_BODY_SIZE = 16 * 1024;
 	private static final String AUTH_HEADER = "X-Agent-Token";
+	private static final String BEARER_PREFIX = "bearer ";
 
 	private static volatile Supplier<String> tokenSupplier = () -> null;
 
@@ -56,7 +57,7 @@ public abstract class AgentHandler implements HttpHandler {
 
 		String expected = tokenSupplier.get();
 		if (expected != null && !expected.isEmpty()) {
-			String provided = exchange.getRequestHeaders().getFirst(AUTH_HEADER);
+			String provided = providedToken(exchange);
 			if (provided == null || !constantTimeEquals(expected, provided)) {
 				sendOpaqueNotFound(exchange);
 				return;
@@ -80,6 +81,40 @@ public abstract class AgentHandler implements HttpHandler {
 				log.debug("Client disconnected before error response could be sent for {}", exchange.getRequestURI());
 			}
 		}
+	}
+
+	/**
+	 * The token from {@code X-Agent-Token} (REST, projectx-cli) or {@code Authorization: Bearer}
+	 * (MCP clients). Either header is accepted on every route.
+	 */
+	static String providedToken(HttpExchange exchange) {
+		String token = exchange.getRequestHeaders().getFirst(AUTH_HEADER);
+		if (token != null && !token.isEmpty()) {
+			return token.trim();
+		}
+		String authorization = exchange.getRequestHeaders().getFirst("Authorization");
+		if (authorization != null && authorization.length() > BEARER_PREFIX.length()
+				&& authorization.regionMatches(true, 0, BEARER_PREFIX, 0, BEARER_PREFIX.length())) {
+			return authorization.substring(BEARER_PREFIX.length()).trim();
+		}
+		return null;
+	}
+
+	/**
+	 * Runs this handler in-process, without HTTP and without the auth checks: for the MCP
+	 * endpoint, whose own request has already passed them. The MCP tools reuse the REST
+	 * handlers' logic this way instead of copying it.
+	 *
+	 * @param method       GET or POST
+	 * @param pathAndQuery e.g. {@code /npcs?name=Guard}
+	 * @param jsonBody     request body for POST (serialised with Gson), or null
+	 */
+	public LocalExchange.Response invokeLocally(String method, String pathAndQuery, Object jsonBody) throws IOException {
+		byte[] body = jsonBody == null ? "{}".getBytes(StandardCharsets.UTF_8)
+				: gson.toJson(jsonBody).getBytes(StandardCharsets.UTF_8);
+		LocalExchange exchange = new LocalExchange(method, URI.create(pathAndQuery), body);
+		handleRequest(exchange);
+		return exchange.response();
 	}
 
 	private static boolean isLoopbackHost(String hostHeader) {

@@ -68,7 +68,7 @@ package or hash is refused.
 - ProjectX plugin and scripts: `runelite-client/src/main/java/net/runelite/client/plugins/projectx`
 - Reusable helpers: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/util`
 - Queryable caches: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/api`
-- Runtime agent tooling: `runelite-client/src/main/java/net/runelite/client/plugins/projectx/agentserver`
+- Runtime agent tooling (MCP server, `docs/MCP.md`): `runelite-client/src/main/java/net/runelite/client/plugins/projectx/agentserver`
 
 ## Discord
 [![Discord Banner 1](https://discord.com/api/guilds/1521062459446657125/widget.png?style=banner1)]([https://discord.gg/zaGrfqFEWE](https://discord.gg/UUwfkXFcub))

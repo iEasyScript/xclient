@@ -1,6 +1,11 @@
-# Agent Server
+# REST API (legacy) of the MCP Server plugin
 
-The Agent Server is an embedded HTTP server that exposes ProjectX's widget system, game state, and game interactions to external AI agents at runtime. An agent can inspect the UI, query NPCs/objects/items, manage inventory, bank, walk, handle dialogues, and more - all through HTTP calls or the `projectx-cli` wrapper.
+> **AI agents: use the MCP endpoint instead.** The **MCP Server** plugin (formerly "Agent Server") serves the
+> Model Context Protocol at `http://127.0.0.1:8081/mcp` with a full tool set; see [MCP.md](MCP.md).
+> This page documents the older REST API on the same port. It is kept working for `projectx-cli` and
+> existing scripts, but new tooling should go through MCP.
+
+The REST API exposes ProjectX's widget system, game state, and game interactions to external tools at runtime. A caller can inspect the UI, query NPCs/objects/items, manage inventory, bank, walk, handle dialogues, and more - all through HTTP calls or the `projectx-cli` wrapper. The MCP tools reuse these handlers in-process, so both stay in step.
 
 ## Architecture
 
@@ -15,7 +20,7 @@ The Agent Server is an embedded HTTP server that exposes ProjectX's widget syste
 └────────────────────┬─────────────────────────────┘
                      │ HTTP (localhost only)
 ┌────────────────────▼─────────────────────────────┐
-│  AgentServerPlugin                               │
+│  AgentServerPlugin ("MCP Server")                │
 │  ├─ AgentHandler (base class)                    │
 │  │   ├─ JSON serialization, CORS, error handling │
 │  │   ├─ Pagination, query parsing                │
@@ -41,7 +46,7 @@ TCP mode binds to `127.0.0.1` only. UDS mode binds to `~/.runelite/.agent.sock` 
 
 - The server uses **daemon threads** so it never prevents the JVM from exiting when the client closes.
 - A **JVM shutdown hook** stops the server cleanly on client exit (window close, kill signal, `System.exit`).
-- On TCP startup, if the port is already in use, this client skips Agent Server startup for that instance.
+- On TCP startup, if the port is already in use, this client skips MCP server startup for that instance.
 - Toggling the plugin off and back on works cleanly — the old server is stopped before the new one starts.
 - Optional stealth-bind mode opens the socket only while a ProjectX script is active, then tears it down after an idle grace period.
 
@@ -49,7 +54,7 @@ TCP mode binds to `127.0.0.1` only. UDS mode binds to `~/.runelite/.agent.sock` 
 
 1. Build: `./gradlew :client:compileJava`
 2. Launch the client
-3. Enable **"Agent Server"** in the ProjectX plugin list
+3. Enable **"MCP Server"** in the ProjectX plugin list (called "Agent Server" in older clients)
 4. Server starts on port `8081` (configurable)
 5. The auth token is auto-generated and written to `~/.runelite/.agent-token`; `./projectx-cli` reads it automatically.
 
@@ -59,7 +64,7 @@ TCP mode binds to `127.0.0.1` only. UDS mode binds to `~/.runelite/.agent.sock` 
 |---------|---------|-------------|
 | Port | `8081` | HTTP server port |
 | Max Results | `200` | Default limit for list/query endpoints |
-| Auth token | generated | Required in `X-Agent-Token`; stored in `~/.runelite/.agent-token` for CLI use |
+| Auth token | generated | Required in `X-Agent-Token` or `Authorization: Bearer`; stored in `~/.runelite/.agent-token` for CLI use |
 | Stealth bind | `false` | Open the socket only while scripts are active |
 | Bind mode | `TCP` | `TCP` on localhost or `UDS` at `~/.runelite/.agent.sock` |
 

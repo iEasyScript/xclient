@@ -37,6 +37,10 @@ usage() {
     cat <<'EOF'
 Usage: projectx-cli <command> [options]
 
+projectx-cli talks to the client's MCP Server plugin through its REST API (legacy, kept working).
+AI agents should use the MCP endpoint instead: http://127.0.0.1:8081/mcp (see docs/MCP.md).
+  mcp                                    Print the MCP URL and a Claude Code .mcp.json entry
+
 Widget Commands:
   widgets list [--limit N] [--offset M]
   widgets search <keywords> [--limit N]
@@ -148,11 +152,11 @@ EOF
 }
 
 do_get() {
-    curl -sf --max-time "$TIMEOUT" "${AUTH_HEADER_ARGS[@]}" "$1" 2>/dev/null || { echo '{"error":"Connection refused - is the Agent Server plugin enabled?"}'; exit 1; }
+    curl -sf --max-time "$TIMEOUT" "${AUTH_HEADER_ARGS[@]}" "$1" 2>/dev/null || { echo '{"error":"Connection refused - is the MCP Server plugin enabled?"}'; exit 1; }
 }
 
 do_post() {
-    curl -sf --max-time "$TIMEOUT" "${AUTH_HEADER_ARGS[@]}" -X POST -H "Content-Type: application/json" -d "$2" "$1" 2>/dev/null || { echo '{"error":"Connection refused - is the Agent Server plugin enabled?"}'; exit 1; }
+    curl -sf --max-time "$TIMEOUT" "${AUTH_HEADER_ARGS[@]}" -X POST -H "Content-Type: application/json" -d "$2" "$1" 2>/dev/null || { echo '{"error":"Connection refused - is the MCP Server plugin enabled?"}'; exit 1; }
 }
 
 build_query() {
@@ -186,6 +190,28 @@ parse_named_args() {
 [[ $# -lt 1 ]] && usage
 
 case "$1" in
+    mcp)
+        cat <<EOF
+MCP endpoint (Streamable HTTP): ${BASE}/mcp
+Auth header: Authorization: Bearer <token from ${TOKEN_FILE}>
+The token file exists only while the client runs with the MCP Server plugin on.
+
+Register with Claude Code:
+  claude mcp add --transport http projectx-osrs ${BASE}/mcp --header "Authorization: Bearer \$(cat ${TOKEN_FILE})"
+
+Or add to .mcp.json (export PROJECTX_MCP_TOKEN first):
+{
+  "mcpServers": {
+    "projectx-osrs": {
+      "type": "http",
+      "url": "${BASE}/mcp",
+      "headers": { "Authorization": "Bearer \${PROJECTX_MCP_TOKEN}" }
+    }
+  }
+}
+EOF
+        ;;
+
     widgets)
         [[ $# -lt 2 ]] && usage
         case "$2" in
@@ -393,7 +419,7 @@ case "$1" in
         if [[ "$walk_wait" == "true" ]]; then
             curl_timeout=$((walk_timeout + 5))
             curl -sf --max-time "$curl_timeout" "${AUTH_HEADER_ARGS[@]}" -X POST -H "Content-Type: application/json" -d "$walk_body" "${BASE}/walk" 2>/dev/null \
-                || { echo '{"error":"Connection refused - is the Agent Server plugin enabled?"}'; exit 1; }
+                || { echo '{"error":"Connection refused - is the MCP Server plugin enabled?"}'; exit 1; }
         else
             do_post "${BASE}/walk" "$walk_body"
         fi
@@ -457,7 +483,7 @@ case "$1" in
                 if [[ -n "$world" ]]; then
                     body="{\"world\":${world},\"timeout\":${login_timeout}}"
                 fi
-                result=$(curl -s --max-time "$((login_timeout + 5))" "${AUTH_HEADER_ARGS[@]}" -X POST -H "Content-Type: application/json" -d "$body" "${BASE}/login" 2>/dev/null) || { echo '{"error":"Connection refused - is the Agent Server plugin enabled?"}'; exit 1; }
+                result=$(curl -s --max-time "$((login_timeout + 5))" "${AUTH_HEADER_ARGS[@]}" -X POST -H "Content-Type: application/json" -d "$body" "${BASE}/login" 2>/dev/null) || { echo '{"error":"Connection refused - is the MCP Server plugin enabled?"}'; exit 1; }
                 echo "$result"
                 echo "$result" | grep -q '"success": *true' || exit 1
                 ;;
@@ -710,7 +736,7 @@ case "$1" in
             q=$(build_query "save" "true" "label" "${label:-screenshot}" "dir" "${dir:-}")
             do_get "${BASE}/screenshot${q}"
         else
-            curl -sf --max-time "$TIMEOUT" "${AUTH_HEADER_ARGS[@]}" -o "${1:-screenshot.png}" "${BASE}/screenshot" 2>/dev/null || { echo '{"error":"Connection refused - is the Agent Server plugin enabled?"}'; exit 1; }
+            curl -sf --max-time "$TIMEOUT" "${AUTH_HEADER_ARGS[@]}" -o "${1:-screenshot.png}" "${BASE}/screenshot" 2>/dev/null || { echo '{"error":"Connection refused - is the MCP Server plugin enabled?"}'; exit 1; }
             echo "{\"success\":true,\"path\":\"$(pwd)/${1:-screenshot.png}\"}"
         fi
         ;;

@@ -146,8 +146,8 @@ If existing code calls showMessage() and it blocks you, you need to either:
 After launching ./gradlew :client:run, the client needs ~30-60 seconds to fully start
 and log in. Always wait and confirm with ./projectx-cli state or login wait before proceeding.
 
-### Agent Server plugin must be enabled
-The CLI only works when the Agent Server plugin is enabled in the client. If CLI calls fail with
+### MCP Server plugin must be enabled
+The CLI only works when the MCP Server plugin (formerly Agent Server) is enabled in the client. If CLI calls fail with
 connection refused, the plugin may not be enabled. Check the plugin list or enable it via config.
 
 ## Reporting

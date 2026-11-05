@@ -5,6 +5,10 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Range;
 
+/**
+ * Settings of the MCP server plugin. The group key stays "agentServer" so existing settings,
+ * including the auth token, carry over.
+ */
 @ConfigGroup(AgentServerConfig.GROUP)
 public interface AgentServerConfig extends Config {
 
@@ -15,7 +19,7 @@ public interface AgentServerConfig extends Config {
 	@ConfigItem(
 			keyName = "port",
 			name = "Port",
-			description = "HTTP server port for agent communication (bound to 127.0.0.1 only)",
+			description = "Port of the MCP server (bound to 127.0.0.1 only). MCP clients connect to http://127.0.0.1:<port>/mcp; the older REST API and projectx-cli use the same port.",
 			position = 0
 	)
 	@Range(min = 1024, max = 65535)
@@ -26,7 +30,7 @@ public interface AgentServerConfig extends Config {
 	@ConfigItem(
 			keyName = "maxResults",
 			name = "Max Results",
-			description = "Default max results for list/query endpoints",
+			description = "Default max results for list tools and REST list endpoints",
 			position = 1
 	)
 	@Range(min = 10, max = 5000)
@@ -37,7 +41,7 @@ public interface AgentServerConfig extends Config {
 	@ConfigItem(
 			keyName = KEY_TOKEN,
 			name = "Auth token",
-			description = "Shared secret required in the X-Agent-Token header. Auto-generated on first start. Use 'Regenerate token' to rotate.",
+			description = "Shared secret every request must carry, as 'Authorization: Bearer <token>' (MCP clients) or the X-Agent-Token header (REST, projectx-cli). Auto-generated on first start and written to ~/.runelite/.agent-token. Clear it to generate a new one.",
 			secret = true,
 			position = 2
 	)
@@ -55,7 +59,7 @@ public interface AgentServerConfig extends Config {
 	@ConfigItem(
 			keyName = "bindOnlyWhileScriptsActive",
 			name = "Stealth bind",
-			description = "Only open the listening socket while a Project X script is actively running. Eliminates the localhost port fingerprint during manual play.",
+			description = "Only open the MCP server's socket while a Project X script is actively running. Eliminates the localhost port fingerprint during manual play, but MCP clients cannot connect until a script runs.",
 			position = 3
 	)
 	default boolean bindOnlyWhileScriptsActive() {
@@ -67,7 +71,7 @@ public interface AgentServerConfig extends Config {
 	@ConfigItem(
 			keyName = "bindMode",
 			name = "Bind mode",
-			description = "TCP: classic 127.0.0.1:<port>. UDS: Unix domain socket at ~/.runelite/.agent.sock — invisible to port scanners but clients must speak UDS.",
+			description = "TCP: 127.0.0.1:<port> (what MCP clients such as Claude Code need). UDS: Unix domain socket at ~/.runelite/.agent.sock, invisible to port scanners but clients must speak UDS.",
 			position = 4
 	)
 	default BindMode bindMode() {

@@ -25,8 +25,8 @@ RuneLite fork (base 1.13.4) with a hidden always-on plugin hosting automation sc
 - **P1:** script loop timing, overlay correctness, plugin discovery/config, shaded-jar packaging, build reproducibility.
 
 ## Runtime tooling
-- `./projectx-cli` (JSON output) — see `docs/PROJECTX_CLI.md`, HTTP API `docs/AGENT_SERVER.md`, full tool list `docs/AGENT_SCRIPT_TOOLS.md`.
-- Agent Server plugin runs on port 8081 by default.
+- MCP Server plugin (formerly Agent Server) on `127.0.0.1:8081`: MCP endpoint `/mcp` for Claude Code and other agents — setup and tool list in `docs/MCP.md`.
+- `./projectx-cli` (JSON output, legacy REST API on the same port) — see `docs/PROJECTX_CLI.md`, HTTP API `docs/AGENT_SERVER.md`, task guide `docs/AGENT_SCRIPT_TOOLS.md`.
 - Offline client-thread lookup: `./projectx-cli ct <method>`.
 - Test mode: `-Dprojectx.test.mode=true -Dprojectx.test.script=<PluginName>` → results in `~/.runelite/test-results/`. Protocol: `docs/AGENTIC_TESTING_LOOP.md`.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test: dynamic script hot-reload via the agent server HTTP API.
+Test: dynamic script hot-reload via the MCP server's REST API.
 
 Verifies the full lifecycle:
   1. Deploy a Java plugin at runtime (version 1)
@@ -10,7 +10,7 @@ Verifies the full lifecycle:
   5. Confirm the plugin descriptor reflects v2 (proves new code is active)
   6. Undeploy and confirm it is gone
 
-Requires the ProjectX client to be running with the Agent Server plugin active.
+Requires the ProjectX client to be running with the MCP Server plugin active.
 Run with:  python3 scripts/test_hot_reload.py
 """
 
@@ -157,8 +157,8 @@ def cleanup(name: str):
 def assert_server_reachable():
     status, resp = api("GET", "/scripts/deploy")
     if status == 0:
-        print(f"ERROR: Cannot reach agent server at {BASE_URL}")
-        print("       Start the ProjectX client and enable the Agent Server plugin, then retry.")
+        print(f"ERROR: Cannot reach the MCP server at {BASE_URL}")
+        print("       Start the ProjectX client and enable the MCP Server plugin, then retry.")
         sys.exit(2)
 
 

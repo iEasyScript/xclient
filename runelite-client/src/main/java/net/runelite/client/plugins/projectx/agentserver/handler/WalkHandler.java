@@ -27,7 +27,7 @@ public class WalkHandler extends AgentHandler {
 
 	private static final AtomicInteger WALK_THREAD_COUNT = new AtomicInteger(1);
 	private static final ExecutorService WALK_EXECUTOR = Executors.newSingleThreadExecutor(r -> {
-		Thread t = new Thread(r, "AgentServer-Walk-" + WALK_THREAD_COUNT.getAndIncrement());
+		Thread t = new Thread(r, "McpServer-Walk-" + WALK_THREAD_COUNT.getAndIncrement());
 		t.setDaemon(true);
 		return t;
 	});
@@ -193,6 +193,23 @@ public class WalkHandler extends AgentHandler {
 		activeWalkReachedDistance = reachedDistance;
 		activeWalk = WALK_EXECUTOR.submit(() -> Rs2Walker.walkWithState(destination, reachedDistance));
 		return activeWalk;
+	}
+
+	/**
+	 * Stops the walk started by {@code POST /walk} (or the MCP walk_to tool), if one is running.
+	 *
+	 * @return true when a walk was running
+	 */
+	public static synchronized boolean cancelActiveWalk() {
+		boolean running = activeWalk != null && !activeWalk.isDone();
+		if (activeWalk != null) {
+			activeWalk.cancel(true);
+		}
+		activeWalk = null;
+		activeWalkTarget = null;
+		activeWalkReachedDistance = DEFAULT_REACHED_DISTANCE;
+		Rs2Walker.clearWalkingRoute("MCP stop_walking");
+		return running;
 	}
 
 	private static synchronized void clearActiveWalk(Future<WalkerState> walkFuture) {

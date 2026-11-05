@@ -20,7 +20,7 @@ Skip it for one-shot, event-driven, or single-linear-sequence scripts.
 - Guards must be **pure** (no side effects, no blocking).
 - Every state needs at least one exit transition; guard against null fields.
 - Transition order = priority. Put high-priority exits (inventory full, death, errors) first.
-- Always supply `because()` and a readable condition string — these surface in logs and the agent server.
+- Always supply `because()` and a readable condition string — these surface in logs and the MCP server.
 - Do state-changing work in `onState()`, never in guards.
 - Use the Queryable API (`Objects.query()`, `Npcs.query()`, ... from `projectx.bot`) inside `onState()`.
 
@@ -29,7 +29,7 @@ Skip it for one-shot, event-driven, or single-linear-sequence scripts.
 - No hierarchical states.
 
 ## Debug
-`GET /statemachine/{scriptName}` on the agent server returns the live `StateSnapshot` (current state, last transition, reason, timestamp).
+`GET /statemachine/{scriptName}` on the MCP server's REST API (MCP tool `get_state_machine_snapshot`) returns the live `StateSnapshot` (current state, last transition, reason, timestamp).
 
 ## See also
 `docs/decisions/` for design rationale; non-negotiable rules in the repo-root `AGENTS.md`.

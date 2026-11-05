@@ -8,7 +8,8 @@
     - [Queryable API Guide](../runelite-client/src/main/java/net/runelite/client/plugins/projectx/api/QUERYABLE_API.md)
     - [Entity Guides](entity-guides/README.md)
     - [Runtime CLI](PROJECTX_CLI.md)
-    - [Agent Server](AGENT_SERVER.md)
+    - [MCP Server](MCP.md)
+    - [REST API (legacy)](AGENT_SERVER.md)
     - [Agent Script Tools](AGENT_SCRIPT_TOOLS.md)
     - [Agentic Testing Loop](AGENTIC_TESTING_LOOP.md)
     - **Reference pages (`projectx.bot` classes; old `Rs2*` names noted on each page)**

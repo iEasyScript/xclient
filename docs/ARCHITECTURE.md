@@ -7,7 +7,7 @@
 - **Utilities (`projectx/util`)**: Facades over RuneLite APIs for player, inventory, banking, walking, etc.; expected to run on script threads, not the client thread. Scripts see them through the `projectx.bot` package (`Inventory`, `Bank`, `Walker`, `Objects`, `Npcs`, ...), the public API since plugin API 2.7.0; the older `Rs2*` classes still work but are deprecated aliases (map: `api-migration.tsv`, guide: `SCRIPTING.md`).
 - **Included builds**: `runelite-api` (shared API artifacts), `runelite-gradle-plugin` (assemble/index/jarsign tasks), `cache` (cache tooling), `runelite-jshell` (JShell support). Root Gradle orchestrates via composite build.
 - **Telemetry/API**: `ProjectXApi`, `ProjectXVersionChecker`, and related clients can call `https://xclient.dev/api`; users can disable this with `-Dprojectx.disableTelemetry=true` or the ProjectX config toggle.
-- **Agent Server**: Optional local control surface under `agentserver`; defaults to TCP on `127.0.0.1:8081`, token-gates requests, and can run in UDS or stealth-bind modes.
+- **MCP Server** (formerly Agent Server): Optional local control surface under `agentserver`; defaults to TCP on `127.0.0.1:8081`, serves the Model Context Protocol at `/mcp` (see `docs/MCP.md`) plus the legacy REST API, token-gates requests, and can run in UDS or stealth-bind modes.
 
 ## Key Data Flows
 - User starts client → `ProjectXClientLoader` fetches jav_config/world info → RuneLite client loads → `ProjectXPlugin` starts, registers overlays/config panels and initializes caches.

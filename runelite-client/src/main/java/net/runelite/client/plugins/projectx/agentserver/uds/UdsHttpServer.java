@@ -204,7 +204,7 @@ public final class UdsHttpServer {
             ProtocolFamily unix = resolveUnixProtocolFamily();
             try (SocketChannel probe = (SocketChannel) invokeSocketChannelOpen(unix)) {
                 probe.connect(newUnixSocketAddress(socketPath));
-                throw new IllegalStateException("Another agent server is already listening on " + socketPath);
+                throw new IllegalStateException("Another MCP server is already listening on " + socketPath);
             } catch (IOException ignored) {
                 try {
                     Files.deleteIfExists(socketPath);

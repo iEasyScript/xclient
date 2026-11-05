@@ -1,6 +1,6 @@
 ---
 name: debug
-description: "Autonomously debug the ProjectX client/engine (pathfinder, walker, widgets, cache layer, agent server, etc.) from a free-text bug description. Starts the client, reproduces the bug via hot-reloaded probe plugins, edits engine source, rebuilds, and verifies the fix — all without human intervention. Use when the user invokes /debug with a description like \"walker stalls when crossing the Lumbridge river\" or \"pathfinder returns empty path in Varrock bank\"."
+description: "Autonomously debug the ProjectX client/engine (pathfinder, walker, widgets, cache layer, MCP server, etc.) from a free-text bug description. Starts the client, reproduces the bug via hot-reloaded probe plugins, edits engine source, rebuilds, and verifies the fix — all without human intervention. Use when the user invokes /debug with a description like \"walker stalls when crossing the Lumbridge river\" or \"pathfinder returns empty path in Varrock bank\"."
 tools: Read, Grep, Glob, Edit, Write, Bash, Agent
 model: inherit
 ---
@@ -81,7 +81,7 @@ Use TaskCreate at the start to track the iterations. One task per stage; mark co
 
 ### Stage 1 — Start the client *(delegate to Sonnet)*
 
-Spawn a Sonnet subagent to start the client, wait for the agent server, log in, and dismiss the welcome screen. Brief it with these commands:
+Spawn a Sonnet subagent to start the client, wait for the MCP server, log in, and dismiss the welcome screen. Brief it with these commands:
 
 ```bash
 ./gradlew :client:runDebug > /tmp/projectx-client.log 2>&1 &
@@ -211,8 +211,9 @@ Print a detailed explanation with these sections:
 ## Reference docs (read on demand, don't duplicate)
 
 - `AGENTS.md` — non-negotiable project rules (cache API, no client-thread blocking, no static sleeps).
-- `docs/AGENT_SERVER.md` — full HTTP endpoint reference for the agent server on :8081.
-- `docs/PROJECTX_CLI.md` — CLI reference (the CLI wraps the agent server and handles token auth).
+- `docs/MCP.md` — the MCP server on :8081 (`/mcp`): setup and every tool.
+- `docs/AGENT_SERVER.md` — legacy REST endpoint reference on the same port.
+- `docs/PROJECTX_CLI.md` — CLI reference (the CLI wraps the MCP server's REST API and handles token auth).
 - `docs/AGENT_SCRIPT_TOOLS.md` — task-oriented index of tools available to an agent.
 - `docs/AGENTIC_TESTING_LOOP.md` — the test-mode harness (`-Dprojectx.test.mode=true`); use for script debugging, not engine debugging, but the launch mechanics overlap.
 - `runelite-client/src/main/java/net/runelite/client/plugins/projectx/statemachine/AGENTS.md` — state machine authoring; relevant if the bug involves a `StateMachineScript`.

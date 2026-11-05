@@ -6,12 +6,20 @@ import com.google.inject.Provides;
 import com.sun.net.httpserver.HttpServer;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.events.ChatMessage;
+import net.runelite.client.RuneLiteProperties;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.plugins.projectx.agentserver.handler.*;
+import net.runelite.client.plugins.projectx.agentserver.mcp.ChatLog;
+import net.runelite.client.plugins.projectx.agentserver.mcp.McpContext;
+import net.runelite.client.plugins.projectx.agentserver.mcp.McpHandler;
+import net.runelite.client.plugins.projectx.agentserver.mcp.McpProtocol;
+import net.runelite.client.plugins.projectx.agentserver.mcp.McpToolRegistry;
+import net.runelite.client.plugins.projectx.agentserver.mcp.tools.McpTools;
 import net.runelite.client.ui.DrawManager;
 
 import javax.inject.Inject;
@@ -22,8 +30,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,10 +41,16 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * The MCP server: a Model Context Protocol endpoint at {@code /mcp} for AI agents (Claude Code and
+ * other MCP clients), and the older REST API used by projectx-cli, on one localhost-only HTTP server.
+ * The class, config group and token file keep their original names so saved settings, the enabled
+ * state and existing tooling carry over.
+ */
 @PluginDescriptor(
-		name = PluginDescriptor.Mocrosoft + "Agent Server",
-		description = "HTTP server for AI agent communication - exposes widget inspection, game interaction, and state endpoints",
-		tags = {"agent", "ai", "server", "automation"},
+		name = PluginDescriptor.Mocrosoft + "MCP Server",
+		description = "MCP server for AI agents on 127.0.0.1 (Model Context Protocol at /mcp, plus the older REST API used by projectx-cli): game state, world queries, actions, widgets, logs and script control",
+		tags = {"mcp", "agent", "ai", "claude", "server", "automation"},
 		enabledByDefault = false
 )
 @Slf4j
@@ -57,6 +73,8 @@ public class AgentServerPlugin extends Plugin {
 	private ExecutorService executor;
 	private Thread shutdownHook;
 	private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+	private final ChatLog chatLog = new ChatLog();
+	private volatile String listening = "not started";
 
 	private java.util.concurrent.ScheduledExecutorService stealthScheduler;
 	private volatile boolean stealthActive = false;
@@ -74,7 +92,7 @@ public class AgentServerPlugin extends Plugin {
 	@Override
 	protected void startUp() throws Exception {
 		if (config.bindOnlyWhileScriptsActive()) {
-			log.info("Agent server in stealth-bind mode; socket will open when a script begins running.");
+			log.info("MCP server in stealth-bind mode; socket will open when a script begins running.");
 			startStealthScheduler();
 			return;
 		}
@@ -89,18 +107,24 @@ public class AgentServerPlugin extends Plugin {
 		String token = ensureAuthToken();
 		AgentHandler.setTokenSupplier(() -> configManager.getConfiguration(AgentServerConfig.GROUP, AgentServerConfig.KEY_TOKEN));
 
-		executor = Executors.newFixedThreadPool(4, new ThreadFactory() {
+		// MCP waits (walk_to with wait, wait_for_*) hold a request thread for their duration, so keep
+		// a few spare for quick reads alongside them.
+		executor = Executors.newFixedThreadPool(8, new ThreadFactory() {
 			private final AtomicInteger count = new AtomicInteger(1);
 
 			@Override
 			public Thread newThread(Runnable r) {
-				Thread t = new Thread(r, "AgentServer-" + count.getAndIncrement());
+				Thread t = new Thread(r, "McpServer-" + count.getAndIncrement());
 				t.setDaemon(true);
 				return t;
 			}
 		});
 
-		List<AgentHandler> handlers = buildHandlers(maxResults);
+		List<AgentHandler> handlers = new ArrayList<>(buildHandlers(maxResults));
+		McpContext mcpContext = new McpContext(client, handlers, chatLog, maxResults, () -> listening);
+		McpToolRegistry tools = McpTools.registerAll(new McpToolRegistry(), mcpContext);
+		String version = Objects.toString(RuneLiteProperties.getProjectXVersion(), "dev");
+		handlers.add(new McpHandler(gson, new McpProtocol(tools, "projectx-osrs", version)));
 
 		AgentServerConfig.BindMode mode = config.bindMode();
 		boolean started;
@@ -118,11 +142,11 @@ public class AgentServerPlugin extends Plugin {
 		shutdownHook = new Thread(() -> {
 			stopServer();
 			deleteTokenFile();
-		}, "AgentServer-Shutdown");
+		}, "McpServer-Shutdown");
 		Runtime.getRuntime().addShutdownHook(shutdownHook);
 		Path tokenFile = writeTokenFile(token);
-		log.info("Agent server started ({} endpoints; auth enabled, token {})",
-				handlers.size(), tokenFile != null ? "at " + tokenFile : "file unavailable");
+		log.info("MCP server started: {} tools at {}, plus {} REST routes; auth enabled, token {}",
+				tools.size(), listening, handlers.size() - 1, tokenFile != null ? "at " + tokenFile : "file unavailable");
 	}
 
 	private List<AgentHandler> buildHandlers(int maxResults) {
@@ -161,7 +185,7 @@ public class AgentServerPlugin extends Plugin {
 		try {
 			server = HttpServer.create(new InetSocketAddress("127.0.0.1", port), 0);
 		} catch (java.net.BindException e) {
-			log.warn("Agent server port {} is already in use (likely another ProjectX client). Skipping agent server startup for this instance.", port);
+			log.warn("MCP server port {} is already in use (likely another ProjectX client). Skipping MCP server startup for this instance.", port);
 			stopServer();
 			return false;
 		} catch (IOException e) {
@@ -175,7 +199,8 @@ public class AgentServerPlugin extends Plugin {
 			server.createContext(handler.getPath(), handler);
 		}
 		server.start();
-		log.info("Agent server bound to 127.0.0.1:{}", port);
+		listening = "http://127.0.0.1:" + port + McpHandler.PATH;
+		log.info("MCP server bound to 127.0.0.1:{} (MCP endpoint {})", port, listening);
 		return true;
 	}
 
@@ -193,7 +218,8 @@ public class AgentServerPlugin extends Plugin {
 				udsServer.createContext(handler.getPath(), handler);
 			}
 			udsServer.start();
-			log.info("Agent server bound to UDS {}", socketPath);
+			listening = "unix:" + socketPath + " " + McpHandler.PATH;
+			log.info("MCP server bound to UDS {}", socketPath);
 			return true;
 		} catch (Exception e) {
 			log.warn("UDS bind failed ({}): {}", socketPath, e.getMessage());
@@ -203,13 +229,18 @@ public class AgentServerPlugin extends Plugin {
 	}
 
 	@Subscribe
+	public void onChatMessage(ChatMessage event) {
+		chatLog.record(event);
+	}
+
+	@Subscribe
 	public void onConfigChanged(ConfigChanged event) {
 		if (!AgentServerConfig.GROUP.equals(event.getGroup()) || !AgentServerConfig.KEY_TOKEN.equals(event.getKey())) {
 			return;
 		}
 		String value = event.getNewValue();
 		if (value == null || value.isEmpty()) {
-			log.warn("Agent server auth token was cleared; regenerating to keep auth enforced");
+			log.warn("MCP server auth token was cleared; regenerating to keep auth enforced");
 			writeTokenFile(ensureAuthToken());
 			return;
 		}
@@ -222,7 +253,7 @@ public class AgentServerPlugin extends Plugin {
 			try {
 				return Integer.parseInt(stored);
 			} catch (NumberFormatException ignored) {
-				log.warn("Invalid agent server port '{}'; falling back to configured default {}", stored, config.port());
+				log.warn("Invalid MCP server port '{}'; falling back to configured default {}", stored, config.port());
 			}
 		}
 		return config.port();
@@ -284,7 +315,7 @@ public class AgentServerPlugin extends Plugin {
 			}
 			return file;
 		} catch (IOException e) {
-			log.warn("Could not write agent token file: {}", e.getMessage());
+			log.warn("Could not write MCP server token file: {}", e.getMessage());
 			return null;
 		}
 	}
@@ -299,7 +330,7 @@ public class AgentServerPlugin extends Plugin {
 	private synchronized void startStealthScheduler() {
 		stopStealthScheduler();
 		stealthScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-			Thread t = new Thread(r, "AgentServer-Stealth");
+			Thread t = new Thread(r, "McpServer-Stealth");
 			t.setDaemon(true);
 			return t;
 		});
@@ -317,11 +348,11 @@ public class AgentServerPlugin extends Plugin {
 		try {
 			boolean anyScriptAlive = hasActiveScript();
 			if (anyScriptAlive && !stealthActive) {
-				log.info("Stealth bind: activating agent server (script detected)");
+				log.info("Stealth bind: activating MCP server (script detected)");
 				actuallyStart();
 				stealthActive = true;
 			} else if (!anyScriptAlive && stealthActive) {
-				log.info("Stealth bind: tearing down agent server (no active scripts for {}ms)", STEALTH_IDLE_GRACE_MS);
+				log.info("Stealth bind: tearing down MCP server (no active scripts for {}ms)", STEALTH_IDLE_GRACE_MS);
 				stopServer();
 				deleteTokenFile();
 				stealthActive = false;
@@ -349,7 +380,7 @@ public class AgentServerPlugin extends Plugin {
 			Path file = Paths.get(System.getProperty("user.home"), ".runelite", ".agent-token");
 			Files.deleteIfExists(file);
 		} catch (IOException e) {
-			log.debug("Could not delete agent token file: {}", e.getMessage());
+			log.debug("Could not delete MCP server token file: {}", e.getMessage());
 		}
 		cleanupLegacyTokenLocations();
 	}
@@ -388,12 +419,12 @@ public class AgentServerPlugin extends Plugin {
 		if (server != null) {
 			server.stop(0);
 			server = null;
-			log.info("Agent server stopped (TCP)");
+			log.info("MCP server stopped (TCP)");
 		}
 		if (udsServer != null) {
 			udsServer.stop();
 			udsServer = null;
-			log.info("Agent server stopped (UDS)");
+			log.info("MCP server stopped (UDS)");
 		}
 		if (executor != null) {
 			executor.shutdownNow();

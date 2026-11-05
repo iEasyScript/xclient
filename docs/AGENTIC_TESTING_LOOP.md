@@ -255,6 +255,26 @@ The agent uses its code editing tools to:
 
 Back to step 1. The loop continues until all checks pass or `maxIterations` is reached.
 
+### Live driving over MCP
+
+The batch loop above runs a script to completion and reads files. To watch and steer a script while it
+runs (or to reproduce a report step by step), drive the live client over MCP instead:
+
+1. Enable the **MCP Server** plugin (formerly "Agent Server") and register it with Claude Code once —
+   see [MCP.md](MCP.md) for the `.mcp.json` entry. The endpoint is `http://127.0.0.1:8081/mcp`.
+2. Load the build under test: copy its jar to `~/.runelite/projectx-plugins/dev/` and call
+   `reload_scripts`, then `start_script` with the class name from `list_scripts`.
+3. Observe with `get_game_state`, `list_npcs` / `list_objects`, `get_dialogue`, `get_chat_messages`,
+   `screenshot`, and `read_logs` (level `WARN` and a pattern for the script's own lines).
+4. Check the loop with `get_script_status` (heartbeat `stalled_ms`) and `get_state_machine_snapshot`.
+5. Step in when needed with `interact_*`, `walk_to`, `click_widget`, `key_press`, followed by a
+   `wait_for_*` tool (every wait is bounded by a timeout), and change settings with `set_plugin_setting`.
+
+Coordinates in MCP results: `tile` is the scene tile (instance coordinates inside instances, the same
+space as NPCs and objects); `map_tile` is the original map tile. Compare with the `distance` field.
+
+`projectx-cli` exposes the same operations through the legacy REST API on the same port and still works.
+
 ### Agent Invocation
 
 All invocations use the existing OAuth session (Max subscription). No API key required.
