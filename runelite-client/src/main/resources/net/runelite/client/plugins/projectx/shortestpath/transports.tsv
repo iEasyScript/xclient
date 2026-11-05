@@ -5170,9 +5170,10 @@
 # woodcutting guild
 1574 3483 1	1575 3483 0	Climb-down;Rope ladder;28858
 1575 3483 0	1574 3483 1	Climb-up;Rope ladder;28857
-#Grimstone Dungeon
-2902 10454 0	2902 10456 0	Climb;Uneven stone ledges;60120
-2902 10456 0	2902 10454 0	Climb;Uneven stone ledges;60120
+# Grimstone Dungeon: the large stone ledges (60119, no level) climb from the north cave onto the frost
+# dragon platform. The south ledges (60120, 83 Agility) are in agility_shortcuts.tsv.
+2896 10480 0	2896 10478 0	Climb;Large stone ledges;60119
+2896 10478 0	2896 10480 0	Climb;Large stone ledges;60119
 # Draynor Manor basement (Ernest the Chicken) lever-puzzle doors — gated by lever varbits 1788-1793
 3108 9757 0	3108 9759 0	Open;Door;144					1788=1;1789=1;1790=0;1793=0			1	Draynor basement puzzle door
 3108 9759 0	3108 9757 0	Open;Door;144					1788=1;1789=1;1790=0;1793=0			1	Draynor basement puzzle door
